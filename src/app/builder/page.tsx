@@ -38,7 +38,7 @@ function BuilderContent() {
   }, [resumeId, isAuthenticated, loadResume]);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col overflow-hidden relative">
+    <div className="min-h-screen bg-background text-foreground flex flex-col overflow-hidden relative">
       {/* Editor Header Toolbar */}
       <EditorHeader
         onToggleAi={() => setIsAiOpen((prev) => !prev)}
@@ -46,21 +46,21 @@ function BuilderContent() {
         onDownloadPdf={triggerPdfDownload}
       />
 
-      {/* Main Workspace (Clean 50-50 Split View) */}
+      {/* Main Workspace (Clean Split View) */}
       <div className="flex-1 flex overflow-hidden">
         {/* Left Side: Form Editor Workspace with Vertical Section Navigation */}
-        <div className="w-full lg:w-1/2 flex border-r border-slate-800 bg-slate-900/40 overflow-hidden no-print">
+        <div className="w-full lg:w-1/2 flex border-r border-border bg-surface/40 overflow-hidden no-print">
           {/* Vertical Section Nav Sidebar */}
           <SectionNav />
 
           {/* Active Section Form Fields */}
-          <div className="flex-1 overflow-y-auto p-2 scrollbar-thin scrollbar-thumb-slate-800">
+          <div className="flex-1 overflow-y-auto p-3 scrollbar-thin scrollbar-thumb-border">
             <ResumeFormContainer onAiImproveSummary={() => setIsAiOpen(true)} />
           </div>
         </div>
 
         {/* Right Side: Live Resume Preview Canvas */}
-        <div className="hidden lg:flex print:flex flex-1 bg-slate-950 relative overflow-hidden print-area">
+        <div className="hidden lg:flex print:flex flex-1 bg-background relative overflow-hidden print-area">
           <LivePreviewCanvas />
         </div>
       </div>
@@ -77,7 +77,7 @@ export default function BuilderPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-slate-950 flex items-center justify-center text-slate-400">
+        <div className="min-h-screen bg-background flex items-center justify-center text-ink-soft">
           Loading Builder...
         </div>
       }

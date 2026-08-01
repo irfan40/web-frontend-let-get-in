@@ -7,7 +7,7 @@ import { IResume } from '../../../features/resume/types';
 import { DashboardHeader } from '../../../features/dashboard/components/DashboardHeader';
 import { ResumeCard } from '../../../features/dashboard/components/ResumeCard';
 import { CreateResumeModal } from '../../../features/dashboard/components/CreateResumeModal';
-import { Plus, Search, FileText } from 'lucide-react';
+import { Plus, Search, FileText, Sparkles } from 'lucide-react';
 
 export default function DashboardPage() {
   const { isAuthenticated, checkAuth } = useAuthStore();
@@ -52,21 +52,27 @@ export default function DashboardPage() {
   );
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
+    <div className="min-h-screen bg-background text-foreground flex flex-col">
       <DashboardHeader onCreateNew={() => setIsModalOpen(true)} />
 
-      <main className="flex-1 max-w-7xl w-full mx-auto p-6 space-y-6">
+      <main className="flex-1 max-w-7xl w-full mx-auto p-6 sm:p-8 space-y-8">
         {/* Banner */}
-        <div className="bg-gradient-to-r from-indigo-900/60 via-purple-900/40 to-slate-900 border border-indigo-500/20 rounded-2xl p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-xl">
-          <div>
-            <h1 className="text-xl font-bold text-white mb-1">Welcome back to ResumeBuild AI</h1>
-            <p className="text-xs text-slate-300">
-              Create ATS-optimized, high-converting professional resumes in minutes.
+        <div className="bg-gradient-dark rounded-3xl p-6 sm:p-8 border border-white/10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-elegant relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-1/2 h-full opacity-10 bg-[radial-gradient(ellipse_at_top_right,_var(--primary-glow)_0%,_transparent_70%)] pointer-events-none" />
+          <div className="relative space-y-2">
+            <div className="flex items-center gap-2 text-xs font-semibold text-primary-glow bg-primary/10 px-3 py-1 rounded-full w-fit border border-primary/20">
+              <Sparkles className="w-3.5 h-3.5" /> Intelligent Career Assistant
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-ink tracking-tight">
+              Welcome back to <span className="text-gradient-brand">LetGetIn AI</span>
+            </h1>
+            <p className="text-sm text-ink-soft max-w-xl leading-relaxed">
+              Build verified, ATS-optimized, high-converting professional profiles and resumes in minutes.
             </p>
           </div>
           <button
             onClick={() => setIsModalOpen(true)}
-            className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-lg shadow-indigo-600/30 transition-all flex items-center gap-2"
+            className="bg-gradient-brand text-primary-foreground text-xs font-semibold px-6 py-3.5 rounded-xl shadow-elegant hover:shadow-glow transition-all hover:scale-[1.02] active:scale-95 flex items-center gap-2 shrink-0"
           >
             <Plus className="w-4 h-4" />
             <span>Create New Resume</span>
@@ -81,11 +87,11 @@ export default function DashboardPage() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search resumes by title..."
-              className="w-full bg-slate-900 border border-slate-800 focus:border-indigo-500 rounded-xl px-4 py-2.5 pl-10 text-xs text-white placeholder-slate-500 focus:outline-none"
+              className="input-base pl-10"
             />
-            <Search className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
+            <Search className="w-4 h-4 text-ink-soft absolute left-3.5 top-3.5" />
           </div>
-          <div className="text-xs text-slate-400 font-medium">
+          <div className="text-xs text-ink-soft font-medium">
             Showing {filteredResumes.length} resume{filteredResumes.length === 1 ? '' : 's'}
           </div>
         </div>
@@ -94,21 +100,21 @@ export default function DashboardPage() {
         {isLoading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-48 bg-slate-900/50 border border-slate-800 rounded-xl animate-pulse" />
+              <div key={i} className="h-56 bg-surface/50 border border-border rounded-3xl animate-pulse" />
             ))}
           </div>
         ) : filteredResumes.length === 0 ? (
-          <div className="text-center py-16 bg-slate-900/30 border border-dashed border-slate-800 rounded-2xl space-y-3">
-            <div className="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center text-slate-500 mx-auto">
-              <FileText className="w-6 h-6" />
+          <div className="text-center py-20 bg-surface/40 border border-dashed border-border rounded-3xl space-y-4">
+            <div className="w-14 h-14 rounded-2xl bg-gradient-brand flex items-center justify-center text-primary-foreground mx-auto shadow-glow">
+              <FileText className="w-7 h-7" />
             </div>
-            <h3 className="text-sm font-bold text-white">No Resumes Found</h3>
-            <p className="text-xs text-slate-400 max-w-sm mx-auto">
-              You haven&apos;t created any resumes yet or no resumes match your search.
+            <h3 className="text-base font-bold text-ink">No Resumes Found</h3>
+            <p className="text-xs text-ink-soft max-w-sm mx-auto leading-relaxed">
+              You haven&apos;t created any resumes yet or no resumes match your search query.
             </p>
             <button
               onClick={() => setIsModalOpen(true)}
-              className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold px-4 py-2 rounded-lg transition-colors inline-flex items-center gap-1.5"
+              className="bg-gradient-brand text-primary-foreground text-xs font-semibold px-6 py-3 rounded-xl shadow-elegant hover:shadow-glow transition-all inline-flex items-center gap-2"
             >
               <Plus className="w-4 h-4" /> Create Your First Resume
             </button>

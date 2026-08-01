@@ -31,62 +31,64 @@ export const CreateResumeModal: React.FC<CreateResumeModalProps> = ({ isOpen, on
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-xl p-6 shadow-2xl space-y-5">
-        <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-          <div className="flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-indigo-400" />
-            <h2 className="text-base font-bold text-white">Create New Resume</h2>
+    <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
+      <div className="bg-surface border border-white/20 rounded-3xl w-full max-w-xl p-6 sm:p-8 shadow-elegant space-y-6 text-ink">
+        <div className="flex items-center justify-between pb-4 border-b border-border">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-gradient-brand flex items-center justify-center text-primary-foreground font-bold text-xs shadow-glow">
+              <Sparkles className="w-4 h-4" />
+            </div>
+            <h2 className="text-lg font-bold text-ink">Create New Resume</h2>
           </div>
-          <button onClick={onClose} className="text-slate-400 hover:text-white p-1 rounded-lg">
-            <X className="w-4 h-4" />
+          <button onClick={onClose} className="text-ink-soft hover:text-ink p-1 rounded-xl hover:bg-surface-alt transition-colors">
+            <X className="w-5 h-5" />
           </button>
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-slate-300 mb-1">Document Title</label>
+          <label className="block text-xs font-semibold text-ink mb-1.5">Document Title</label>
           <input
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="e.g. Senior Software Engineer Resume"
-            className="w-full bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-lg p-2.5 text-xs text-white placeholder-slate-500 focus:outline-none"
+            className="input-base"
           />
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-slate-300 mb-2">Select Initial Template</label>
+          <label className="block text-xs font-semibold text-ink mb-3">Select Initial Template</label>
           <div className="grid grid-cols-2 gap-3">
             {templates.map((tpl) => (
               <div
                 key={tpl.id}
                 onClick={() => setSelectedTemplate(tpl.id)}
-                className={`p-3 rounded-xl border cursor-pointer transition-all ${
+                className={`p-4 rounded-2xl border cursor-pointer transition-all ${
                   selectedTemplate === tpl.id
-                    ? 'bg-indigo-950/60 border-indigo-500 text-white ring-1 ring-indigo-500'
-                    : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:border-slate-700'
+                    ? 'bg-primary/10 border-primary-glow text-ink ring-2 ring-primary-glow/40 shadow-glow'
+                    : 'bg-surface-alt border-border text-ink-soft hover:border-primary-glow/40'
                 }`}
               >
-                <div className="flex items-center gap-2 mb-1">
-                  <LayoutTemplate className={`w-4 h-4 ${selectedTemplate === tpl.id ? 'text-indigo-400' : 'text-slate-500'}`} />
-                  <span className="text-xs font-bold text-white">{tpl.name}</span>
+                <div className="flex items-center gap-2 mb-1.5">
+                  <LayoutTemplate className={`w-4 h-4 ${selectedTemplate === tpl.id ? 'text-primary-glow' : 'text-ink-soft'}`} />
+                  <span className="text-xs font-bold text-ink">{tpl.name}</span>
                 </div>
-                <p className="text-[10px] text-slate-500 leading-tight">{tpl.desc}</p>
+                <p className="text-[11px] text-ink-soft leading-tight">{tpl.desc}</p>
               </div>
             ))}
           </div>
         </div>
 
-        <div className="pt-3 border-t border-slate-800 flex justify-end gap-3">
+        <div className="pt-4 border-t border-border flex justify-end gap-3">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-xs font-semibold text-slate-400 hover:text-white transition-colors"
+            className="px-5 py-2.5 text-xs font-semibold text-ink-soft hover:text-ink transition-colors rounded-xl"
           >
             Cancel
           </button>
           <button
             onClick={handleCreate}
-            className="px-5 py-2 text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg shadow-lg shadow-indigo-600/30 transition-all"
+            className="px-6 py-2.5 text-xs font-semibold bg-gradient-brand text-primary-foreground rounded-xl shadow-elegant hover:shadow-glow transition-all hover:scale-[1.02] active:scale-95"
           >
             Launch Builder
           </button>

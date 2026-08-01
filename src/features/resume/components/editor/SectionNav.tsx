@@ -25,16 +25,16 @@ export const SectionNav: React.FC = () => {
   const currentScore = result?.overallScore ?? 0;
 
   const getBadgeColor = (score: number) => {
-    if (score >= 80) return 'text-emerald-400 border-emerald-500/30 bg-emerald-500/10';
-    if (score >= 65) return 'text-blue-400 border-blue-500/30 bg-blue-500/10';
+    if (score >= 80) return 'text-success border-success/30 bg-success/10';
+    if (score >= 65) return 'text-primary-glow border-primary/30 bg-primary/10';
     return 'text-amber-400 border-amber-500/30 bg-amber-500/10';
   };
 
   return (
-    <div className="w-16 sm:w-48 bg-slate-900 border-r border-slate-800 flex flex-col justify-between py-3 px-2 gap-1 select-none flex-shrink-0">
+    <div className="w-16 sm:w-48 bg-surface border-r border-border flex flex-col justify-between py-4 px-2.5 gap-1 select-none flex-shrink-0">
       <div className="flex flex-col gap-1">
         <div className="px-3 py-1.5 hidden sm:block">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Form Sections</span>
+          <span className="text-[10px] font-bold uppercase tracking-wider text-ink-soft">Form Sections</span>
         </div>
 
         {SECTIONS.map((sec) => {
@@ -44,17 +44,17 @@ export const SectionNav: React.FC = () => {
             <button
               key={sec.id}
               onClick={() => setActiveSection(sec.id)}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-left transition-all ${
+              className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-left transition-all ${
                 isActive
-                  ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30 font-bold'
-                  : 'text-slate-400 hover:text-white hover:bg-slate-800/80'
+                  ? 'bg-gradient-brand text-primary-foreground font-bold shadow-elegant shadow-primary-glow/20'
+                  : 'text-ink-soft hover:text-ink hover:bg-surface-alt'
               }`}
               title={sec.label}
             >
-              <Icon className={`w-4 h-4 flex-shrink-0 ${isActive ? 'text-white' : 'text-slate-400'}`} />
+              <Icon className={`w-4 h-4 flex-shrink-0 ${isActive ? 'text-primary-foreground' : 'text-ink-soft'}`} />
               <span className="hidden sm:inline truncate">{sec.shortLabel}</span>
               {sec.id === 'ats' && (
-                <span className="hidden sm:inline-block ml-auto text-[10px] px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-300 font-bold">
+                <span className="hidden sm:inline-block ml-auto text-[10px] px-1.5 py-0.5 rounded-full bg-primary/20 text-primary-glow font-bold">
                   {currentScore}%
                 </span>
               )}
@@ -64,14 +64,14 @@ export const SectionNav: React.FC = () => {
       </div>
 
       {/* Down of Settings: Live Open Resume ATS Score Card */}
-      <div className="mt-auto pt-3 border-t border-slate-800/80">
+      <div className="mt-auto pt-3 border-t border-border">
         <button
           onClick={() => setActiveSection('ats')}
-          className={`w-full border rounded-xl p-2.5 text-left transition-all flex flex-col gap-1 ${getBadgeColor(currentScore)} hover:scale-[1.02] shadow-md`}
+          className={`w-full border rounded-2xl p-3 text-left transition-all flex flex-col gap-1 ${getBadgeColor(currentScore)} hover:scale-[1.02] shadow-elegant`}
         >
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-300">Open Resume ATS</span>
-            <ShieldCheck className="w-3.5 h-3.5" />
+            <span className="text-[10px] font-bold uppercase tracking-wider text-ink-soft">Open Resume ATS</span>
+            <ShieldCheck className="w-4 h-4" />
           </div>
           <div className="flex items-baseline justify-between">
             <span className="text-xl font-extrabold">{currentScore}%</span>

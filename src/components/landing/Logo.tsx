@@ -1,12 +1,14 @@
 import React from 'react';
+import Link from 'next/link';
 
 export interface LogoProps {
   dark?: boolean;
+  className?: string;
 }
 
-export function Logo({ dark = false }: LogoProps) {
+export function Logo({ dark = false, className = '' }: LogoProps) {
   return (
-    <a href="#top" className="flex items-center gap-2.5 group shrink-0">
+    <Link href="/" className={`inline-flex items-center gap-2.5 font-bold group shrink-0 ${className}`}>
       <div
         className={
           dark
@@ -21,7 +23,7 @@ export function Logo({ dark = false }: LogoProps) {
       >
         Let<span className={dark ? "text-primary-glow" : "text-primary-glow"}>Get</span>In
       </span>
-    </a>
+    </Link>
   );
 }
 

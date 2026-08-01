@@ -10,46 +10,46 @@ interface ResumeCardProps {
 
 export const ResumeCard: React.FC<ResumeCardProps> = ({ resume, onDelete }) => {
   return (
-    <div className="bg-slate-900 border border-slate-800 hover:border-indigo-500/50 rounded-xl p-5 transition-all shadow-lg hover:shadow-xl flex flex-col justify-between group">
+    <div className="bg-surface border border-border hover:border-primary-glow/60 rounded-3xl p-6 transition-all card-hover shadow-elegant flex flex-col justify-between group">
       <div>
-        <div className="flex items-start justify-between mb-3">
-          <div className="w-10 h-10 rounded-lg bg-indigo-950/60 border border-indigo-800/40 flex items-center justify-center text-indigo-400 group-hover:scale-105 transition-transform">
-            <FileText className="w-5 h-5" />
+        <div className="flex items-start justify-between mb-4">
+          <div className="w-12 h-12 rounded-2xl bg-gradient-brand flex items-center justify-center text-primary-foreground font-bold shadow-glow group-hover:scale-105 transition-transform">
+            <FileText className="w-6 h-6" />
           </div>
           <button
             onClick={() => onDelete(resume.id)}
-            className="text-slate-500 hover:text-rose-400 p-1.5 rounded-lg hover:bg-slate-800 transition-colors"
+            className="text-ink-soft hover:text-destructive p-2 rounded-xl hover:bg-surface-alt transition-colors"
             title="Delete Resume"
           >
             <Trash2 className="w-4 h-4" />
           </button>
         </div>
 
-        <h3 className="text-sm font-bold text-white mb-1 group-hover:text-indigo-300 transition-colors">
+        <h3 className="text-base font-bold text-ink mb-1 group-hover:text-primary-glow transition-colors">
           {resume.title}
         </h3>
-        <p className="text-xs text-slate-400 line-clamp-1 mb-4">
+        <p className="text-xs text-ink-soft line-clamp-1 mb-5">
           {resume.content.personalInfo.headline || 'Software Professional'}
         </p>
 
-        <div className="space-y-1.5 text-[11px] text-slate-500 font-medium">
-          <div className="flex items-center gap-1.5">
-            <LayoutTemplate className="w-3.5 h-3.5 text-indigo-400" />
+        <div className="space-y-2 text-xs text-ink-soft font-medium">
+          <div className="flex items-center gap-2">
+            <LayoutTemplate className="w-4 h-4 text-primary-glow" />
             <span className="capitalize">{resume.templateId.replace('-', ' ')}</span>
           </div>
-          <div className="flex items-center gap-1.5">
-            <Calendar className="w-3.5 h-3.5 text-slate-400" />
+          <div className="flex items-center gap-2">
+            <Calendar className="w-4 h-4 text-ink-soft" />
             <span>Updated {resume.updatedAt ? new Date(resume.updatedAt).toLocaleDateString() : 'Recently'}</span>
           </div>
         </div>
       </div>
 
-      <div className="pt-4 mt-4 border-t border-slate-800/80">
+      <div className="pt-5 mt-5 border-t border-border">
         <Link
           href={`/builder?id=${resume.id}`}
-          className="w-full bg-slate-800 hover:bg-indigo-600 text-white text-xs font-semibold py-2 rounded-lg transition-all flex items-center justify-center gap-2 group-hover:shadow-md"
+          className="w-full bg-gradient-brand text-primary-foreground text-xs font-semibold py-2.5 rounded-xl shadow-elegant hover:shadow-glow transition-all flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95"
         >
-          <Edit className="w-3.5 h-3.5" />
+          <Edit className="w-4 h-4" />
           <span>Open in Editor</span>
         </Link>
       </div>
