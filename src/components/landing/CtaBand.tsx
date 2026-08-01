@@ -18,8 +18,8 @@ export function CtaBand() {
           Ready to <span className="text-success">Get In</span>?
         </h2>
         <p className="text-white/75 text-lg md:text-xl mt-4 max-w-2xl mx-auto leading-relaxed">
-          Stop claiming. Start proving. Join the network where your verified
-          skills, not your CV, define your future.
+          Stop claiming. Start proving. Join the network where your verified skills, not your
+          CV, define your future.
         </p>
 
         <div className="mt-8 flex flex-wrap justify-center gap-4">

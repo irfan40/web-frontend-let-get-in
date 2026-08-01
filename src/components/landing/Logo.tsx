@@ -1,21 +1,27 @@
 import React from 'react';
-import Link from './NavLink';
 
 export interface LogoProps {
   dark?: boolean;
-  className?: string;
 }
 
-export function Logo({ dark = false, className = '' }: LogoProps) {
+export function Logo({ dark = false }: LogoProps) {
   return (
-    <Link href="/" className={`inline-flex items-center gap-2.5 font-extrabold text-lg group ${className}`}>
-      <span className="w-9 h-9 rounded-xl bg-gradient-brand flex items-center justify-center text-white text-sm font-black shadow-lg shadow-indigo-500/25 group-hover:scale-105 transition-transform">
-        LGI
+    <a href="#top" className="flex items-center gap-2.5 group shrink-0">
+      <div
+        className={
+          dark
+            ? "w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center text-white font-bold text-sm"
+            : "w-9 h-9 rounded-xl bg-gradient-brand flex items-center justify-center text-primary-foreground font-bold text-sm shadow-glow"
+        }
+      >
+        L
+      </div>
+      <span
+        className={`text-xl font-bold tracking-tight ${dark ? "text-white" : "text-ink"}`}
+      >
+        Let<span className={dark ? "text-primary-glow" : "text-primary-glow"}>Get</span>In
       </span>
-      <span className={`tracking-tight ${dark ? 'text-white' : 'text-slate-100'}`}>
-        LetGet<span className="text-indigo-400">In</span>
-      </span>
-    </Link>
+    </a>
   );
 }
 

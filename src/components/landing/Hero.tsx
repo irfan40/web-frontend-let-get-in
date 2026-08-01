@@ -1,95 +1,116 @@
-import React from 'react';
-import Link from './NavLink';
-import { Sparkles, ArrowRight, ShieldCheck, Zap, CheckCircle2, Award } from 'lucide-react';
+import React from "react";
+import { Sparkles, PlayCircle, CheckCircle2, Building2 } from "lucide-react";
+import Link from "./NavLink";
 
 export function Hero() {
   return (
-    <section className="relative pt-16 pb-20 md:pt-24 md:pb-32 px-4 sm:px-6 overflow-hidden">
-      {/* Glow Effects */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[350px] bg-indigo-600/20 blur-[120px] rounded-full pointer-events-none" />
-      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[400px] h-[250px] bg-purple-600/15 blur-[100px] rounded-full pointer-events-none" />
+    <section className="pt-28 md:pt-36 pb-16 md:pb-24 px-4 sm:px-6 relative overflow-hidden">
+      <div className="absolute top-0 right-0 w-1/2 h-full opacity-[0.05] bg-[radial-gradient(ellipse_at_top_right,_var(--primary-glow)_0%,_transparent_70%)] pointer-events-none" />
+      <div className="absolute bottom-0 left-0 w-1/3 h-1/2 opacity-[0.04] bg-[radial-gradient(ellipse_at_bottom_left,_var(--primary-deep)_0%,_transparent_70%)] pointer-events-none" />
 
-      <div className="max-w-6xl mx-auto text-center relative z-10">
-        {/* Top Badge */}
-        <div className="inline-flex items-center gap-2 bg-indigo-950/80 border border-indigo-500/30 text-indigo-300 px-4 py-1.5 rounded-full text-xs md:text-sm font-semibold shadow-lg shadow-indigo-500/10 mb-8 backdrop-blur-md">
-          <Sparkles className="w-4 h-4 text-purple-400" />
-          <span>The Verified Professional Identity Platform</span>
-        </div>
-
-        {/* Hero Title */}
-        <h1 className="text-4xl sm:text-6xl md:text-7xl font-extrabold text-white tracking-tight leading-[1.1]">
-          Stop Claiming Skills. <br />
-          <span className="text-gradient-brand">Start Proving Them.</span>
-        </h1>
-
-        {/* Subtitle */}
-        <p className="text-slate-300 text-lg sm:text-xl max-w-3xl mx-auto mt-6 leading-relaxed">
-          Build ATS-optimized, executive-ready resumes backed by AI skill verification, real-time interview evaluations, and shareable proof of work cards.
-        </p>
-
-        {/* CTA Buttons */}
-        <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
-          <Link
-            to="/auth"
-            className="w-full sm:w-auto bg-gradient-brand text-white font-bold text-base px-8 py-4 rounded-xl shadow-xl shadow-indigo-500/25 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2.5"
-          >
-            <span>Claim Your Profile — Free</span>
-            <ArrowRight className="w-5 h-5" />
-          </Link>
-          <a
-            href="#features"
-            className="w-full sm:w-auto bg-slate-900/80 hover:bg-slate-800 border border-slate-700 text-slate-200 font-semibold text-base px-7 py-4 rounded-xl backdrop-blur-md transition-all flex items-center justify-center"
-          >
-            Explore Features
-          </a>
-        </div>
-
-        {/* Trust Badges */}
-        <div className="mt-10 flex flex-wrap items-center justify-center gap-6 text-xs md:text-sm text-slate-400 font-medium">
-          <div className="flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-            <span>No Credit Card Required</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <ShieldCheck className="w-4 h-4 text-indigo-400" />
-            <span>100% Verified Proofs</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Zap className="w-4 h-4 text-amber-400" />
-            <span>Instant ATS Parsing</span>
-          </div>
-        </div>
-
-        {/* Interactive Mockup Preview Card */}
-        <div className="mt-14 relative max-w-4xl mx-auto rounded-2xl border border-white/15 bg-slate-900/70 backdrop-blur-xl p-4 sm:p-6 shadow-2xl shadow-indigo-950/50">
-          <div className="flex items-center justify-between border-b border-white/10 pb-4 mb-4 text-xs text-slate-400">
-            <div className="flex items-center gap-2">
-              <span className="w-3 h-3 rounded-full bg-rose-500/80 inline-block" />
-              <span className="w-3 h-3 rounded-full bg-amber-500/80 inline-block" />
-              <span className="w-3 h-3 rounded-full bg-emerald-500/80 inline-block" />
-              <span className="ml-2 font-mono text-slate-500">letgetin.id/proof/rahul-khanna</span>
+      <div className="max-w-7xl mx-auto relative">
+        <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+          <div className="space-y-7 animate-fade-up">
+            <div className="flex items-center gap-2 text-sm font-medium text-primary-glow bg-primary/5 px-4 py-1.5 rounded-full w-fit border border-primary/10">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary-glow opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-primary-glow" />
+              </span>
+              <Sparkles className="w-3.5 h-3.5" /> The future of professional identity
             </div>
-            <div className="flex items-center gap-2 text-indigo-400 font-semibold">
-              <Award className="w-4 h-4" />
-              <span>Verified Candidate</span>
+
+            <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold leading-[1.08] tracking-tight">
+              <span className="text-ink">Stop Claiming.</span>
+              <br />
+              <span className="text-gradient-brand">Start Proving.</span>
+            </h1>
+
+            <p className="text-lg md:text-xl text-ink-soft max-w-lg leading-relaxed">
+              The professional network where verified skills, not CVs, get you hired.{" "}
+              <span className="font-semibold text-ink">
+                Companies bid for talent — not the other way around.
+              </span>
+            </p>
+
+            <div className="flex flex-wrap items-center gap-4 pt-2">
+              <Link
+                to="/auth"
+                className="bg-gradient-brand text-primary-foreground font-semibold px-8 py-3.5 rounded-xl shadow-elegant hover:shadow-glow transition-all hover:scale-[1.02] active:scale-95 text-base"
+              >
+                Get In — It's Free
+              </Link>
+
+              <a
+                href="#features"
+                className="text-ink font-medium px-6 py-3.5 rounded-xl border border-border hover:border-primary-glow transition flex items-center gap-2"
+              >
+                <PlayCircle className="w-5 h-5" />
+                Watch Demo
+              </a>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-6 pt-4 text-sm text-ink-soft">
+              {["AI-verified skills", "Zero bias hiring", "Global talent pool"].map((t) => (
+                <div key={t} className="flex items-center gap-1.5">
+                  <CheckCircle2 className="w-4 h-4 text-primary-glow" />
+                  <span>{t}</span>
+                </div>
+              ))}
             </div>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-4 text-left">
-            <div className="bg-slate-950/60 p-4 rounded-xl border border-white/5 space-y-2">
-              <div className="text-xs text-indigo-400 font-semibold uppercase">AI Match Score</div>
-              <div className="text-3xl font-extrabold text-white">98.4%</div>
-              <p className="text-xs text-slate-400">Validated against Stripe Data Science benchmarks</p>
-            </div>
-            <div className="bg-slate-950/60 p-4 rounded-xl border border-white/5 space-y-2">
-              <div className="text-xs text-emerald-400 font-semibold uppercase">Time to Hire</div>
-              <div className="text-3xl font-extrabold text-white">11 Days</div>
-              <p className="text-xs text-slate-400">Accelerated by Pathfinder AI assessments</p>
-            </div>
-            <div className="bg-slate-950/60 p-4 rounded-xl border border-white/5 space-y-2">
-              <div className="text-xs text-purple-400 font-semibold uppercase">Proof of Work</div>
-              <div className="text-3xl font-extrabold text-white">12 Badges</div>
-              <p className="text-xs text-slate-400">Cryptographically signed skill evaluations</p>
+          <div className="relative flex justify-center lg:justify-end">
+            <div className="relative w-full max-w-md">
+              <div className="absolute -top-6 -right-6 w-32 h-32 bg-primary-glow/15 rounded-full blur-3xl" />
+              <div className="absolute -bottom-6 -left-6 w-40 h-40 bg-primary-deep/15 rounded-full blur-3xl" />
+
+              <div className="relative glass rounded-3xl p-6 shadow-elegant border border-white/60">
+                <div className="flex items-center gap-4 pb-5 border-b border-border">
+                  <div className="w-14 h-14 rounded-2xl bg-gradient-brand flex items-center justify-center text-primary-foreground font-bold text-xl shadow-glow shrink-0">
+                    AK
+                  </div>
+                  <div className="min-w-0">
+                    <div className="font-bold text-ink text-lg truncate">Aisha Kapoor</div>
+                    <div className="text-sm text-ink-soft">Product Designer · Verified</div>
+                  </div>
+                  <div className="ml-auto shrink-0">
+                    <span className="bg-success/10 text-success text-xs font-semibold px-3 py-1 rounded-full border border-success/20 whitespace-nowrap">
+                      ★ 98% Fit
+                    </span>
+                  </div>
+                </div>
+
+                <div className="py-4 space-y-3">
+                  {[
+                    { label: "AI Interview Passed", meta: "5 min · Adaptive" },
+                    { label: "Portfolio · 12 projects", meta: "97% peer rated" },
+                    { label: "Top 5% · Design Community", meta: "🏆 Gold" },
+                  ].map((r) => (
+                    <div key={r.label} className="flex items-center gap-3 text-sm">
+                      <CheckCircle2 className="w-5 h-5 text-primary-glow shrink-0" />
+                      <span className="font-medium text-ink truncate">{r.label}</span>
+                      <span className="ml-auto text-ink-soft text-xs whitespace-nowrap">
+                        {r.meta}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="pt-3 border-t border-border">
+                  <div className="bg-gradient-brand rounded-xl px-4 py-3 text-primary-foreground text-sm font-medium flex items-center justify-between gap-3">
+                    <span className="truncate">3 companies viewing your profile</span>
+                    <span className="text-xs opacity-80 shrink-0">Active now</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="absolute -bottom-4 -left-4 sm:-left-8 bg-surface rounded-2xl shadow-elegant px-4 py-2.5 border border-border flex items-center gap-3 animate-float">
+                <Building2 className="w-6 h-6 text-primary-glow" />
+                <div>
+                  <div className="text-xs font-semibold text-ink">Stripe · hiring</div>
+                  <div className="text-xs text-ink-soft">Offered $185k · 2d ago</div>
+                </div>
+              </div>
             </div>
           </div>
         </div>

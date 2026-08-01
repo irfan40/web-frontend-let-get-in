@@ -179,7 +179,8 @@
 
 /* Landing Page Design Tokens & Utility Classes */
 :root {
-  --primary-glow: rgba(99, 102, 241, 0.35);
+  --primary-glow: #818cf8;
+  --primary-deep: #4f46e5;
 }
 
 .text-gradient-brand {
@@ -201,12 +202,29 @@
   backdrop-filter: blur(12px);
 }
 
+.bg-surface-alt {
+  background-color: rgba(30, 41, 59, 0.6);
+  backdrop-filter: blur(8px);
+}
+
 .text-ink {
   color: #f8fafc;
 }
 
 .text-ink-soft {
   color: #94a3b8;
+}
+
+.text-primary-glow {
+  color: #818cf8;
+}
+
+.bg-primary-glow {
+  background-color: #818cf8;
+}
+
+.bg-primary-deep {
+  background-color: #4338ca;
 }
 
 .text-success {
@@ -217,6 +235,20 @@
   background-color: #34d399;
 }
 
+.glass {
+  background-color: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.shadow-glow {
+  box-shadow: 0 0 25px -5px rgba(99, 102, 241, 0.4);
+}
+
+.shadow-elegant {
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
+}
+
 .card-hover {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -225,4 +257,32 @@
   border-color: rgba(129, 140, 248, 0.4);
   box-shadow: 0 12px 30px -10px rgba(99, 102, 241, 0.25);
   transform: translateY(-2px);
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-up {
+  animation: fade-up 0.6s ease-out forwards;
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+.animate-float {
+  animation: float 4s ease-in-out infinite;
 }

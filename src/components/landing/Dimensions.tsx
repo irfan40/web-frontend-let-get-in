@@ -1,83 +1,48 @@
-import React from 'react';
-import SectionHeader from './SectionHeader';
-import { Code, Layout, Database, Brain, HeartHandshake } from 'lucide-react';
+import React from "react";
+import SectionHeader from "./SectionHeader";
 
 export function Dimensions() {
-  const dimensions = [
-    {
-      icon: Code,
-      title: 'Technical Execution',
-      score: '96%',
-      tags: ['System Design', 'Algorithms', 'TypeScript', 'Clean Code'],
-    },
-    {
-      icon: Layout,
-      title: 'UI/UX Craftsmanship',
-      score: '92%',
-      tags: ['Design Systems', 'Micro-interactions', 'Accessibility', 'Figma'],
-    },
-    {
-      icon: Database,
-      title: 'Architecture & Data',
-      score: '94%',
-      tags: ['PostgreSQL', 'Redis', 'Distributed Systems', 'API Design'],
-    },
-    {
-      icon: Brain,
-      title: 'Problem Solving',
-      score: '98%',
-      tags: ['Debugging', 'Performance Tuning', 'Tradeoff Analysis'],
-    },
-    {
-      icon: HeartHandshake,
-      title: 'Leadership & Culture',
-      score: '95%',
-      tags: ['Mentorship', 'Cross-functional Comms', 'Agile Leadership'],
-    },
+  const items = [
+    ["Educational Foundations", "Consistency + Specialization. Tier 1 reputation matters, but so does relevancy."],
+    ["Verified Skill Sets", "Technical proficiency, certifications, and domain expertise — proven, not claimed."],
+    ["Performance History", "Promotion velocity + quantifiable ROI. STAR results beat years of tenure."],
+    ["Psychometric & Cognitive", "Aptitude, SJT, personality (DISC/Big Five), and EQ — raw ability minus bias."],
+    ["Communication & Language", "Professional fluency, cross-cultural agility, and public speaking."],
+    ["Soft Power & Adaptability", "Learnability (AQ), critical thinking, collaboration, and digital literacy."],
   ];
-
   return (
-    <section id="dimensions" className="py-20 md:py-28 px-4 sm:px-6 relative">
+    <section id="dimensions" className="py-20 md:py-28 px-4 sm:px-6">
       <div className="max-w-7xl mx-auto">
         <SectionHeader
-          eyebrow="Skill Identity"
-          description="Multidimensional skill profiles validated through live AI challenges rather than self-reported text."
+          eyebrow="Modern Hiring"
+          desc="How forward-thinking companies evaluate candidates in 2026."
         >
-          5 Dimensions of <span className="text-gradient-brand">Verified Competency</span>
+          The <span className="text-gradient-brand">6 Dimensions</span> of Talent
         </SectionHeader>
 
-        <div className="grid md:grid-cols-3 lg:grid-cols-5 gap-4">
-          {dimensions.map((d) => {
-            const Icon = d.icon;
-            return (
-              <div
-                key={d.title}
-                className="bg-surface rounded-2xl p-5 border border-white/10 card-hover flex flex-col justify-between"
-              >
-                <div>
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
-                      <Icon className="w-5 h-5" />
-                    </div>
-                    <span className="text-xs font-mono font-bold text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded-md border border-emerald-500/20">
-                      {d.score}
-                    </span>
-                  </div>
-                  <h3 className="text-base font-bold text-ink mb-3">{d.title}</h3>
-                  <div className="flex flex-wrap gap-1.5 mb-4">
-                    {d.tags.map((tag) => (
-                      <span
-                        key={tag}
-                        className="text-[11px] bg-slate-800/80 text-slate-300 px-2 py-0.5 rounded-md border border-white/5"
-                      >
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                </div>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          {items.map(([title, desc], i) => (
+            <div
+              key={title}
+              className="bg-surface rounded-xl p-6 border border-border card-hover"
+            >
+              <div className="text-sm font-semibold text-primary-glow mb-1">
+                {String(i + 1).padStart(2, "0")}
               </div>
-            );
-          })}
+              <h4 className="font-bold text-ink text-lg">{title}</h4>
+              <p className="text-sm text-ink-soft mt-1 leading-relaxed">{desc}</p>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-10 bg-surface-alt rounded-2xl p-6 border border-border max-w-3xl mx-auto text-center">
+          <p className="text-sm text-ink-soft">
+            <span className="font-semibold text-ink">Expert Insight:</span> In 2026, the most
+            valued parameter is{" "}
+            <span className="font-bold text-primary-glow">"Verified Proof of Work."</span>{" "}
+            Companies are moving away from trusting CVs toward audited portfolios and AI-vetted
+            live assessments.
+          </p>
         </div>
       </div>
     </section>

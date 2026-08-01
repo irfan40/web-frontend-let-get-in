@@ -1,6 +1,6 @@
 import React from "react";
+import { X, Sparkles, CheckCircle2 } from "lucide-react";
 import SectionHeader from "./SectionHeader";
-import { Check, CheckCircle2, Sparkles, X } from "lucide-react";
 
 export function Compare() {
   return (
@@ -26,7 +26,7 @@ export function Compare() {
             </div>
             <ul className="space-y-2.5 text-sm text-ink-soft">
               {[
-                ['"Claims" not proof', "— CVs are self-reported"],
+                ["\"Claims\" not proof", "— CVs are self-reported"],
                 ["Spammy feeds,", "low engagement"],
                 ["No", "transparency for candidates"],
                 ["Hiring bias", "from profiles"],
