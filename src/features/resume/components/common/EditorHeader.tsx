@@ -144,7 +144,7 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({ onToggleAi, isAiOpen
           </div>
         ) : (
           <Link
-            href="/login"
+            href="/auth"
             className="text-xs font-medium text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded-lg border border-slate-700 transition-colors flex items-center gap-1.5"
           >
             <User className="w-3.5 h-3.5" />
