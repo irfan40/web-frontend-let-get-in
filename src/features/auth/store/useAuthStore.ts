@@ -4,66 +4,142 @@ import { AuthService, UserProfile } from '../services/authService';
 interface AuthState {
   user: UserProfile | null;
   isAuthenticated: boolean;
-  isLoading: boolean;
+  loading: boolean;
+  isLoading: boolean; // Alias for loading
   error: string | null;
 
-  checkAuth: () => Promise<void>;
   login: (data: { email: string; password: string }) => Promise<UserProfile>;
-  register: (data: { email: string; password: string; fullName: string }) => Promise<UserProfile>;
+  googleLogin: (credential: string) => Promise<UserProfile>;
+  sendOtp: (email: string) => Promise<{ cooldown: number }>;
+  verifyOtp: (data: {
+    email: string;
+    username: string;
+    password: string;
+    confirmPassword: string;
+    otp: string;
+  }) => Promise<UserProfile>;
+  emailSignup: (data: {
+    email: string;
+    username: string;
+    password: string;
+    confirmPassword: string;
+    otp: string;
+  }) => Promise<UserProfile>;
   logout: () => Promise<void>;
+  refresh: () => Promise<UserProfile | null>;
+  fetchCurrentUser: () => Promise<UserProfile | null>;
+  checkAuth: () => Promise<UserProfile | null>; // Alias for fetchCurrentUser
   clearError: () => void;
 }
 
-export const useAuthStore = create<AuthState>((set) => ({
+export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   isAuthenticated: false,
+  loading: true,
   isLoading: true,
   error: null,
 
-  checkAuth: async () => {
-    set({ isLoading: true, error: null });
+  fetchCurrentUser: async () => {
+    set({ loading: true, isLoading: true, error: null });
     try {
-      const user = await AuthService.getMe();
-      set({ user, isAuthenticated: true, isLoading: false });
+      const user = await AuthService.fetchCurrentUser();
+      set({ user, isAuthenticated: true, loading: false, isLoading: false });
+      return user;
     } catch {
-      set({ user: null, isAuthenticated: false, isLoading: false });
+      set({ user: null, isAuthenticated: false, loading: false, isLoading: false });
+      return null;
     }
+  },
+
+  checkAuth: async () => {
+    return get().fetchCurrentUser();
   },
 
   login: async (credentials) => {
-    set({ isLoading: true, error: null });
+    set({ loading: true, isLoading: true, error: null });
     try {
       const user = await AuthService.login(credentials);
-      set({ user, isAuthenticated: true, isLoading: false });
+      set({ user, isAuthenticated: true, loading: false, isLoading: false });
       return user;
     } catch (err: unknown) {
-      const errorMsg = (err as { error?: { message?: string } })?.error?.message || 'Login failed';
-      set({ error: errorMsg, isLoading: false });
+      const errorMsg =
+        (err as { error?: { message?: string } })?.error?.message ||
+        (err as { message?: string })?.message ||
+        'Login failed';
+      set({ error: errorMsg, loading: false, isLoading: false });
       throw new Error(errorMsg);
     }
   },
 
-  register: async (data) => {
-    set({ isLoading: true, error: null });
+  googleLogin: async (credential: string) => {
+    set({ loading: true, isLoading: true, error: null });
     try {
-      const user = await AuthService.register(data);
-      set({ user, isAuthenticated: true, isLoading: false });
+      const user = await AuthService.googleLogin(credential);
+      set({ user, isAuthenticated: true, loading: false, isLoading: false });
       return user;
     } catch (err: unknown) {
-      const errorMsg = (err as { error?: { message?: string } })?.error?.message || 'Registration failed';
-      set({ error: errorMsg, isLoading: false });
+      const errorMsg =
+        (err as { error?: { message?: string } })?.error?.message ||
+        (err as { message?: string })?.message ||
+        'Google authentication failed';
+      set({ error: errorMsg, loading: false, isLoading: false });
       throw new Error(errorMsg);
+    }
+  },
+
+  sendOtp: async (email: string) => {
+    set({ error: null });
+    try {
+      return await AuthService.sendOtp(email);
+    } catch (err: unknown) {
+      const errorMsg =
+        (err as { error?: { message?: string } })?.error?.message ||
+        (err as { message?: string })?.message ||
+        'Failed to send verification OTP';
+      set({ error: errorMsg });
+      throw new Error(errorMsg);
+    }
+  },
+
+  verifyOtp: async (data) => {
+    set({ loading: true, isLoading: true, error: null });
+    try {
+      const user = await AuthService.verifyOtp(data);
+      set({ user, isAuthenticated: true, loading: false, isLoading: false });
+      return user;
+    } catch (err: unknown) {
+      const errorMsg =
+        (err as { error?: { message?: string } })?.error?.message ||
+        (err as { message?: string })?.message ||
+        'OTP verification failed';
+      set({ error: errorMsg, loading: false, isLoading: false });
+      throw new Error(errorMsg);
+    }
+  },
+
+  emailSignup: async (data) => {
+    return get().verifyOtp(data);
+  },
+
+  refresh: async () => {
+    try {
+      const user = await AuthService.refresh();
+      set({ user, isAuthenticated: true, loading: false, isLoading: false });
+      return user;
+    } catch {
+      set({ user: null, isAuthenticated: false, loading: false, isLoading: false });
+      return null;
     }
   },
 
   logout: async () => {
-    set({ isLoading: true });
+    set({ loading: true, isLoading: true });
     try {
       await AuthService.logout();
     } catch (err) {
       console.error('Logout error:', err);
     } finally {
-      set({ user: null, isAuthenticated: false, isLoading: false });
+      set({ user: null, isAuthenticated: false, loading: false, isLoading: false });
     }
   },
 

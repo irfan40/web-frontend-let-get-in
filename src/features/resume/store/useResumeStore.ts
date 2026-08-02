@@ -482,11 +482,6 @@ export const useResumeStore = create<ResumeStoreState>((set, get) => ({
   setResume: (resume) => {
     const normalizedContent = ResumeNormalizationService.normalize(resume.content);
     const cleanedResume = { ...resume, content: normalizedContent };
-    if (typeof window !== 'undefined') {
-      try {
-        localStorage.setItem('guest_active_resume', JSON.stringify(cleanedResume));
-      } catch (e) {}
-    }
     set({
       resume: cleanedResume,
       isDirty: false,
@@ -494,15 +489,10 @@ export const useResumeStore = create<ResumeStoreState>((set, get) => ({
     });
   },
 
-  saveResume: async (isAuthenticated) => {
+  saveResume: async (isAuthenticated = true) => {
     const { resume } = get();
     set({ saveStatus: 'saving' });
     try {
-      if (typeof window !== 'undefined') {
-        try {
-          localStorage.setItem('guest_active_resume', JSON.stringify(resume));
-        } catch (e) {}
-      }
       const provider = StorageProviderFactory.getProvider(isAuthenticated);
       const savedResume = await provider.save(resume);
       set({
@@ -517,20 +507,11 @@ export const useResumeStore = create<ResumeStoreState>((set, get) => ({
     }
   },
 
-  loadResume: async (id, isAuthenticated) => {
+  loadResume: async (id, isAuthenticated = true) => {
     set({ saveStatus: 'saving' });
     try {
       const provider = StorageProviderFactory.getProvider(isAuthenticated);
-      let loaded = await provider.load(id);
-
-      if (!loaded && typeof window !== 'undefined') {
-        const cached = localStorage.getItem('guest_active_resume');
-        if (cached) {
-          try {
-            loaded = JSON.parse(cached);
-          } catch (e) {}
-        }
-      }
+      const loaded = await provider.load(id);
 
       if (loaded) {
         const normalizedContent = ResumeNormalizationService.normalize(loaded.content);

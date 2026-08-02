@@ -4,11 +4,12 @@ import Link from 'next/link';
 export interface LogoProps {
   dark?: boolean;
   className?: string;
+  href?: string;
 }
 
-export function Logo({ dark = false, className = '' }: LogoProps) {
+export function Logo({ dark = false, className = '', href = '/' }: LogoProps) {
   return (
-    <Link href="/" className={`inline-flex items-center gap-2.5 font-bold group shrink-0 ${className}`}>
+    <Link href={href} className={`inline-flex items-center gap-2.5 font-bold group shrink-0 ${className}`}>
       <div
         className={
           dark
