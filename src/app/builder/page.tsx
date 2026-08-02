@@ -11,29 +11,21 @@ import { ResumeFormContainer } from "../../features/resume/components/editor/Res
 import { LivePreviewCanvas } from "../../features/resume/components/preview/LivePreviewCanvas";
 import { FloatingAiChatbot } from "../../features/resume/components/ai/FloatingAiChatbot";
 import { triggerPdfDownload } from "../../features/resume/utils/downloadPdf";
+import { AuthGuard } from "@/components/auth/AuthGuard";
 
 function BuilderContent() {
   const searchParams = useSearchParams();
   const resumeId = searchParams.get("id");
   const { loadResume } = useResumeStore();
-  const { isAuthenticated, checkAuth } = useAuthStore();
+  const { isAuthenticated } = useAuthStore();
   const [isAiOpen, setIsAiOpen] = useState(false);
 
   // Initialize Autosave Hook
   useAutosave();
 
   useEffect(() => {
-    checkAuth();
-  }, [checkAuth]);
-
-  useEffect(() => {
     if (resumeId) {
       loadResume(resumeId, isAuthenticated);
-    } else {
-      const currentResume = useResumeStore.getState().resume;
-      if (!currentResume || currentResume.id === "guest-draft-resume") {
-        loadResume("guest-active-resume", isAuthenticated);
-      }
     }
   }, [resumeId, isAuthenticated, loadResume]);
 
@@ -75,14 +67,16 @@ function BuilderContent() {
 
 export default function BuilderPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="min-h-screen bg-background flex items-center justify-center text-ink-soft">
-          Loading Builder...
-        </div>
-      }
-    >
-      <BuilderContent />
-    </Suspense>
+    <AuthGuard>
+      <Suspense
+        fallback={
+          <div className="min-h-screen bg-background flex items-center justify-center text-ink-soft">
+            Loading Builder...
+          </div>
+        }
+      >
+        <BuilderContent />
+      </Suspense>
+    </AuthGuard>
   );
 }

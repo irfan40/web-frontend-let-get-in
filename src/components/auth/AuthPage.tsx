@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { GoogleLogin, CredentialResponse } from "@react-oauth/google";
@@ -21,7 +21,13 @@ type Step = "form" | "verify" | "done";
 
 export default function AuthPage() {
   const router = useRouter();
-  const { login, googleLogin, sendOtp, verifyOtp, error, clearError } = useAuthStore();
+  const { login, googleLogin, sendOtp, verifyOtp, error, clearError, isAuthenticated, isLoading } = useAuthStore();
+
+  useEffect(() => {
+    if (!isLoading && isAuthenticated) {
+      router.replace("/dashboard");
+    }
+  }, [isAuthenticated, isLoading, router]);
 
   const [mode, setMode] = useState<Mode>("signup");
   const [step, setStep] = useState<Step>("form");

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useResumeStore } from '../../store/useResumeStore';
 import { useAuthStore } from '../../../auth/store/useAuthStore';
 import { Logo } from '@/components/landing/Logo';
+import { UserDropdown } from '@/components/layout/UserDropdown';
 import { Check, Cloud, RefreshCw, AlertCircle, Download, Sparkles, LayoutTemplate, User } from 'lucide-react';
 import Link from 'next/link';
 
@@ -133,11 +134,9 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({ onToggleAi, isAiOpen
           <span>Download PDF</span>
         </button>
 
-        {/* User Account / Login */}
+        {/* User Account Dropdown / Login */}
         {isAuthenticated ? (
-          <div className="w-9 h-9 rounded-full bg-gradient-brand flex items-center justify-center text-xs font-bold text-primary-foreground shadow-glow">
-            {user?.fullName?.charAt(0).toUpperCase() || 'U'}
-          </div>
+          <UserDropdown />
         ) : (
           <Link
             href="/auth"

@@ -4,11 +4,12 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Sparkles, FileText, Upload, ArrowRight, Wand2, ShieldCheck, Zap } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { Logo } from '@/components/landing/Logo';
 import { useResumeStore } from '../../features/resume/store/useResumeStore';
 import { ResumeUploadModal } from '../../features/resume/components/onboarding/ResumeUploadModal';
+import { AuthGuard } from '@/components/auth/AuthGuard';
+import { Navbar } from '@/components/layout/Navbar';
 
-export default function DemoOnboardingPage() {
+function DemoContent() {
   const router = useRouter();
   const { resetToBlank } = useResumeStore();
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
@@ -20,21 +21,12 @@ export default function DemoOnboardingPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col justify-between relative overflow-hidden">
+      {/* Navbar with User Dropdown */}
+      <Navbar />
+
       {/* Background Ambient Glows */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-[radial-gradient(ellipse_at_top,_var(--primary-glow)_0%,_transparent_70%)] opacity-20 pointer-events-none rounded-full" />
+      <div className="absolute top-16 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-[radial-gradient(ellipse_at_top,_var(--primary-glow)_0%,_transparent_70%)] opacity-20 pointer-events-none rounded-full" />
       <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-[radial-gradient(ellipse_at_bottom_right,_var(--primary-deep)_0%,_transparent_70%)] opacity-20 pointer-events-none rounded-full" />
-
-      {/* Top Header Navigation */}
-      <header className="w-full max-w-7xl mx-auto px-6 py-6 flex items-center justify-between z-10">
-        <Logo />
-
-        <div className="flex items-center gap-4">
-          <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 bg-surface border border-border rounded-full text-xs text-ink-soft">
-            <span className="w-2 h-2 rounded-full bg-success animate-ping" />
-            AI Career Suite v2.0
-          </span>
-        </div>
-      </header>
 
       {/* Main Content Hero */}
       <main className="w-full max-w-5xl mx-auto px-6 py-12 flex-1 flex flex-col items-center justify-center z-10 text-center">
@@ -179,5 +171,13 @@ export default function DemoOnboardingPage() {
         onClose={() => setIsUploadModalOpen(false)}
       />
     </div>
+  );
+}
+
+export default function DemoOnboardingPage() {
+  return (
+    <AuthGuard>
+      <DemoContent />
+    </AuthGuard>
   );
 }

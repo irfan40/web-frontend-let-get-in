@@ -10,53 +10,74 @@ interface ApiResponse<T> {
 
 export class MongoStorage implements IStorageProvider {
   async save(resume: IResume): Promise<IResume> {
-    if (resume.id && !resume.id.startsWith('guest-')) {
-      // Patch existing resume
-      const response = await apiClient.patch<never, ApiResponse<{ resume: IResume }>>(
-        `/resumes/${resume.id}`,
-        {
+    try {
+      if (resume.id && !resume.id.startsWith('guest-')) {
+        // Patch existing resume
+        const response = await apiClient.patch<never, ApiResponse<{ resume: IResume }>>(
+          `/resumes/${resume.id}`,
+          {
+            title: resume.title,
+            templateId: resume.templateId,
+            content: resume.content,
+            settings: resume.settings,
+          }
+        );
+        return response?.data?.resume || resume;
+      } else {
+        // Create new MongoDB resume
+        const response = await apiClient.post<never, ApiResponse<{ resume: IResume }>>('/resumes', {
           title: resume.title,
           templateId: resume.templateId,
           content: resume.content,
           settings: resume.settings,
-        }
-      );
-      return response.data.resume;
-    } else {
-      // Create new MongoDB resume
-      const response = await apiClient.post<never, ApiResponse<{ resume: IResume }>>('/resumes', {
-        title: resume.title,
-        templateId: resume.templateId,
-        content: resume.content,
-        settings: resume.settings,
-      });
-      return response.data.resume;
+        });
+        return response?.data?.resume || resume;
+      }
+    } catch (error) {
+      console.error('MongoStorage save error:', error);
+      throw error;
     }
   }
 
   async load(id: string): Promise<IResume | null> {
     try {
       const response = await apiClient.get<never, ApiResponse<{ resume: IResume }>>(`/resumes/${id}`);
-      return response.data.resume;
-    } catch {
+      return response?.data?.resume || null;
+    } catch (error) {
+      console.error('MongoStorage load error:', error);
       return null;
     }
   }
 
   async list(): Promise<IResume[]> {
-    const response = await apiClient.get<never, ApiResponse<{ resumes: IResume[] }>>('/resumes');
-    return response.data.resumes;
+    try {
+      const response = await apiClient.get<never, ApiResponse<{ resumes: IResume[] }>>('/resumes');
+      return response?.data?.resumes || [];
+    } catch (error) {
+      console.warn('MongoStorage list error (returning empty list):', error);
+      return [];
+    }
   }
 
   async delete(id: string): Promise<void> {
-    await apiClient.delete(`/resumes/${id}`);
+    try {
+      await apiClient.delete(`/resumes/${id}`);
+    } catch (error) {
+      console.error('MongoStorage delete error:', error);
+      throw error;
+    }
   }
 
   async migrateGuestResume(guestResume: IResume): Promise<IResume> {
-    const response = await apiClient.post<never, ApiResponse<{ resume: IResume }>>(
-      '/resumes/migrate-guest',
-      { guestResume }
-    );
-    return response.data.resume;
+    try {
+      const response = await apiClient.post<never, ApiResponse<{ resume: IResume }>>(
+        '/resumes/migrate-guest',
+        { guestResume }
+      );
+      return response?.data?.resume || guestResume;
+    } catch (error) {
+      console.error('MongoStorage migrateGuestResume error:', error);
+      throw error;
+    }
   }
 }

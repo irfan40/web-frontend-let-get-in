@@ -18,20 +18,34 @@ export default function DashboardPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
+    let isMounted = true;
+
     const fetchResumes = async () => {
       setIsLoading(true);
       try {
         const provider = StorageProviderFactory.getProvider(isAuthenticated);
         const list = await provider.list();
-        setResumes(list);
-      } catch (err) {
-        console.error('Failed to fetch resumes:', err);
+        if (isMounted) {
+          setResumes(Array.isArray(list) ? list : []);
+        }
+      } catch (err: unknown) {
+        const errorMsg = (err as { message?: string })?.message || String(err);
+        console.warn('Failed to fetch resumes:', errorMsg);
+        if (isMounted) {
+          setResumes([]);
+        }
       } finally {
-        setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     };
 
     fetchResumes();
+
+    return () => {
+      isMounted = false;
+    };
   }, [isAuthenticated]);
 
   const handleDelete = async (id: string) => {
@@ -39,8 +53,9 @@ export default function DashboardPage() {
       const provider = StorageProviderFactory.getProvider(isAuthenticated);
       await provider.delete(id);
       setResumes((prev) => prev.filter((r) => r.id !== id));
-    } catch (err) {
-      console.error('Failed to delete resume:', err);
+    } catch (err: unknown) {
+      const errorMsg = (err as { message?: string })?.message || String(err);
+      console.error('Failed to delete resume:', errorMsg);
     }
   };
 
