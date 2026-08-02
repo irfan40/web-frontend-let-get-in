@@ -32,6 +32,8 @@ interface AuthState {
   clearError: () => void;
 }
 
+let authCheckPromise: Promise<UserProfile | null> | null = null;
+
 export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   isAuthenticated: false,
@@ -40,15 +42,25 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   error: null,
 
   fetchCurrentUser: async () => {
-    set({ loading: true, isLoading: true, error: null });
-    try {
-      const user = await AuthService.fetchCurrentUser();
-      set({ user, isAuthenticated: true, loading: false, isLoading: false });
-      return user;
-    } catch {
-      set({ user: null, isAuthenticated: false, loading: false, isLoading: false });
-      return null;
+    if (authCheckPromise) {
+      return authCheckPromise;
     }
+
+    set({ loading: true, isLoading: true, error: null });
+    authCheckPromise = (async () => {
+      try {
+        const user = await AuthService.fetchCurrentUser();
+        set({ user, isAuthenticated: true, loading: false, isLoading: false });
+        return user;
+      } catch {
+        set({ user: null, isAuthenticated: false, loading: false, isLoading: false });
+        return null;
+      } finally {
+        authCheckPromise = null;
+      }
+    })();
+
+    return authCheckPromise;
   },
 
   checkAuth: async () => {

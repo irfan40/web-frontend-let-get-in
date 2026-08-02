@@ -84,7 +84,13 @@ apiClient.interceptors.response.use(
         isRefreshing = false;
         processQueue(refreshError);
 
-        // Clear local auth state and redirect to /auth if in browser environment
+        // Attempt client-side cookie clearing as fallback
+        if (typeof document !== 'undefined') {
+          document.cookie = 'accessToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
+          document.cookie = 'refreshToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
+        }
+
+        // Redirect to /auth if in browser environment and not already on /auth
         if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/auth')) {
           window.location.href = '/auth';
         }

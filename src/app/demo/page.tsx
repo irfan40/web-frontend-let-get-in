@@ -7,7 +7,6 @@ import { useRouter } from 'next/navigation';
 import { useResumeStore } from '../../features/resume/store/useResumeStore';
 import { ResumeUploadModal } from '../../features/resume/components/onboarding/ResumeUploadModal';
 import { AuthGuard } from '@/components/auth/AuthGuard';
-import { Navbar } from '@/components/layout/Navbar';
 
 function DemoContent() {
   const router = useRouter();
@@ -21,8 +20,6 @@ function DemoContent() {
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col justify-between relative overflow-hidden">
-      {/* Navbar with User Dropdown */}
-      <Navbar />
 
       {/* Background Ambient Glows */}
       <div className="absolute top-16 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-[radial-gradient(ellipse_at_top,_var(--primary-glow)_0%,_transparent_70%)] opacity-20 pointer-events-none rounded-full" />
