@@ -1,7 +1,13 @@
+"use client";
+
 import React from "react";
+import { ArrowRight } from "lucide-react";
 import Link from "./NavLink";
+import { useAuthStore } from "@/features/auth/store/useAuthStore";
 
 export function CtaBand() {
+  const { isAuthenticated } = useAuthStore();
+
   return (
     <section className="py-20 md:py-28 px-4 sm:px-6 bg-gradient-dark relative overflow-hidden">
       <div className="absolute inset-0 opacity-10 bg-[radial-gradient(ellipse_at_center,_var(--primary-glow)_0%,_transparent_60%)]" />
@@ -23,12 +29,22 @@ export function CtaBand() {
         </p>
 
         <div className="mt-8 flex flex-wrap justify-center gap-4">
-          <Link
-            to="/auth"
-            className="bg-white text-ink font-bold px-8 py-3.5 rounded-xl shadow-xl hover:scale-[1.02] active:scale-95 transition text-base"
-          >
-            Get In — Free
-          </Link>
+          {isAuthenticated ? (
+            <Link
+              to="/dashboard"
+              className="bg-white text-ink font-bold px-8 py-3.5 rounded-xl shadow-xl hover:scale-[1.02] active:scale-95 transition text-base inline-flex items-center gap-2"
+            >
+              <span>Go to Dashboard</span>
+              <ArrowRight className="w-4 h-4 text-primary-glow" />
+            </Link>
+          ) : (
+            <Link
+              to="/auth"
+              className="bg-white text-ink font-bold px-8 py-3.5 rounded-xl shadow-xl hover:scale-[1.02] active:scale-95 transition text-base"
+            >
+              Get In — Free
+            </Link>
+          )}
 
           <a
             href="#"

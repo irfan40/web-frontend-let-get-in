@@ -24,7 +24,7 @@ export function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         {/* Brand Logo & Version Badge */}
         <div className="flex items-center gap-4">
-          <Logo href={isAuthenticated ? "/dashboard" : "/"} />
+          <Logo href="/" />
           <span className="hidden md:inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-primary-glow bg-primary/10 px-2.5 py-0.5 rounded-full border border-primary/20">
             <Sparkles className="w-3 h-3 text-primary-glow" /> Pro Career v2.0
           </span>

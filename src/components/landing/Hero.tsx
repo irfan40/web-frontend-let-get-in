@@ -1,8 +1,13 @@
+"use client";
+
 import React from "react";
-import { Sparkles, PlayCircle, CheckCircle2, Building2 } from "lucide-react";
+import { Sparkles, PlayCircle, CheckCircle2, Building2, ArrowRight } from "lucide-react";
 import Link from "./NavLink";
+import { useAuthStore } from "@/features/auth/store/useAuthStore";
 
 export function Hero() {
+  const { isAuthenticated } = useAuthStore();
+
   return (
     <section className="pt-28 md:pt-36 pb-16 md:pb-24 px-4 sm:px-6 relative overflow-hidden">
       <div className="absolute top-0 right-0 w-1/2 h-full opacity-[0.05] bg-[radial-gradient(ellipse_at_top_right,_var(--primary-glow)_0%,_transparent_70%)] pointer-events-none" />
@@ -33,12 +38,22 @@ export function Hero() {
             </p>
 
             <div className="flex flex-wrap items-center gap-4 pt-2">
-              <Link
-                to="/auth"
-                className="bg-gradient-brand text-primary-foreground font-semibold px-8 py-3.5 rounded-xl shadow-elegant hover:shadow-glow transition-all hover:scale-[1.02] active:scale-95 text-base"
-              >
-                Get In — It's Free
-              </Link>
+              {isAuthenticated ? (
+                <Link
+                  to="/dashboard"
+                  className="bg-gradient-brand text-primary-foreground font-semibold px-8 py-3.5 rounded-xl shadow-elegant hover:shadow-glow transition-all hover:scale-[1.02] active:scale-95 text-base flex items-center gap-2"
+                >
+                  <span>Go to Dashboard</span>
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
+              ) : (
+                <Link
+                  to="/auth"
+                  className="bg-gradient-brand text-primary-foreground font-semibold px-8 py-3.5 rounded-xl shadow-elegant hover:shadow-glow transition-all hover:scale-[1.02] active:scale-95 text-base"
+                >
+                  Get In — It's Free
+                </Link>
+              )}
 
               <a
                 href="#features"

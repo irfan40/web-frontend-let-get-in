@@ -1,9 +1,11 @@
 "use client";
 
-import React, { useState } from "react";
-import { Menu, X } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Menu, X, ArrowRight } from "lucide-react";
 import Logo from "./Logo";
 import Link from "./NavLink";
+import { useAuthStore } from "@/features/auth/store/useAuthStore";
+import { UserDropdown } from "@/components/layout/UserDropdown";
 
 const navLinks = [
   { href: "#features", label: "Features" },
@@ -14,6 +16,12 @@ const navLinks = [
 
 export function Header() {
   const [open, setOpen] = useState(false);
+  const { isAuthenticated, checkAuth, logout } = useAuthStore();
+
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
+
   return (
     <header
       id="top"
@@ -41,18 +49,24 @@ export function Header() {
           </nav>
 
           <div className="hidden md:flex items-center gap-3">
-            <Link
-              to="/auth"
-              className="text-sm font-medium text-ink hover:text-primary-glow transition px-3 py-2"
-            >
-              Sign In
-            </Link>
-            <Link
-              to="/auth"
-              className="bg-gradient-brand text-primary-foreground text-sm font-semibold px-5 py-2.5 rounded-xl shadow-elegant hover:shadow-glow transition-all hover:scale-[1.02] active:scale-95"
-            >
-              Get In — Free
-            </Link>
+            {isAuthenticated ? (
+              <UserDropdown />
+            ) : (
+              <>
+                <Link
+                  to="/auth"
+                  className="text-sm font-medium text-ink hover:text-primary-glow transition px-3 py-2"
+                >
+                  Sign In
+                </Link>
+                <Link
+                  to="/auth"
+                  className="bg-gradient-brand text-primary-foreground text-sm font-semibold px-5 py-2.5 rounded-xl shadow-elegant hover:shadow-glow transition-all hover:scale-[1.02] active:scale-95"
+                >
+                  Get In — Free
+                </Link>
+              </>
+            )}
           </div>
 
           <button
@@ -78,18 +92,43 @@ export function Header() {
                 </a>
               ))}
               <hr className="my-2 border-white/40" />
-              <Link
-                to="/auth"
-                className="px-3 py-2.5 text-sm font-medium text-ink hover:bg-white/60 rounded-lg transition"
-              >
-                Sign In
-              </Link>
-              <Link
-                to="/auth"
-                className="mt-1 bg-gradient-brand text-primary-foreground text-sm font-semibold px-5 py-3 rounded-xl text-center shadow-elegant"
-              >
-                Get In — Free
-              </Link>
+              {isAuthenticated ? (
+                <>
+                  <Link
+                    to="/dashboard"
+                    onClick={() => setOpen(false)}
+                    className="mt-1 bg-gradient-brand text-primary-foreground text-sm font-semibold px-5 py-3 rounded-xl text-center shadow-elegant flex items-center justify-center gap-2"
+                  >
+                    <span>Go to Dashboard</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setOpen(false);
+                      logout();
+                    }}
+                    className="px-3 py-2.5 text-sm font-medium text-destructive hover:bg-destructive/10 rounded-lg transition text-left"
+                  >
+                    Log Out
+                  </button>
+                </>
+              ) : (
+                <>
+                  <Link
+                    to="/auth"
+                    className="px-3 py-2.5 text-sm font-medium text-ink hover:bg-white/60 rounded-lg transition"
+                  >
+                    Sign In
+                  </Link>
+                  <Link
+                    to="/auth"
+                    className="mt-1 bg-gradient-brand text-primary-foreground text-sm font-semibold px-5 py-3 rounded-xl text-center shadow-elegant"
+                  >
+                    Get In — Free
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         )}
