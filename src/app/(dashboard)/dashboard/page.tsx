@@ -1,18 +1,18 @@
-'use client';
+"use client";
 
-import React, { useEffect, useState } from 'react';
-import { useAuthStore } from '../../../features/auth/store/useAuthStore';
-import { StorageProviderFactory } from '../../../features/resume/storage/factory';
-import { IResume } from '../../../features/resume/types';
-import { ResumeCard } from '../../../features/dashboard/components/ResumeCard';
-import { CreateResumeModal } from '../../../features/dashboard/components/CreateResumeModal';
-import { Plus, Search, FileText, Sparkles } from 'lucide-react';
+import React, { useEffect, useState } from "react";
+import { useAuthStore } from "../../../features/auth/store/useAuthStore";
+import { StorageProviderFactory } from "../../../features/resume/storage/factory";
+import { IResume } from "../../../features/resume/types";
+import { ResumeCard } from "../../../features/dashboard/components/ResumeCard";
+import { CreateResumeModal } from "../../../features/dashboard/components/CreateResumeModal";
+import { Plus, Search, FileText, Sparkles } from "lucide-react";
 
 export default function DashboardPage() {
   const { isAuthenticated } = useAuthStore();
   const [resumes, setResumes] = useState<IResume[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
@@ -28,7 +28,7 @@ export default function DashboardPage() {
         }
       } catch (err: unknown) {
         const errorMsg = (err as { message?: string })?.message || String(err);
-        console.warn('Failed to fetch resumes:', errorMsg);
+        console.warn("Failed to fetch resumes:", errorMsg);
         if (isMounted) {
           setResumes([]);
         }
@@ -53,12 +53,12 @@ export default function DashboardPage() {
       setResumes((prev) => prev.filter((r) => r.id !== id));
     } catch (err: unknown) {
       const errorMsg = (err as { message?: string })?.message || String(err);
-      console.error('Failed to delete resume:', errorMsg);
+      console.error("Failed to delete resume:", errorMsg);
     }
   };
 
   const filteredResumes = resumes.filter((r) =>
-    r.title.toLowerCase().includes(searchQuery.toLowerCase())
+    r.title.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   return (
@@ -72,19 +72,14 @@ export default function DashboardPage() {
               <Sparkles className="w-3.5 h-3.5" /> Intelligent Career Assistant
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-ink tracking-tight">
-              Welcome back to <span className="text-gradient-brand">LetGetIn AI</span>
+              Welcome back to{" "}
+              <span className="text-gradient-brand">LetGetIn AI</span>
             </h1>
             <p className="text-sm text-ink-soft max-w-xl leading-relaxed">
-              Build verified, ATS-optimized, high-converting professional profiles and resumes in minutes.
+              Build verified, ATS-optimized, high-converting professional
+              profiles and resumes in minutes.
             </p>
           </div>
-          <button
-            onClick={() => setIsModalOpen(true)}
-            className="bg-gradient-brand text-primary-foreground text-xs font-semibold px-6 py-3.5 rounded-xl shadow-elegant hover:shadow-glow transition-all hover:scale-[1.02] active:scale-95 flex items-center gap-2 shrink-0"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Create New Resume</span>
-          </button>
         </div>
 
         {/* Filter Bar */}
@@ -100,7 +95,8 @@ export default function DashboardPage() {
             <Search className="w-4 h-4 text-ink-soft absolute left-3.5 top-3.5" />
           </div>
           <div className="text-xs text-ink-soft font-medium">
-            Showing {filteredResumes.length} resume{filteredResumes.length === 1 ? '' : 's'}
+            Showing {filteredResumes.length} resume
+            {filteredResumes.length === 1 ? "" : "s"}
           </div>
         </div>
 
@@ -108,7 +104,10 @@ export default function DashboardPage() {
         {isLoading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-56 bg-surface/50 border border-border rounded-3xl animate-pulse" />
+              <div
+                key={i}
+                className="h-56 bg-surface/50 border border-border rounded-3xl animate-pulse"
+              />
             ))}
           </div>
         ) : filteredResumes.length === 0 ? (
@@ -118,7 +117,8 @@ export default function DashboardPage() {
             </div>
             <h3 className="text-base font-bold text-ink">No Resumes Found</h3>
             <p className="text-xs text-ink-soft max-w-sm mx-auto leading-relaxed">
-              You haven&apos;t created any resumes yet or no resumes match your search query.
+              You haven&apos;t created any resumes yet or no resumes match your
+              search query.
             </p>
             <button
               onClick={() => setIsModalOpen(true)}
@@ -130,13 +130,20 @@ export default function DashboardPage() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
             {filteredResumes.map((resume) => (
-              <ResumeCard key={resume.id} resume={resume} onDelete={handleDelete} />
+              <ResumeCard
+                key={resume.id}
+                resume={resume}
+                onDelete={handleDelete}
+              />
             ))}
           </div>
         )}
       </main>
 
-      <CreateResumeModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+      <CreateResumeModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+      />
     </div>
   );
 }

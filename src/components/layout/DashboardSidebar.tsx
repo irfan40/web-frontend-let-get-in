@@ -14,6 +14,14 @@ import {
   X,
   ShieldCheck,
   ChevronRight,
+  Compass,
+  User,
+  HardDrive,
+  LayoutGrid,
+  BrainCircuit,
+  GraduationCap,
+  BookOpenCheck,
+  Activity,
 } from "lucide-react";
 
 interface DashboardSidebarProps {
@@ -22,28 +30,74 @@ interface DashboardSidebarProps {
   onCreateNew?: () => void;
 }
 
-export function DashboardSidebar({ isOpen = false, onClose, onCreateNew }: DashboardSidebarProps) {
+export function DashboardSidebar({
+  isOpen = false,
+  onClose,
+  onCreateNew,
+}: DashboardSidebarProps) {
   const pathname = usePathname();
   const { user, logout } = useAuthStore();
 
   const navItems = [
     {
-      name: "Dashboard",
+      name: "Explore Opportunities",
+      href: "/explore",
+      icon: Compass,
+      description: "Explore matched job opportunities",
+    },
+    {
+      name: "My Resumes",
       href: "/dashboard",
-      icon: LayoutDashboard,
+      icon: FileText,
       description: "Manage & view all resumes",
     },
     {
-      name: "Resume Builder",
-      href: "/builder",
-      icon: FileText,
-      description: "Build & optimize resumes",
+      name: "My Profile",
+      href: "/profile",
+      icon: User,
+      description: "Manage your professional identity",
     },
     {
       name: "AI Onboarding",
       href: "/demo",
       icon: Sparkles,
-      description: "Smart career onboarding",
+      description: "Smart career onboarding suite",
+    },
+    {
+      name: "My Drive",
+      href: "/drive",
+      icon: HardDrive,
+      description: "Cloud resume & asset storage",
+    },
+    {
+      name: "My Hub",
+      href: "/myhub",
+      icon: LayoutGrid,
+      description: "Central application hub",
+    },
+    {
+      name: "Genius Test",
+      href: "/geniustest",
+      icon: BrainCircuit,
+      description: "Adaptive AI skill assessments",
+    },
+    {
+      name: "Exams",
+      href: "/exams",
+      icon: GraduationCap,
+      description: "Proctored certification exams",
+    },
+    {
+      name: "Edupye",
+      href: "/edupye",
+      icon: BookOpenCheck,
+      description: "Learning paths & course recommendations",
+    },
+    {
+      name: "My Dive",
+      href: "/mydive",
+      icon: Activity,
+      description: "Deep career analytics & market demand",
     },
   ];
 
@@ -107,43 +161,13 @@ export function DashboardSidebar({ isOpen = false, onClose, onCreateNew }: Dashb
                       </div>
                     )}
                   </div>
-                  {isActive && <ChevronRight className="w-3.5 h-3.5 shrink-0 opacity-80" />}
+                  {isActive && (
+                    <ChevronRight className="w-3.5 h-3.5 shrink-0 opacity-80" />
+                  )}
                 </Link>
               );
             })}
           </nav>
-        </div>
-
-        {/* Quick Action Box */}
-        <div className="p-4 rounded-2xl bg-gradient-dark border border-white/10 text-white space-y-3 relative overflow-hidden shadow-elegant">
-          <div className="absolute top-0 right-0 w-24 h-24 bg-[radial-gradient(ellipse_at_top_right,_var(--primary-glow)_0%,_transparent_70%)] opacity-30 pointer-events-none" />
-          <div className="flex items-center gap-2 text-xs font-semibold text-primary-glow">
-            <Sparkles className="w-3.5 h-3.5" /> AI Carrier Assistant
-          </div>
-          <p className="text-[11px] text-white/80 leading-relaxed">
-            Create ATS-optimized resumes with real-time scoring.
-          </p>
-          {onCreateNew ? (
-            <button
-              onClick={() => {
-                onClose?.();
-                onCreateNew();
-              }}
-              className="w-full bg-gradient-brand text-primary-foreground text-xs font-semibold px-4 py-2.5 rounded-xl shadow-glow hover:scale-[1.02] active:scale-95 transition flex items-center justify-center gap-2"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>Create New Resume</span>
-            </button>
-          ) : (
-            <Link
-              href="/builder"
-              onClick={onClose}
-              className="w-full bg-gradient-brand text-primary-foreground text-xs font-semibold px-4 py-2.5 rounded-xl shadow-glow hover:scale-[1.02] active:scale-95 transition flex items-center justify-center gap-2"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>Create New Resume</span>
-            </Link>
-          )}
         </div>
       </div>
 
@@ -163,7 +187,9 @@ export function DashboardSidebar({ isOpen = false, onClose, onCreateNew }: Dashb
               </div>
             )}
             <div className="min-w-0">
-              <div className="text-xs font-bold text-ink truncate">{displayName}</div>
+              <div className="text-xs font-bold text-ink truncate">
+                {displayName}
+              </div>
               <div className="text-[10px] text-ink-soft truncate">{email}</div>
             </div>
           </div>
@@ -181,7 +207,6 @@ export function DashboardSidebar({ isOpen = false, onClose, onCreateNew }: Dashb
 
   return (
     <>
-      {/* Desktop Sidebar (Permanent) */}
       <aside className="hidden lg:block sticky top-0 h-screen shrink-0 z-30">
         {sidebarContent}
       </aside>
