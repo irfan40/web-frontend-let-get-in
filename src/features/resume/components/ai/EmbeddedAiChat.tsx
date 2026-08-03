@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useResumeStore } from '../../store/useResumeStore';
-import { Sparkles, MessageSquare, Wand2, Send, Check, RefreshCw, SpellCheck, Bot } from 'lucide-react';
+import { Sparkles, MessageSquare, Wand2, Send, Check, RefreshCw, SpellCheck, X } from 'lucide-react';
 import { apiClient } from '../../../../shared/services/apiClient';
 
 interface ChatMessage {
@@ -13,7 +13,11 @@ interface ChatMessage {
   timestamp: string;
 }
 
-export const EmbeddedAiChat: React.FC = () => {
+interface EmbeddedAiChatProps {
+  onClose?: () => void;
+}
+
+export const EmbeddedAiChat: React.FC<EmbeddedAiChatProps> = ({ onClose }) => {
   const { resume, activeSection, updateSummary, updatePersonalInfo, addSkill, setResume } = useResumeStore();
   const [activeTab, setActiveTab] = useState<'chat' | 'section'>('chat');
 
@@ -141,24 +145,35 @@ export const EmbeddedAiChat: React.FC = () => {
   };
 
   return (
-    <div className="h-full flex flex-col bg-surface/60 backdrop-blur border border-border rounded-2xl overflow-hidden shadow-sm">
+    <div className="h-full flex flex-col bg-surface/80 backdrop-blur border border-border rounded-2xl overflow-hidden shadow-elegant">
       {/* Header Styled matching /dashboard */}
-      <div className="bg-gradient-dark p-3.5 border-b border-white/10 flex items-center justify-between text-white">
+      <div className="bg-gradient-dark p-3.5 border-b border-white/10 flex items-center justify-between text-white relative">
         <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded-lg bg-gradient-brand flex items-center justify-center text-white shadow-glow">
-            <Sparkles className="w-4 h-4" />
+          <div className="w-8 h-8 rounded-xl bg-gradient-brand flex items-center justify-center text-white shadow-glow border border-white/10">
+            <Sparkles className="w-4 h-4 text-primary-glow" />
           </div>
           <div>
-            <h3 className="text-xs font-bold text-white tracking-tight flex items-center gap-1">
+            <h3 className="text-xs font-bold text-white tracking-tight flex items-center gap-1.5">
               LetGetIn AI Advisor
             </h3>
             <p className="text-[10px] text-slate-300">Live Context Resume Chat</p>
           </div>
         </div>
 
-        <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded-full bg-white/10 text-primary-glow border border-white/10 capitalize">
-          Section: {activeSection}
-        </span>
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] font-mono font-semibold px-2.5 py-0.5 rounded-full bg-white/10 text-primary-glow border border-white/10 capitalize hidden xs:inline-block">
+            {activeSection}
+          </span>
+          {onClose && (
+            <button
+              onClick={onClose}
+              className="p-1.5 rounded-xl bg-white/10 hover:bg-rose-500/20 text-slate-300 hover:text-white border border-white/10 transition-colors"
+              title="Close Chat Section & Expand Resume"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Navigation Tabs */}
@@ -189,7 +204,7 @@ export const EmbeddedAiChat: React.FC = () => {
 
       {/* Tab 1: AI Chat Workspace */}
       {activeTab === 'chat' && (
-        <div className="flex-1 flex flex-col min-h-0 bg-background/50">
+        <div className="flex-1 flex flex-col min-h-0 bg-background/40">
           <div className="flex-1 p-3.5 overflow-y-auto space-y-3 scrollbar-thin scrollbar-thumb-border">
             {messages.map((msg) => (
               <div
@@ -199,8 +214,8 @@ export const EmbeddedAiChat: React.FC = () => {
                 <div
                   className={`max-w-[88%] rounded-2xl p-3 text-xs leading-relaxed ${
                     msg.sender === 'user'
-                      ? 'bg-gradient-brand text-primary-foreground rounded-br-none shadow-sm'
-                      : 'bg-surface border border-border text-ink rounded-bl-none shadow-sm'
+                      ? 'bg-gradient-brand text-primary-foreground rounded-br-none shadow-sm font-medium'
+                      : 'bg-surface border border-border text-ink rounded-bl-none shadow-xs font-medium'
                   }`}
                 >
                   <p>{msg.text}</p>
@@ -213,7 +228,7 @@ export const EmbeddedAiChat: React.FC = () => {
                         <button
                           key={sIdx}
                           onClick={() => updateSummary(sug)}
-                          className="w-full text-[10px] text-left bg-surface-alt hover:bg-primary/10 text-ink p-2 rounded-lg border border-border flex items-center justify-between gap-1 transition-colors font-medium"
+                          className="w-full text-[10px] text-left bg-surface-alt hover:bg-primary/10 text-ink p-2 rounded-xl border border-border flex items-center justify-between gap-1 transition-colors font-semibold"
                         >
                           <span className="truncate">{sug}</span>
                           <Check className="w-3.5 h-3.5 text-success flex-shrink-0" />
@@ -226,7 +241,7 @@ export const EmbeddedAiChat: React.FC = () => {
               </div>
             ))}
             {isChatLoading && (
-              <div className="flex items-center gap-2 text-xs text-primary-glow bg-surface p-2.5 rounded-xl border border-border w-fit shadow-sm">
+              <div className="flex items-center gap-2 text-xs text-primary-glow bg-surface p-2.5 rounded-xl border border-border w-fit shadow-xs">
                 <RefreshCw className="w-3.5 h-3.5 animate-spin" />
                 <span>AI analyzing resume context...</span>
               </div>
@@ -255,8 +270,8 @@ export const EmbeddedAiChat: React.FC = () => {
 
       {/* Tab 2: Section Optimizer */}
       {activeTab === 'section' && (
-        <div className="flex-1 p-4 overflow-y-auto space-y-4 bg-background/50">
-          <div className="bg-surface border border-border p-4 rounded-2xl space-y-3 shadow-sm">
+        <div className="flex-1 p-4 overflow-y-auto space-y-4 bg-background/40">
+          <div className="bg-surface border border-border p-4 rounded-2xl space-y-3 shadow-xs">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-ink flex items-center gap-1.5">
                 <Wand2 className="w-4 h-4 text-primary-glow" /> Active Section Scan:
@@ -279,7 +294,7 @@ export const EmbeddedAiChat: React.FC = () => {
           </div>
 
           {sectionOptimizationResult && (
-            <div className="bg-surface border border-border p-4 rounded-2xl space-y-3 shadow-sm">
+            <div className="bg-surface border border-border p-4 rounded-2xl space-y-3 shadow-xs">
               <h4 className="text-xs font-bold text-success flex items-center gap-1.5">
                 <Check className="w-4 h-4" /> AI Corrections Ready
               </h4>

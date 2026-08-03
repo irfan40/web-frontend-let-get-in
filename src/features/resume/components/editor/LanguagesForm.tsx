@@ -35,15 +35,15 @@ export const LanguagesForm: React.FC = () => {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between bg-slate-900/50 p-4 rounded-xl border border-slate-800">
+      <div className="flex items-center justify-between bg-surface p-4 rounded-2xl border border-border shadow-sm">
         <div className="flex items-center gap-2">
-          <Languages className="w-4 h-4 text-indigo-400" />
-          <h3 className="text-sm font-bold text-white">Languages</h3>
+          <Languages className="w-4 h-4 text-primary-glow" />
+          <h3 className="text-sm font-bold text-ink">Languages</h3>
         </div>
         <button
           type="button"
           onClick={handleAdd}
-          className="flex items-center gap-1.5 text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-lg transition-colors"
+          className="flex items-center gap-1.5 text-xs font-semibold bg-gradient-brand text-primary-foreground px-3 py-1.5 rounded-xl shadow-elegant transition-all hover:shadow-glow"
         >
           <Plus className="w-3.5 h-3.5" />
           <span>Add Language</span>
@@ -51,25 +51,25 @@ export const LanguagesForm: React.FC = () => {
       </div>
 
       {languages.length === 0 ? (
-        <div className="text-center py-8 bg-slate-900/30 rounded-xl border border-dashed border-slate-800 text-slate-500 text-xs">
+        <div className="text-center py-8 bg-surface/50 rounded-2xl border border-dashed border-border text-ink-soft text-xs">
           No languages added yet. Click &quot;Add Language&quot; to specify your spoken/written languages.
         </div>
       ) : (
         languages.map((lang, idx) => (
-          <div key={lang.id} className="bg-slate-900/70 p-5 rounded-xl border border-slate-800 space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+          <div key={lang.id} className="bg-surface p-5 rounded-2xl border border-border space-y-4 shadow-sm">
+            <div className="flex items-center justify-between pb-3 border-b border-border">
               <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-indigo-400 bg-indigo-950 px-2 py-0.5 rounded border border-indigo-800/50">
+                <span className="text-xs font-bold text-primary-glow bg-primary/10 px-2 py-0.5 rounded-md border border-primary/20">
                   #{idx + 1}
                 </span>
-                <span className="text-xs font-semibold text-white">{lang.language || 'Language'}</span>
+                <span className="text-xs font-semibold text-ink">{lang.language || 'Language'}</span>
               </div>
               <div className="flex items-center gap-1">
                 <button
                   type="button"
                   disabled={idx === 0}
                   onClick={() => moveLang(idx, 'up')}
-                  className="p-1 text-slate-400 hover:text-white disabled:opacity-30"
+                  className="p-1 text-ink-soft hover:text-ink disabled:opacity-30"
                   title="Move Up"
                 >
                   <ChevronUp className="w-4 h-4" />
@@ -78,7 +78,7 @@ export const LanguagesForm: React.FC = () => {
                   type="button"
                   disabled={idx === languages.length - 1}
                   onClick={() => moveLang(idx, 'down')}
-                  className="p-1 text-slate-400 hover:text-white disabled:opacity-30"
+                  className="p-1 text-ink-soft hover:text-ink disabled:opacity-30"
                   title="Move Down"
                 >
                   <ChevronDown className="w-4 h-4" />
@@ -86,7 +86,7 @@ export const LanguagesForm: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => removeLanguage(lang.id)}
-                  className="p-1 text-rose-400 hover:text-rose-300 ml-2"
+                  className="p-1 text-destructive hover:opacity-80 ml-2"
                   title="Delete Language"
                 >
                   <Trash2 className="w-4 h-4" />
@@ -96,22 +96,22 @@ export const LanguagesForm: React.FC = () => {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
               <div>
-                <label className="block text-slate-400 mb-1">Language Name</label>
+                <label className="block text-ink-soft font-semibold mb-1">Language Name</label>
                 <input
                   type="text"
                   value={lang.language}
                   onChange={(e) => updateLanguage(lang.id, { language: e.target.value })}
                   placeholder="e.g. English, Spanish, German"
-                  className="w-full bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded px-2.5 py-1.5 text-white"
+                  className="input-base text-xs"
                 />
               </div>
 
               <div>
-                <label className="block text-slate-400 mb-1">Proficiency Level</label>
+                <label className="block text-ink-soft font-semibold mb-1">Proficiency Level</label>
                 <select
                   value={lang.proficiency}
                   onChange={(e) => updateLanguage(lang.id, { proficiency: e.target.value as ILanguage['proficiency'] })}
-                  className="w-full bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded px-2.5 py-1.5 text-white"
+                  className="input-base text-xs"
                 >
                   {PROFICIENCY_LEVELS.map((level) => (
                     <option key={level} value={level}>

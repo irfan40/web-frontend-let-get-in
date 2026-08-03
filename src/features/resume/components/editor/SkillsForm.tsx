@@ -39,7 +39,6 @@ export const SkillsForm: React.FC = () => {
     setIsAiSuggesting(true);
     setAiSuggestions([]);
 
-    // Match skills based on current open resume headline and experience
     const lowerHeadline = headline.toLowerCase();
     let suggested: string[] = [];
 
@@ -55,7 +54,6 @@ export const SkillsForm: React.FC = () => {
       suggested = ROLE_PRESETS['Full Stack'];
     }
 
-    // Filter out skills user already has
     const filtered = suggested.filter((sk) => !existingSkillNames.has(sk.toLowerCase()));
     setTimeout(() => {
       setAiSuggestions(filtered);
@@ -71,28 +69,28 @@ export const SkillsForm: React.FC = () => {
   };
 
   return (
-    <div className="space-y-5 bg-slate-900/50 p-5 rounded-xl border border-slate-800">
-      <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+    <div className="space-y-5 bg-surface p-5 rounded-2xl border border-border shadow-sm">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-3 border-b border-border gap-3">
         <div>
-          <h3 className="text-sm font-bold text-white flex items-center gap-2">
-            <Wrench className="w-4 h-4 text-indigo-400" />
+          <h3 className="text-sm font-bold text-ink flex items-center gap-2">
+            <Wrench className="w-4 h-4 text-primary-glow" />
             Skills & Technical Proficiencies
           </h3>
-          <p className="text-[11px] text-slate-400 mt-0.5">
-            Targeting: <span className="text-indigo-300 font-semibold">{headline}</span>
+          <p className="text-xs text-ink-soft mt-0.5">
+            Targeting: <span className="text-primary-glow font-semibold">{headline}</span>
           </p>
         </div>
         <button
           type="button"
           onClick={handleAiSuggest}
           disabled={isAiSuggesting}
-          className="flex items-center gap-1.5 text-xs text-purple-300 bg-purple-950/80 hover:bg-purple-900 border border-purple-700/60 px-3 py-1.5 rounded-lg transition-all font-semibold shadow-sm disabled:opacity-50"
+          className="flex items-center gap-1.5 text-xs text-primary-foreground bg-gradient-brand px-3.5 py-1.5 rounded-xl transition-all font-semibold shadow-elegant hover:shadow-glow disabled:opacity-50"
           title="Suggest skills based on current resume headline"
         >
           {isAiSuggesting ? (
-            <RefreshCw className="w-3.5 h-3.5 text-purple-400 animate-spin" />
+            <RefreshCw className="w-3.5 h-3.5 animate-spin" />
           ) : (
-            <Sparkles className="w-3.5 h-3.5 text-purple-400" />
+            <Sparkles className="w-3.5 h-3.5" />
           )}
           <span>Suggest Skills with AI</span>
         </button>
@@ -106,12 +104,12 @@ export const SkillsForm: React.FC = () => {
           onChange={(e) => setSkillInput(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
           placeholder="e.g. React, TypeScript, Docker, Node.js..."
-          className="flex-1 bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-lg px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none"
+          className="input-base text-xs flex-1"
         />
         <button
           type="button"
           onClick={() => handleAdd()}
-          className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold px-4 py-2 rounded-lg transition-colors flex items-center gap-1"
+          className="bg-gradient-brand text-primary-foreground text-xs font-semibold px-4 py-2 rounded-xl transition-all shadow-elegant flex items-center gap-1 shrink-0"
         >
           <Plus className="w-4 h-4" /> Add Skill
         </button>
@@ -119,7 +117,7 @@ export const SkillsForm: React.FC = () => {
 
       {/* Added Confirmation Alert */}
       {addedMessage && (
-        <div className="text-xs font-semibold text-emerald-400 bg-emerald-950/60 border border-emerald-800 p-2.5 rounded-lg flex items-center gap-2">
+        <div className="text-xs font-semibold text-success bg-success/10 border border-success/20 p-2.5 rounded-xl flex items-center gap-2">
           <Check className="w-4 h-4" />
           {addedMessage}
         </div>
@@ -127,16 +125,16 @@ export const SkillsForm: React.FC = () => {
 
       {/* AI Skill Suggestions Drawer */}
       {aiSuggestions.length > 0 && (
-        <div className="bg-purple-950/40 border border-purple-800/60 p-4 rounded-xl space-y-3">
+        <div className="bg-primary/5 border border-primary/20 p-4 rounded-2xl space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-purple-200 flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5 text-purple-400" />
+            <span className="text-xs font-bold text-ink flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-primary-glow" />
               AI Skill Recommendations for &quot;{headline}&quot;
             </span>
             <button
               type="button"
               onClick={handleAddAllAi}
-              className="text-[11px] font-bold bg-purple-600 hover:bg-purple-500 text-white px-2.5 py-1 rounded transition-colors"
+              className="text-[11px] font-bold bg-gradient-brand text-primary-foreground px-2.5 py-1 rounded-lg shadow-sm transition-all"
             >
               Add All ({aiSuggestions.length})
             </button>
@@ -150,9 +148,9 @@ export const SkillsForm: React.FC = () => {
                   handleAdd(sk);
                   setAiSuggestions((prev) => prev.filter((s) => s !== sk));
                 }}
-                className="bg-purple-900/60 hover:bg-purple-800 text-purple-200 border border-purple-700/50 text-xs px-2.5 py-1 rounded-full flex items-center gap-1 transition-colors"
+                className="bg-surface hover:bg-surface-alt text-ink border border-border text-xs px-2.5 py-1 rounded-full flex items-center gap-1 transition-colors font-medium shadow-xs"
               >
-                <Plus className="w-3 h-3 text-purple-300" />
+                <Plus className="w-3 h-3 text-primary-glow" />
                 {sk}
               </button>
             ))}
@@ -162,11 +160,11 @@ export const SkillsForm: React.FC = () => {
 
       {/* Current Skill Badges */}
       <div>
-        <div className="text-xs font-semibold text-slate-400 mb-2">
+        <div className="text-xs font-semibold text-ink-soft mb-2">
           Active Resume Skills ({skills.length}):
         </div>
         {skills.length === 0 ? (
-          <div className="text-xs text-slate-500 italic py-2">
+          <div className="text-xs text-ink-soft italic py-2">
             No skills added yet. Use the input above or click &quot;Suggest Skills with AI&quot;.
           </div>
         ) : (
@@ -174,13 +172,13 @@ export const SkillsForm: React.FC = () => {
             {skills.map((skill) => (
               <span
                 key={skill.id}
-                className="bg-slate-800 text-indigo-200 border border-indigo-500/30 text-xs px-3 py-1.5 rounded-full flex items-center gap-2"
+                className="bg-surface text-ink border border-border text-xs px-3 py-1 rounded-full flex items-center gap-2 shadow-xs font-medium"
               >
                 {skill.name}
                 <button
                   type="button"
                   onClick={() => removeSkill(skill.id)}
-                  className="text-slate-400 hover:text-rose-400 transition-colors"
+                  className="text-ink-soft hover:text-destructive transition-colors"
                   title="Remove skill"
                 >
                   <X className="w-3.5 h-3.5" />
@@ -192,8 +190,8 @@ export const SkillsForm: React.FC = () => {
       </div>
 
       {/* Role Presets */}
-      <div className="pt-2 border-t border-slate-800/60">
-        <span className="text-[11px] font-semibold text-slate-400 block mb-2">Quick Tech Stack Presets:</span>
+      <div className="pt-2 border-t border-border">
+        <span className="text-xs font-semibold text-ink-soft block mb-2">Quick Tech Stack Presets:</span>
         <div className="flex flex-wrap gap-1.5">
           {Object.keys(ROLE_PRESETS).map((presetName) => (
             <button
@@ -202,7 +200,7 @@ export const SkillsForm: React.FC = () => {
               onClick={() => {
                 ROLE_PRESETS[presetName].forEach((sk) => handleAdd(sk));
               }}
-              className="text-[11px] bg-slate-950 hover:bg-slate-800 border border-slate-800 text-slate-300 px-2.5 py-1 rounded-lg transition-colors"
+              className="text-xs bg-surface-alt hover:bg-surface border border-border text-ink px-2.5 py-1 rounded-xl transition-colors font-medium"
             >
               + {presetName}
             </button>

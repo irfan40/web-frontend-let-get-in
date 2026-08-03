@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
 import { useResumeStore } from "@/features/resume/store/useResumeStore";
 import { useAuthStore } from "@/features/auth/store/useAuthStore";
 import { useAutosave } from "@/features/resume/hooks/useAutosave";
@@ -12,13 +13,14 @@ import { ResumeFormContainer } from "@/features/resume/components/editor/ResumeF
 import { EmbeddedAiChat } from "@/features/resume/components/ai/EmbeddedAiChat";
 import { LivePreviewCanvas } from "@/features/resume/components/preview/LivePreviewCanvas";
 import { triggerPdfDownload } from "@/features/resume/utils/downloadPdf";
-import { Loader2, FileText, MessageSquare, Eye } from "lucide-react";
+import { Loader2, FileText, MessageSquare, Eye, Sparkles } from "lucide-react";
 
 function BuilderContent() {
   const searchParams = useSearchParams();
   const resumeId = searchParams.get("id");
   const { loadResume } = useResumeStore();
   const { isAuthenticated } = useAuthStore();
+  const [isChatOpen, setIsChatOpen] = useState(true);
   const [activeMobileTab, setActiveMobileTab] = useState<"form" | "chat" | "preview">("form");
 
   // Initialize Autosave Hook
@@ -32,10 +34,10 @@ function BuilderContent() {
 
   return (
     <div className="h-screen flex flex-col bg-background text-foreground overflow-hidden">
-      {/* Editor Header Toolbar (Styled matching /dashboard theme) */}
+      {/* Editor Header Toolbar */}
       <EditorHeader
-        onToggleAi={() => setActiveMobileTab((prev) => (prev === "chat" ? "form" : "chat"))}
-        isAiOpen={activeMobileTab === "chat"}
+        onToggleAi={() => setIsChatOpen((prev) => !prev)}
+        isAiOpen={isChatOpen}
         onDownloadPdf={triggerPdfDownload}
       />
 
@@ -76,11 +78,11 @@ function BuilderContent() {
         </button>
       </div>
 
-      {/* Main 3-Part Workspace Layout */}
-      <main className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-4 p-4 min-h-0 overflow-hidden bg-background">
-        {/* PART 1: FORM SECTION (Horizontal Navigation & ATS Score on top of form) */}
+      {/* Main Responsive Split Layout (Desktop: 40% Form | 60% Chat + Resume Area) */}
+      <main className="flex-1 flex flex-col lg:flex-row gap-4 p-4 min-h-0 overflow-hidden bg-background">
+        {/* PART 1: FORM SECTION (Fixed 40% width on desktop) */}
         <section
-          className={`lg:col-span-5 flex flex-col h-full overflow-hidden bg-surface/50 border border-border rounded-2xl p-4 shadow-sm ${
+          className={`w-full lg:w-[40%] shrink-0 flex flex-col h-full overflow-hidden bg-surface/50 border border-border rounded-2xl p-4 shadow-sm ${
             activeMobileTab === "form" ? "flex" : "hidden lg:flex"
           }`}
         >
@@ -98,23 +100,51 @@ function BuilderContent() {
           </div>
         </section>
 
-        {/* PART 2: CHAT SECTION (Embedded AI Resume Advisor Workspace) */}
-        <section
-          className={`lg:col-span-3 flex flex-col h-full overflow-hidden ${
-            activeMobileTab === "chat" ? "flex" : "hidden lg:flex"
-          }`}
-        >
-          <EmbeddedAiChat />
-        </section>
+        {/* RIGHT AREA: 60% Width Area containing Chat & Resume Preview with Smooth Animations */}
+        <div className="w-full lg:w-[60%] flex-1 flex gap-4 h-full overflow-hidden relative">
+          {/* PART 2: CHAT SECTION (Smooth left-to-right collapse/expand animation) */}
+          <AnimatePresence initial={false}>
+            {isChatOpen && (
+              <motion.section
+                key="ai-chat-panel"
+                initial={{ width: 0, opacity: 0, scale: 0.95 }}
+                animate={{ width: "40%", opacity: 1, scale: 1 }}
+                exit={{ width: 0, opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.35, ease: [0.25, 1, 0.5, 1] }}
+                className={`flex flex-col h-full shrink-0 overflow-hidden ${
+                  activeMobileTab === "chat" ? "flex w-full" : "hidden lg:flex"
+                }`}
+              >
+                <EmbeddedAiChat onClose={() => setIsChatOpen(false)} />
+              </motion.section>
+            )}
+          </AnimatePresence>
 
-        {/* PART 3: RESUME SHOW SECTION (Live Interactive Canvas) */}
-        <section
-          className={`lg:col-span-4 flex flex-col h-full overflow-hidden bg-surface/30 border border-border rounded-2xl print:border-none print:p-0 shadow-sm relative ${
-            activeMobileTab === "preview" ? "flex" : "hidden lg:flex"
-          }`}
-        >
-          <LivePreviewCanvas />
-        </section>
+          {/* PART 3: RESUME SHOW SECTION (Smooth right-to-left layout expansion to 100% of the 60% area) */}
+          <motion.section
+            layout
+            transition={{ duration: 0.35, ease: [0.25, 1, 0.5, 1] }}
+            className={`flex-1 flex flex-col h-full overflow-hidden bg-surface/30 border border-border rounded-2xl print:border-none print:p-0 shadow-sm relative ${
+              activeMobileTab === "preview" ? "flex w-full" : "hidden lg:flex"
+            }`}
+          >
+            {/* Floating Re-Open Chat Button (Visible on desktop when Chat section is closed) */}
+            {!isChatOpen && (
+              <motion.button
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                onClick={() => setIsChatOpen(true)}
+                className="absolute top-4 right-6 z-30 bg-gradient-brand text-primary-foreground text-xs font-semibold px-3.5 py-2 rounded-xl shadow-elegant hover:shadow-glow transition-all flex items-center gap-2"
+                title="Open AI Chat Advisor"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>Open AI Chat</span>
+              </motion.button>
+            )}
+
+            <LivePreviewCanvas />
+          </motion.section>
+        </div>
       </main>
     </div>
   );
