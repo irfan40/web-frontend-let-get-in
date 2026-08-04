@@ -84,14 +84,24 @@ apiClient.interceptors.response.use(
         isRefreshing = false;
         processQueue(refreshError);
 
-        // Attempt client-side cookie clearing as fallback
-        if (typeof document !== 'undefined') {
-          document.cookie = 'accessToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
-          document.cookie = 'refreshToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
-        }
+        // Only redirect to /auth if currently on a protected route and not already on /auth
+        const PROTECTED_PREFIXES = [
+          '/dashboard',
+          '/builder',
+          '/demo',
+          '/settings',
+          '/account',
+          '/profile',
+          '/history',
+          '/download',
+          '/ats',
+        ];
 
-        // Redirect to /auth if in browser environment and not already on /auth
-        if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/auth')) {
+        const isProtectedRoute =
+          typeof window !== 'undefined' &&
+          PROTECTED_PREFIXES.some((prefix) => window.location.pathname.startsWith(prefix));
+
+        if (typeof window !== 'undefined' && isProtectedRoute && !window.location.pathname.startsWith('/auth')) {
           window.location.href = '/auth';
         }
         return Promise.reject(
