@@ -1,15 +1,1414 @@
 "use client";
 
-import React from "react";
-import { User } from "lucide-react";
-import { ComingSoon } from "@/components/common/ComingSoon";
+import React, { useState, useMemo, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useAuthStore } from "@/features/auth/store/useAuthStore";
+import {
+  User,
+  Mail,
+  Phone,
+  MapPin,
+  GraduationCap,
+  Briefcase,
+  Zap,
+  Sparkles,
+  FileText,
+  CheckCircle2,
+  ShieldCheck,
+  Compass,
+  Plus,
+  Check,
+  Trash2,
+  ExternalLink,
+} from "lucide-react";
 
-export default function ProfilePage() {
+export type Track = "fresher" | "experienced";
+export type Mode = "resume" | "manual";
+export type SectionId =
+  | "overview"
+  | "personal"
+  | "contacts"
+  | "education"
+  | "experience"
+  | "skills"
+  | "generate";
+
+export type EducationItem = {
+  id: string;
+  institution: string;
+  degree: string;
+  startYear: string;
+  endYear: string;
+  certificateUrl?: string;
+};
+
+export type ExperienceItem = {
+  id: string;
+  company: string;
+  title: string;
+  start: string;
+  end: string;
+  highlights: string;
+};
+
+export type ProfileData = {
+  track: Track | null;
+  mode: Mode | null;
+  resumeName: string | null;
+  contact: {
+    fullName: string;
+    phone: string;
+    city: string;
+    country: string;
+    linkedin: string;
+    email?: string;
+    streetAddress?: string;
+    state?: string;
+    postalCode?: string;
+  };
+  personal: {
+    firstName: string;
+    lastName: string;
+    headline: string;
+    dob: string;
+    bio: string;
+  };
+  education: {
+    institution: string;
+    degree: string;
+    startYear: string;
+    endYear: string;
+    certificateUrl?: string;
+  };
+  educationsList: EducationItem[];
+  experience: {
+    company: string;
+    title: string;
+    start: string;
+    end: string;
+    highlights: string;
+  };
+  experiencesList: ExperienceItem[];
+  skills: string[];
+  videoName: string | null;
+};
+
+const DEFAULT_PROFILE: ProfileData = {
+  track: "experienced",
+  mode: "manual",
+  resumeName: null,
+  contact: {
+    fullName: "Irfan Rabeeh",
+    phone: "+91 98765 43210",
+    city: "Mumbai",
+    country: "India",
+    linkedin: "https://linkedin.com/in/irfanrabeeh",
+    email: "irfanrabeeh@gmail.com",
+    streetAddress: "123 Main Street, Apt 4B",
+    state: "Maharashtra",
+    postalCode: "400001",
+  },
+  personal: {
+    firstName: "Irfan",
+    lastName: "Rabeeh",
+    headline: "Product designer & builder",
+    dob: "1998-05-15",
+    bio: "Passionate product designer focused on creating intuitive digital experiences and high-performing web applications.",
+  },
+  education: {
+    institution: "Indian Institute of Technology",
+    degree: "B.Tech in Computer Science",
+    startYear: "2020",
+    endYear: "2024",
+    certificateUrl: "https://certificate.org/iit",
+  },
+  educationsList: [
+    {
+      id: "edu-1",
+      institution: "Indian Institute of Technology",
+      degree: "B.Tech in Computer Science",
+      startYear: "2020",
+      endYear: "2024",
+      certificateUrl: "https://certificate.org/iit",
+    },
+  ],
+  experience: {
+    company: "Acme Corp",
+    title: "Senior Product Designer",
+    start: "2022-06",
+    end: "Present",
+    highlights: "Shipped v2 redesign, led product design team, improved conversion by 42%.",
+  },
+  experiencesList: [
+    {
+      id: "exp-1",
+      company: "Acme Corp",
+      title: "Senior Product Designer",
+      start: "2022-06",
+      end: "Present",
+      highlights: "Shipped v2 redesign, led product design team, improved conversion by 42%.",
+    },
+  ],
+  skills: ["React", "TypeScript", "Figma", "Product Strategy"],
+  videoName: null,
+};
+
+/* --- Circular Progress Ring --- */
+function ProgressRing({ percent }: { percent: number }) {
+  const radius = 36;
+  const circumference = 2 * Math.PI * radius;
+  const strokeDashoffset = circumference - (percent / 100) * circumference;
+
   return (
-    <ComingSoon
-      title="User Profile & Identity"
-      description="Manage your account preferences, verified skills, credentials, and public professional persona."
-      icon={User}
-    />
+    <div className="relative w-24 h-24 flex items-center justify-center">
+      <svg className="w-full h-full transform -rotate-90" viewBox="0 0 96 96">
+        <circle
+          cx="48"
+          cy="48"
+          r={radius}
+          className="stroke-white/20"
+          strokeWidth="8"
+          fill="transparent"
+        />
+        <circle
+          cx="48"
+          cy="48"
+          r={radius}
+          className="stroke-white transition-all duration-700 ease-out"
+          strokeWidth="8"
+          strokeDasharray={circumference}
+          strokeDashoffset={strokeDashoffset}
+          strokeLinecap="round"
+          fill="transparent"
+        />
+      </svg>
+      <span className="absolute text-xl font-extrabold text-white">{percent}%</span>
+    </div>
+  );
+}
+
+/* --- TipCard --- */
+function TipCard({
+  icon: Icon,
+  title,
+  body,
+  onClick,
+}: {
+  icon: React.ElementType;
+  title: string;
+  body: string;
+  onClick?: () => void;
+}) {
+  return (
+    <div
+      onClick={onClick}
+      className={`p-5 rounded-2xl bg-surface border border-border shadow-xs space-y-2 select-none transition-all ${
+        onClick ? "cursor-pointer hover:border-primary-glow/50 hover:shadow-sm" : ""
+      }`}
+    >
+      <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary-glow flex items-center justify-center">
+        <Icon className="w-5 h-5" />
+      </div>
+      <h3 className="font-bold text-ink text-sm">{title}</h3>
+      <p className="text-xs text-ink-soft leading-relaxed">{body}</p>
+    </div>
+  );
+}
+
+/* --- PreviewCard --- */
+function PreviewCard({
+  title,
+  icon: Icon,
+  filled,
+  filledTitle,
+  filledSubtitle,
+  emptyText,
+  cta,
+  onCta,
+  verified,
+}: {
+  title: string;
+  icon: React.ElementType;
+  filled: boolean;
+  filledTitle?: string;
+  filledSubtitle?: string;
+  emptyText: string;
+  cta: string;
+  onCta: () => void;
+  verified?: "verified" | "unverified";
+}) {
+  return (
+    <div className="p-5 rounded-2xl bg-surface border border-border shadow-xs flex flex-col justify-between space-y-4">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-xl bg-primary/10 text-primary-glow flex items-center justify-center">
+            <Icon className="w-4 h-4" />
+          </div>
+          <h3 className="font-bold text-ink text-sm">{title}</h3>
+        </div>
+        {verified && (
+          <span
+            className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
+              verified === "verified"
+                ? "bg-success/10 text-success border border-success/20"
+                : "bg-amber-500/10 text-amber-600 border border-amber-500/20"
+            }`}
+          >
+            {verified}
+          </span>
+        )}
+      </div>
+
+      {filled ? (
+        <div className="space-y-1">
+          <p className="font-bold text-ink text-sm">{filledTitle || "Title Specified"}</p>
+          <p className="text-xs text-ink-soft">{filledSubtitle}</p>
+        </div>
+      ) : (
+        <p className="text-xs text-ink-soft italic">{emptyText}</p>
+      )}
+
+      <button
+        onClick={onCta}
+        className="w-full text-xs font-semibold text-primary-glow hover:text-primary py-2 px-3 rounded-xl border border-primary/20 hover:bg-primary/5 transition-all text-center flex items-center justify-center gap-1.5 cursor-pointer"
+      >
+        <span>{cta}</span>
+      </button>
+    </div>
+  );
+}
+
+/* --- Section Layout Utilities --- */
+function SectionHeader({ title, subtitle }: { title: string; subtitle: string }) {
+  return (
+    <div className="mb-2">
+      <h2 className="text-xl font-extrabold text-ink tracking-tight">{title}</h2>
+      <p className="text-xs text-ink-soft mt-0.5">{subtitle}</p>
+    </div>
+  );
+}
+
+function Card({
+  icon: Icon,
+  iconColor = "text-primary-glow",
+  title,
+  verified,
+  children,
+}: {
+  icon: React.ElementType;
+  iconColor?: string;
+  title: string;
+  verified?: "verified" | "unverified";
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="p-6 rounded-2xl bg-surface border border-border shadow-xs space-y-4">
+      <div className="flex items-center justify-between pb-3 border-b border-border">
+        <div className="flex items-center gap-3">
+          <div className={`w-9 h-9 rounded-xl bg-secondary flex items-center justify-center ${iconColor}`}>
+            <Icon className="w-5 h-5" />
+          </div>
+          <h3 className="font-bold text-ink text-sm">{title}</h3>
+        </div>
+        {verified && (
+          <span
+            className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider ${
+              verified === "verified"
+                ? "bg-success/10 text-success border border-success/20"
+                : "bg-amber-500/10 text-amber-600 border border-amber-500/20"
+            }`}
+          >
+            {verified}
+          </span>
+        )}
+      </div>
+      <div>{children}</div>
+    </div>
+  );
+}
+
+function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
+  return (
+    <div className="space-y-1">
+      <label className="block text-xs font-semibold text-ink-soft">{label}</label>
+      {children}
+      {hint && <p className="text-[11px] text-ink-soft/70">{hint}</p>}
+    </div>
+  );
+}
+
+function SaveBar({ onSave }: { onSave?: () => void }) {
+  return (
+    <div className="pt-4 border-t border-border flex items-center justify-between">
+      <span className="text-xs text-ink-soft">Changes are saved to your profile</span>
+      <button
+        onClick={onSave}
+        className="bg-gradient-brand text-white font-semibold px-5 py-2 rounded-xl text-xs shadow-elegant hover:shadow-glow transition cursor-pointer"
+      >
+        Save changes
+      </button>
+    </div>
+  );
+}
+
+function EmptyList({ title, subtitle }: { title: string; subtitle: string }) {
+  return (
+    <div className="p-8 rounded-2xl border border-dashed border-border text-center space-y-1 bg-surface/50">
+      <p className="font-bold text-ink text-sm">{title}</p>
+      <p className="text-xs text-ink-soft">{subtitle}</p>
+    </div>
+  );
+}
+
+/* --- OVERVIEW SECTION --- */
+function Overview({
+  profile,
+  onNavigate,
+  onCompleteProfile,
+}: {
+  profile: ProfileData;
+  onNavigate: (s: SectionId) => void;
+  onCompleteProfile: () => void;
+}) {
+  const checks = useMemo(() => {
+    const hasContact =
+      !!profile.contact.fullName.trim() && !!profile.contact.phone.trim();
+    const hasEducation =
+      !!profile.education.institution.trim() || profile.educationsList.length > 0;
+    const hasExperience =
+      profile.track === "fresher"
+        ? true
+        : !!profile.experience.company.trim() || profile.experiencesList.length > 0;
+    const hasSkills = profile.skills.length > 0;
+    const hasVideo = !!profile.videoName;
+    return [
+      { key: "contact", label: "Contact details", done: hasContact, section: "contacts" as SectionId },
+      { key: "education", label: "Education", done: hasEducation, section: "education" as SectionId },
+      {
+        key: "experience",
+        label: profile.track === "fresher" ? "Experience (skipped)" : "Work experience",
+        done: hasExperience,
+        section: "experience" as SectionId,
+      },
+      { key: "skills", label: "Skills", done: hasSkills, section: "skills" as SectionId },
+      { key: "video", label: "Intro video (optional)", done: hasVideo, section: "personal" as SectionId, optional: true },
+    ];
+  }, [profile]);
+
+  const requiredChecks = checks.filter((c) => !("optional" in c && c.optional));
+  const percent = Math.round(
+    (requiredChecks.filter((c) => c.done).length / requiredChecks.length) * 100,
+  );
+  const nextStep = checks.find((c) => !c.done);
+
+  const displayName =
+    profile.contact.fullName.trim().split(" ")[0] ||
+    profile.personal.firstName.trim() ||
+    "there";
+
+  return (
+    <div className="space-y-6 animate-fade-up">
+      {/* Welcome + progress hero */}
+      <section className="relative overflow-hidden rounded-2xl bg-gradient-brand p-6 sm:p-8 text-white shadow-elegant">
+        <div className="absolute -right-16 -top-16 w-64 h-64 rounded-full bg-white/10 blur-3xl" />
+        <div className="relative grid lg:grid-cols-[1fr_auto] gap-6 items-center">
+          <div>
+            <div className="flex flex-wrap items-center gap-3 mb-2">
+              <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
+                Welcome back, {displayName}!
+              </h1>
+              <span className="text-xs font-semibold bg-white/20 backdrop-blur px-3 py-1 rounded-full border border-white/25">
+                {profile.track === "experienced"
+                  ? "Experienced"
+                  : profile.track === "fresher"
+                  ? "Fresher"
+                  : "Candidate"}
+              </span>
+            </div>
+            <p className="text-white/85 max-w-xl">
+              {percent === 100
+                ? "Your profile is complete — you're ready to be discovered by employers."
+                : `Your profile is ${percent}% complete. ${nextStep ? `Next up: ${nextStep.label.toLowerCase()}.` : ""}`}
+            </p>
+            <div className="flex flex-wrap gap-3 mt-6">
+              <button
+                onClick={onCompleteProfile}
+                className="inline-flex items-center gap-2 bg-white text-primary font-semibold px-4 py-2 rounded-full text-sm hover:shadow-glow transition cursor-pointer"
+              >
+                <Sparkles className="w-4 h-4 text-primary-glow" />
+                {percent === 0 ? "Start profile" : percent === 100 ? "Review profile" : "Continue profile"}
+              </button>
+              <button
+                onClick={() => onNavigate("generate")}
+                className="inline-flex items-center gap-2 bg-white/15 border border-white/25 text-white font-semibold px-4 py-2 rounded-full text-sm hover:bg-white/25 transition cursor-pointer"
+              >
+                <FileText className="w-4 h-4" /> Generate CV
+              </button>
+            </div>
+          </div>
+
+          {/* Circular progress */}
+          <div className="justify-self-center lg:justify-self-end">
+            <ProgressRing percent={percent} />
+          </div>
+        </div>
+      </section>
+
+      {/* Profile checklist */}
+      <section className="rounded-2xl bg-surface border border-border p-6 shadow-sm">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <div>
+            <h2 className="text-lg font-bold text-ink">Profile checklist</h2>
+            <p className="text-sm text-ink-soft">Complete each step to unlock your verified CV.</p>
+          </div>
+          <span className="text-xs font-semibold text-ink-soft">
+            {requiredChecks.filter((c) => c.done).length} of {requiredChecks.length} done
+          </span>
+        </div>
+        <div className="mt-4 h-2 rounded-full bg-secondary overflow-hidden">
+          <div
+            className="h-full bg-gradient-brand transition-all duration-500"
+            style={{ width: `${percent}%` }}
+          />
+        </div>
+        <ul className="mt-5 divide-y divide-border">
+          {checks.map((c) => (
+            <li key={c.key} className="flex items-center justify-between py-3">
+              <div className="flex items-center gap-3">
+                {c.done ? (
+                  <CheckCircle2 className="w-5 h-5 text-success" />
+                ) : (
+                  <span className="w-5 h-5 rounded-full border-2 border-border" />
+                )}
+                <span className={c.done ? "text-ink font-medium text-sm" : "text-ink-soft text-sm"}>
+                  {c.label}
+                </span>
+                {"optional" in c && c.optional && (
+                  <span className="text-[10px] font-semibold uppercase tracking-wide text-ink-soft/70 bg-secondary px-1.5 py-0.5 rounded">
+                    Optional
+                  </span>
+                )}
+              </div>
+              <button
+                onClick={() => onNavigate(c.section)}
+                className="text-sm font-semibold text-primary-glow hover:underline cursor-pointer"
+              >
+                {c.done ? "Edit" : "Add"}
+              </button>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      {/* Helpful tips */}
+      <section className="grid md:grid-cols-3 gap-4">
+        <TipCard
+          icon={ShieldCheck}
+          title="Get verified"
+          body="Verified candidates get 3x more views from recruiters."
+        />
+        <TipCard
+          icon={Compass}
+          title="Explore roles"
+          body="See jobs ranked by how well they match your skills."
+          onClick={() => onNavigate("overview")}
+        />
+        <TipCard
+          icon={FileText}
+          title="Generate CV"
+          body="Turn your verified profile into a polished, downloadable CV."
+          onClick={() => onNavigate("generate")}
+        />
+      </section>
+
+      {/* Preview cards */}
+      <section className="grid md:grid-cols-2 gap-4">
+        <PreviewCard
+          title="Work Experience"
+          icon={Briefcase}
+          filled={!!profile.experience.company.trim() || profile.experiencesList.length > 0}
+          filledTitle={profile.experience.title || profile.experiencesList[0]?.title}
+          filledSubtitle={profile.experience.company || profile.experiencesList[0]?.company}
+          emptyText={profile.track === "fresher" ? "You've marked yourself as a fresher" : "No work experience added yet"}
+          cta={profile.track === "fresher" ? "Add an internship" : "Add your first role"}
+          onCta={() => onNavigate("experience")}
+          verified={!!profile.experience.company.trim() || profile.experiencesList.length > 0 ? "unverified" : undefined}
+        />
+        <PreviewCard
+          title="Education"
+          icon={GraduationCap}
+          filled={!!profile.education.institution.trim() || profile.educationsList.length > 0}
+          filledTitle={profile.education.degree || profile.educationsList[0]?.degree}
+          filledSubtitle={profile.education.institution || profile.educationsList[0]?.institution}
+          emptyText="No education added yet"
+          cta="Add your first degree"
+          onCta={() => onNavigate("education")}
+          verified={!!profile.education.institution.trim() || profile.educationsList.length > 0 ? "unverified" : undefined}
+        />
+      </section>
+    </div>
+  );
+}
+
+/* --- PERSONAL DETAILS SECTION --- */
+function PersonalSection({
+  profile,
+  onUpdate,
+  onSave,
+}: {
+  profile: ProfileData;
+  onUpdate: (updater: (prev: ProfileData) => ProfileData) => void;
+  onSave: () => void;
+}) {
+  const { personal, experience } = profile;
+
+  return (
+    <div className="space-y-6 animate-fade-up">
+      <SectionHeader title="Personal Details" subtitle="Your public profile information." />
+      <Card icon={User} iconColor="text-primary-glow" title="Basic Info">
+        <div className="grid sm:grid-cols-2 gap-4">
+          <Field label="First name">
+            <input
+              type="text"
+              className="input-base"
+              value={personal.firstName}
+              onChange={(e) =>
+                onUpdate((prev) => ({
+                  ...prev,
+                  personal: { ...prev.personal, firstName: e.target.value },
+                  contact: {
+                    ...prev.contact,
+                    fullName: `${e.target.value} ${prev.personal.lastName}`.trim(),
+                  },
+                }))
+              }
+              placeholder="Irfan"
+            />
+          </Field>
+          <Field label="Last name">
+            <input
+              type="text"
+              className="input-base"
+              value={personal.lastName}
+              onChange={(e) =>
+                onUpdate((prev) => ({
+                  ...prev,
+                  personal: { ...prev.personal, lastName: e.target.value },
+                  contact: {
+                    ...prev.contact,
+                    fullName: `${prev.personal.firstName} ${e.target.value}`.trim(),
+                  },
+                }))
+              }
+              placeholder="Rabeeh"
+            />
+          </Field>
+          <Field label="Headline" hint="One line describing your professional identity.">
+            <input
+              type="text"
+              className="input-base"
+              value={personal.headline || experience.title || ""}
+              onChange={(e) =>
+                onUpdate((prev) => ({
+                  ...prev,
+                  personal: { ...prev.personal, headline: e.target.value },
+                  experience: { ...prev.experience, title: e.target.value },
+                }))
+              }
+              placeholder="Product designer & builder"
+            />
+          </Field>
+          <Field label="Date of birth">
+            <input
+              type="date"
+              className="input-base"
+              value={personal.dob || ""}
+              onChange={(e) =>
+                onUpdate((prev) => ({
+                  ...prev,
+                  personal: { ...prev.personal, dob: e.target.value },
+                }))
+              }
+            />
+          </Field>
+          <div className="sm:col-span-2">
+            <Field label="Bio">
+              <textarea
+                rows={4}
+                className="input-base"
+                value={personal.bio || ""}
+                onChange={(e) =>
+                  onUpdate((prev) => ({
+                    ...prev,
+                    personal: { ...prev.personal, bio: e.target.value },
+                  }))
+                }
+                placeholder="Tell recruiters what makes you, you."
+              />
+            </Field>
+          </div>
+        </div>
+        <SaveBar onSave={onSave} />
+      </Card>
+    </div>
+  );
+}
+
+/* --- CONTACT DETAILS SECTION --- */
+function ContactsSection({
+  profile,
+  onUpdate,
+  onSave,
+}: {
+  profile: ProfileData;
+  onUpdate: (updater: (prev: ProfileData) => ProfileData) => void;
+  onSave: () => void;
+}) {
+  const { contact } = profile;
+  const [otpSent, setOtpSent] = useState(false);
+
+  return (
+    <div className="space-y-6 animate-fade-up">
+      <SectionHeader title="Contact Details" subtitle="How recruiters and companies can reach you." />
+
+      <Card icon={Mail} iconColor="text-primary-glow" title="Email Address" verified="verified">
+        <Field label="Email" hint="Email is tied to your account. Change it from account settings.">
+          <input
+            className="input-base bg-secondary/60 cursor-not-allowed text-ink-soft"
+            value={contact.email || "irfanrabeeh@gmail.com"}
+            disabled
+          />
+        </Field>
+      </Card>
+
+      <Card icon={Phone} iconColor="text-[oklch(0.6_0.18_160)]" title="Phone Number" verified="unverified">
+        <Field label="Phone Number">
+          <input
+            className="input-base"
+            value={contact.phone}
+            onChange={(e) =>
+              onUpdate((prev) => ({
+                ...prev,
+                contact: { ...prev.contact, phone: e.target.value },
+              }))
+            }
+            placeholder="+91 98765 43210"
+          />
+        </Field>
+        <div className="mt-4 flex items-center justify-between">
+          {otpSent ? (
+            <span className="text-xs font-semibold text-success flex items-center gap-1.5">
+              <Check className="w-4 h-4" /> OTP sent to WhatsApp
+            </span>
+          ) : (
+            <span className="text-xs text-ink-soft">Instant phone verification</span>
+          )}
+          <button
+            onClick={() => {
+              setOtpSent(true);
+              setTimeout(() => setOtpSent(false), 4000);
+            }}
+            className="bg-gradient-brand text-white font-semibold px-5 py-2.5 rounded-xl text-sm hover:shadow-glow transition cursor-pointer"
+          >
+            Verify via WhatsApp OTP
+          </button>
+        </div>
+      </Card>
+
+      <Card icon={MapPin} iconColor="text-[oklch(0.6_0.22_25)]" title="Address" verified="unverified">
+        <div className="grid gap-4">
+          <Field label="Street Address">
+            <input
+              className="input-base"
+              value={contact.streetAddress || ""}
+              onChange={(e) =>
+                onUpdate((prev) => ({
+                  ...prev,
+                  contact: { ...prev.contact, streetAddress: e.target.value },
+                }))
+              }
+              placeholder="123 Main Street, Apt 4B"
+            />
+          </Field>
+          <div className="grid sm:grid-cols-2 gap-4">
+            <Field label="City">
+              <input
+                className="input-base"
+                value={contact.city}
+                onChange={(e) =>
+                  onUpdate((prev) => ({
+                    ...prev,
+                    contact: { ...prev.contact, city: e.target.value },
+                  }))
+                }
+                placeholder="Mumbai"
+              />
+            </Field>
+            <Field label="State / Province">
+              <input
+                className="input-base"
+                value={contact.state || ""}
+                onChange={(e) =>
+                  onUpdate((prev) => ({
+                    ...prev,
+                    contact: { ...prev.contact, state: e.target.value },
+                  }))
+                }
+                placeholder="Maharashtra"
+              />
+            </Field>
+            <Field label="Country">
+              <input
+                className="input-base"
+                value={contact.country}
+                onChange={(e) =>
+                  onUpdate((prev) => ({
+                    ...prev,
+                    contact: { ...prev.contact, country: e.target.value },
+                  }))
+                }
+                placeholder="India"
+              />
+            </Field>
+            <Field label="Postal Code">
+              <input
+                className="input-base"
+                value={contact.postalCode || ""}
+                onChange={(e) =>
+                  onUpdate((prev) => ({
+                    ...prev,
+                    contact: { ...prev.contact, postalCode: e.target.value },
+                  }))
+                }
+                placeholder="400001"
+              />
+            </Field>
+          </div>
+          <Field label="LinkedIn / Portfolio">
+            <input
+              className="input-base"
+              value={contact.linkedin}
+              onChange={(e) =>
+                onUpdate((prev) => ({
+                  ...prev,
+                  contact: { ...prev.contact, linkedin: e.target.value },
+                }))
+              }
+              placeholder="https://linkedin.com/in/username"
+            />
+          </Field>
+        </div>
+        <SaveBar onSave={onSave} />
+      </Card>
+    </div>
+  );
+}
+
+/* --- EDUCATION SECTION --- */
+function EducationSection({
+  profile,
+  onUpdate,
+  onSave,
+}: {
+  profile: ProfileData;
+  onUpdate: (updater: (prev: ProfileData) => ProfileData) => void;
+  onSave: () => void;
+}) {
+  const list = profile.educationsList || [];
+  const [institution, setInstitution] = useState("");
+  const [degree, setDegree] = useState("");
+  const [startYear, setStartYear] = useState("");
+  const [endYear, setEndYear] = useState("");
+  const [certificateUrl, setCertificateUrl] = useState("");
+
+  const handleAddDegree = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!institution.trim() || !degree.trim()) return;
+
+    const newItem: EducationItem = {
+      id: `edu-${Date.now()}`,
+      institution: institution.trim(),
+      degree: degree.trim(),
+      startYear: startYear.trim() || "2020",
+      endYear: endYear.trim() || "2024",
+      certificateUrl: certificateUrl.trim(),
+    };
+
+    onUpdate((prev) => ({
+      ...prev,
+      education: {
+        institution: newItem.institution,
+        degree: newItem.degree,
+        startYear: newItem.startYear,
+        endYear: newItem.endYear,
+        certificateUrl: newItem.certificateUrl,
+      },
+      educationsList: [newItem, ...prev.educationsList],
+    }));
+
+    setInstitution("");
+    setDegree("");
+    setStartYear("");
+    setEndYear("");
+    setCertificateUrl("");
+    onSave();
+  };
+
+  const handleRemove = (id: string) => {
+    onUpdate((prev) => {
+      const newList = prev.educationsList.filter((item) => item.id !== id);
+      const top = newList[0] || { institution: "", degree: "", startYear: "", endYear: "" };
+      return {
+        ...prev,
+        education: top,
+        educationsList: newList,
+      };
+    });
+    onSave();
+  };
+
+  return (
+    <div className="space-y-6 animate-fade-up">
+      <SectionHeader
+        title="Education"
+        subtitle="Add every degree and certification — verified ones earn extra points."
+      />
+
+      {/* Render list of added degrees */}
+      {list.map((edu) => (
+        <Card
+          key={edu.id}
+          icon={GraduationCap}
+          iconColor="text-[oklch(0.55_0.22_285)]"
+          title={edu.degree || "Your Degree"}
+          verified="unverified"
+        >
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="font-semibold text-ink">{edu.institution}</p>
+              <p className="text-sm text-ink-soft mt-1">
+                {edu.startYear} — {edu.endYear || "Present"}
+              </p>
+              {edu.certificateUrl && (
+                <a
+                  href={edu.certificateUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1 text-xs text-primary-glow font-semibold mt-2 hover:underline"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" /> View Certificate
+                </a>
+              )}
+            </div>
+            <button
+              onClick={() => handleRemove(edu.id)}
+              className="text-ink-soft hover:text-destructive p-1 rounded transition"
+              title="Delete degree"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          </div>
+        </Card>
+      ))}
+
+      {/* Add Degree Card */}
+      <Card icon={GraduationCap} iconColor="text-[oklch(0.55_0.22_285)]" title="Add Degree">
+        <form onSubmit={handleAddDegree} className="space-y-4">
+          <div className="grid sm:grid-cols-2 gap-4">
+            <Field label="Institution">
+              <input
+                className="input-base"
+                value={institution}
+                onChange={(e) => setInstitution(e.target.value)}
+                placeholder="Indian Institute of Technology"
+                required
+              />
+            </Field>
+            <Field label="Degree">
+              <input
+                className="input-base"
+                value={degree}
+                onChange={(e) => setDegree(e.target.value)}
+                placeholder="B.Tech in Computer Science"
+                required
+              />
+            </Field>
+            <Field label="Start year">
+              <input
+                className="input-base"
+                value={startYear}
+                onChange={(e) => setStartYear(e.target.value)}
+                placeholder="2020"
+              />
+            </Field>
+            <Field label="End year">
+              <input
+                className="input-base"
+                value={endYear}
+                onChange={(e) => setEndYear(e.target.value)}
+                placeholder="2024"
+              />
+            </Field>
+            <div className="sm:col-span-2">
+              <Field
+                label="Certificate URL"
+                hint="Upload a link to your official certificate for verification."
+              >
+                <input
+                  className="input-base"
+                  value={certificateUrl}
+                  onChange={(e) => setCertificateUrl(e.target.value)}
+                  placeholder="https://..."
+                />
+              </Field>
+            </div>
+          </div>
+          <div className="mt-5 flex justify-end">
+            <button
+              type="submit"
+              className="inline-flex items-center gap-2 bg-gradient-brand text-white font-semibold px-5 py-2.5 rounded-xl text-sm hover:shadow-glow transition cursor-pointer"
+            >
+              <Plus className="w-4 h-4" /> Add education
+            </button>
+          </div>
+        </form>
+      </Card>
+
+      {list.length === 0 && (
+        <EmptyList
+          title="No education added yet"
+          subtitle="Once added, degrees will show up here with verification status."
+        />
+      )}
+    </div>
+  );
+}
+
+/* --- WORK EXPERIENCE SECTION --- */
+function ExperienceSection({
+  profile,
+  onUpdate,
+  onSave,
+}: {
+  profile: ProfileData;
+  onUpdate: (updater: (prev: ProfileData) => ProfileData) => void;
+  onSave: () => void;
+}) {
+  const list = profile.experiencesList || [];
+  const [company, setCompany] = useState("");
+  const [title, setTitle] = useState("");
+  const [start, setStart] = useState("");
+  const [end, setEnd] = useState("");
+  const [highlights, setHighlights] = useState("");
+
+  const handleAddRole = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!company.trim() || !title.trim()) return;
+
+    const newItem: ExperienceItem = {
+      id: `exp-${Date.now()}`,
+      company: company.trim(),
+      title: title.trim(),
+      start: start || "2022-01",
+      end: end || "Present",
+      highlights: highlights.trim(),
+    };
+
+    onUpdate((prev) => ({
+      ...prev,
+      experience: {
+        company: newItem.company,
+        title: newItem.title,
+        start: newItem.start,
+        end: newItem.end,
+        highlights: newItem.highlights,
+      },
+      experiencesList: [newItem, ...prev.experiencesList],
+    }));
+
+    setCompany("");
+    setTitle("");
+    setStart("");
+    setEnd("");
+    setHighlights("");
+    onSave();
+  };
+
+  const handleRemove = (id: string) => {
+    onUpdate((prev) => {
+      const newList = prev.experiencesList.filter((item) => item.id !== id);
+      const top = newList[0] || { company: "", title: "", start: "", end: "", highlights: "" };
+      return {
+        ...prev,
+        experience: top,
+        experiencesList: newList,
+      };
+    });
+    onSave();
+  };
+
+  return (
+    <div className="space-y-6 animate-fade-up">
+      <SectionHeader
+        title="Work Experience"
+        subtitle="Every role you've held. Verified experiences unlock offers."
+      />
+
+      {/* Render list of added experiences */}
+      {list.map((exp) => (
+        <Card
+          key={exp.id}
+          icon={Briefcase}
+          iconColor="text-[oklch(0.65_0.18_45)]"
+          title={exp.title || "Your Role"}
+          verified="unverified"
+        >
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="font-semibold text-ink">{exp.company}</p>
+              <p className="text-sm text-ink-soft mt-1">
+                {exp.start || "—"} → {exp.end || "Present"}
+              </p>
+              {exp.highlights && <p className="text-sm text-ink mt-3">{exp.highlights}</p>}
+            </div>
+            <button
+              onClick={() => handleRemove(exp.id)}
+              className="text-ink-soft hover:text-destructive p-1 rounded transition"
+              title="Delete role"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          </div>
+        </Card>
+      ))}
+
+      {/* Add Role Card */}
+      <Card icon={Briefcase} iconColor="text-[oklch(0.65_0.18_45)]" title="Add Role">
+        <form onSubmit={handleAddRole} className="space-y-4">
+          <div className="grid sm:grid-cols-2 gap-4">
+            <Field label="Company">
+              <input
+                className="input-base"
+                value={company}
+                onChange={(e) => setCompany(e.target.value)}
+                placeholder="Acme Corp"
+                required
+              />
+            </Field>
+            <Field label="Job title">
+              <input
+                className="input-base"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Senior Product Designer"
+                required
+              />
+            </Field>
+            <Field label="Start date">
+              <input
+                type="month"
+                className="input-base"
+                value={start}
+                onChange={(e) => setStart(e.target.value)}
+              />
+            </Field>
+            <Field label="End date">
+              <input
+                type="month"
+                className="input-base"
+                value={end}
+                onChange={(e) => setEnd(e.target.value)}
+              />
+            </Field>
+            <div className="sm:col-span-2">
+              <Field label="Highlights">
+                <textarea
+                  rows={4}
+                  className="input-base"
+                  value={highlights}
+                  onChange={(e) => setHighlights(e.target.value)}
+                  placeholder="Shipped X, led Y, improved Z by 42%..."
+                />
+              </Field>
+            </div>
+          </div>
+          <div className="mt-5 flex justify-end">
+            <button
+              type="submit"
+              className="inline-flex items-center gap-2 bg-gradient-brand text-white font-semibold px-5 py-2.5 rounded-xl text-sm hover:shadow-glow transition cursor-pointer"
+            >
+              <Plus className="w-4 h-4" /> Add role
+            </button>
+          </div>
+        </form>
+      </Card>
+
+      {list.length === 0 && (
+        <EmptyList title="No work experience added yet" subtitle="Your roles will appear here." />
+      )}
+    </div>
+  );
+}
+
+/* --- SKILLS SECTION --- */
+function SkillsSection({
+  profile,
+  onUpdate,
+  onSave,
+}: {
+  profile: ProfileData;
+  onUpdate: (updater: (prev: ProfileData) => ProfileData) => void;
+  onSave: () => void;
+}) {
+  const [newSkill, setNewSkill] = useState("");
+  const suggested = ["React", "TypeScript", "Figma", "Product Strategy", "SQL", "Node.js", "System Design", "GraphQL"].filter(
+    (s) => !profile.skills.includes(s)
+  );
+
+  const handleAddSkill = (skillToAdd: string) => {
+    const trimmed = skillToAdd.trim();
+    if (!trimmed || profile.skills.includes(trimmed)) return;
+
+    onUpdate((prev) => ({
+      ...prev,
+      skills: [...prev.skills, trimmed],
+    }));
+    setNewSkill("");
+    onSave();
+  };
+
+  const handleRemoveSkill = (skillToRemove: string) => {
+    onUpdate((prev) => ({
+      ...prev,
+      skills: prev.skills.filter((s) => s !== skillToRemove),
+    }));
+    onSave();
+  };
+
+  return (
+    <div className="space-y-6 animate-fade-up">
+      <SectionHeader
+        title="Skills"
+        subtitle="Add skills and take a verification test to earn a badge."
+      />
+
+      {profile.skills.length > 0 && (
+        <Card icon={Zap} iconColor="text-[oklch(0.5_0.2_265)]" title="Your Skills">
+          <div className="flex flex-wrap gap-2">
+            {profile.skills.map((s) => (
+              <span
+                key={s}
+                className="inline-flex items-center gap-2 text-sm px-3.5 py-1.5 rounded-full bg-gradient-brand text-white font-semibold shadow-xs"
+              >
+                <span>{s}</span>
+                <button
+                  onClick={() => handleRemoveSkill(s)}
+                  className="hover:text-rose-200 transition"
+                  title={`Remove ${s}`}
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </span>
+            ))}
+          </div>
+        </Card>
+      )}
+
+      <Card icon={Zap} iconColor="text-[oklch(0.5_0.2_265)]" title="Add a skill">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleAddSkill(newSkill);
+          }}
+          className="flex gap-3"
+        >
+          <input
+            className="input-base flex-1"
+            value={newSkill}
+            onChange={(e) => setNewSkill(e.target.value)}
+            placeholder="e.g. UI Animation"
+          />
+          <button
+            type="submit"
+            className="bg-gradient-brand text-white font-semibold px-5 rounded-xl text-sm hover:shadow-glow transition cursor-pointer shrink-0"
+          >
+            Add
+          </button>
+        </form>
+
+        {suggested.length > 0 && (
+          <>
+            <p className="text-xs font-semibold text-ink-soft mt-5 mb-2">SUGGESTED SKILLS</p>
+            <div className="flex flex-wrap gap-2">
+              {suggested.map((s) => (
+                <button
+                  key={s}
+                  onClick={() => handleAddSkill(s)}
+                  className="text-sm px-3 py-1.5 rounded-full border border-border bg-secondary/50 text-ink hover:bg-secondary transition cursor-pointer font-medium"
+                >
+                  + {s}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
+      </Card>
+
+      {profile.skills.length === 0 && (
+        <EmptyList
+          title="No skills added yet"
+          subtitle="Skills you add will show verification status here."
+        />
+      )}
+    </div>
+  );
+}
+
+/* --- MAIN PROFILE PAGE --- */
+export default function ProfilePage() {
+  const router = useRouter();
+  const { user } = useAuthStore();
+  const [activeSection, setActiveSection] = useState<SectionId>("overview");
+  const [saveNotice, setSaveNotice] = useState(false);
+
+  // Profile data state persisted in local state & pre-populated from user store
+  const [profile, setProfile] = useState<ProfileData>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("user_profile_data");
+      if (saved) {
+        try {
+          return JSON.parse(saved);
+        } catch {
+          // fallback
+        }
+      }
+    }
+    return DEFAULT_PROFILE;
+  });
+
+  // Sync logged in user name/email if present
+  useEffect(() => {
+    if (user) {
+      setProfile((prev) => ({
+        ...prev,
+        contact: {
+          ...prev.contact,
+          fullName: user.fullName || user.username || prev.contact.fullName,
+          email: user.email || prev.contact.email,
+        },
+      }));
+    }
+  }, [user]);
+
+  // Handle Save
+  const handleSave = () => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("user_profile_data", JSON.stringify(profile));
+    }
+    setSaveNotice(true);
+    setTimeout(() => setSaveNotice(false), 3000);
+  };
+
+  const handleNavigate = (sec: SectionId) => {
+    if (sec === "generate") {
+      router.push("/builder");
+    } else {
+      setActiveSection(sec);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
+
+  const PROFILE_SECTIONS = [
+    { id: "overview" as SectionId, label: "Overview", icon: Compass },
+    { id: "personal" as SectionId, label: "Personal Details", icon: User },
+    { id: "contacts" as SectionId, label: "Contact Details", icon: Mail },
+    { id: "experience" as SectionId, label: "Work Experience", icon: Briefcase },
+    { id: "education" as SectionId, label: "Education", icon: GraduationCap },
+    { id: "skills" as SectionId, label: "Skills", icon: Zap },
+  ];
+
+  return (
+    <div className="p-4 sm:p-6 lg:p-8 max-w-6xl mx-auto space-y-6">
+      {/* Save Notification Alert */}
+      {saveNotice && (
+        <div className="fixed top-20 right-6 z-50 bg-emerald-600 text-white font-semibold text-xs px-4 py-2.5 rounded-xl shadow-elegant flex items-center gap-2 animate-fade-up">
+          <Check className="w-4 h-4" />
+          <span>Profile changes saved successfully!</span>
+        </div>
+      )}
+
+      {/* Top Header Navigation Tabs */}
+      <div className="bg-surface border border-border rounded-2xl p-2 shadow-xs flex items-center gap-1.5 overflow-x-auto no-scrollbar select-none">
+        {PROFILE_SECTIONS.map((sec) => {
+          const Icon = sec.icon;
+          const isActive = activeSection === sec.id;
+          return (
+            <button
+              key={sec.id}
+              onClick={() => handleNavigate(sec.id)}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
+                isActive
+                  ? "bg-gradient-brand text-white shadow-elegant"
+                  : "text-ink-soft hover:text-ink hover:bg-secondary/60"
+              }`}
+            >
+              <Icon className={`w-4 h-4 ${isActive ? "text-white" : "text-primary-glow"}`} />
+              <span>{sec.label}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Main Section Render Area */}
+      <div>
+        {activeSection === "overview" && (
+          <Overview
+            profile={profile}
+            onNavigate={handleNavigate}
+            onCompleteProfile={() => handleNavigate("contacts")}
+          />
+        )}
+
+        {activeSection === "personal" && (
+          <PersonalSection
+            profile={profile}
+            onUpdate={setProfile}
+            onSave={handleSave}
+          />
+        )}
+
+        {activeSection === "contacts" && (
+          <ContactsSection
+            profile={profile}
+            onUpdate={setProfile}
+            onSave={handleSave}
+          />
+        )}
+
+        {activeSection === "education" && (
+          <EducationSection
+            profile={profile}
+            onUpdate={setProfile}
+            onSave={handleSave}
+          />
+        )}
+
+        {activeSection === "experience" && (
+          <ExperienceSection
+            profile={profile}
+            onUpdate={setProfile}
+            onSave={handleSave}
+          />
+        )}
+
+        {activeSection === "skills" && (
+          <SkillsSection
+            profile={profile}
+            onUpdate={setProfile}
+            onSave={handleSave}
+          />
+        )}
+      </div>
+    </div>
   );
 }
