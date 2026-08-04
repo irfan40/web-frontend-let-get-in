@@ -4,14 +4,16 @@ export interface UserProfile {
   id?: string;
   _id?: string;
   username?: string;
-  email: string;
+  email?: string;
+  phone?: string;
   fullName?: string;
   role: 'user' | 'admin';
   avatar?: string;
   avatarUrl?: string;
-  provider?: 'email' | 'google' | 'local';
+  provider?: 'email' | 'google' | 'local' | 'whatsapp';
   emailVerified?: boolean;
   isEmailVerified?: boolean;
+  phoneVerified?: boolean;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -37,9 +39,25 @@ export interface SendOtpApiResponse {
 }
 
 export class AuthService {
-  static async sendOtp(email: string): Promise<{ cooldown: number }> {
-    const response = await apiClient.post<never, SendOtpApiResponse>('/auth/send-otp', { email });
+  static async sendEmailOtp(email: string): Promise<{ cooldown: number }> {
+    const response = await apiClient.post<never, SendOtpApiResponse>('/auth/send-email-otp', { email });
     return response.data;
+  }
+
+  static async verifyEmailOtp(data: {
+    email: string;
+    username: string;
+    password: string;
+    confirmPassword: string;
+    otp: string;
+  }): Promise<UserProfile> {
+    const response = await apiClient.post<never, AuthApiResponse>('/auth/verify-email-otp', data);
+    return response.data.user;
+  }
+
+  // Alias for backward compatibility
+  static async sendOtp(email: string): Promise<{ cooldown: number }> {
+    return this.sendEmailOtp(email);
   }
 
   static async verifyOtp(data: {
@@ -49,7 +67,23 @@ export class AuthService {
     confirmPassword: string;
     otp: string;
   }): Promise<UserProfile> {
-    const response = await apiClient.post<never, AuthApiResponse>('/auth/verify-otp', data);
+    return this.verifyEmailOtp(data);
+  }
+
+  static async sendWhatsAppOtp(data: { countryCode: string; phone: string }): Promise<{ cooldown: number }> {
+    const response = await apiClient.post<never, SendOtpApiResponse>('/auth/send-whatsapp-otp', data);
+    return response.data;
+  }
+
+  static async verifyWhatsAppOtp(data: {
+    username: string;
+    countryCode?: string;
+    phone: string;
+    password: string;
+    confirmPassword: string;
+    otp: string;
+  }): Promise<UserProfile> {
+    const response = await apiClient.post<never, AuthApiResponse>('/auth/verify-whatsapp-otp', data);
     return response.data.user;
   }
 
@@ -60,11 +94,10 @@ export class AuthService {
     confirmPassword: string;
     otp: string;
   }): Promise<UserProfile> {
-    const response = await apiClient.post<never, AuthApiResponse>('/auth/signup', data);
-    return response.data.user;
+    return this.verifyEmailOtp(data);
   }
 
-  static async login(data: { email: string; password: string }): Promise<UserProfile> {
+  static async login(data: { email?: string; phone?: string; emailOrPhone?: string; password: string }): Promise<UserProfile> {
     const response = await apiClient.post<never, AuthApiResponse>('/auth/login', data);
     return response.data.user;
   }

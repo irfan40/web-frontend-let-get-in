@@ -13,15 +13,44 @@ import {
   Sparkles,
   Loader2,
   Lock,
+  MessageSquare,
+  Phone,
+  Globe,
 } from "lucide-react";
 import { useAuthStore } from "@/features/auth/store/useAuthStore";
 
 type Mode = "signin" | "signup";
 type Step = "form" | "verify" | "done";
+type VerificationMethod = "email" | "whatsapp";
+
+const COUNTRY_CODES = [
+  { code: "+1", country: "US/CA" },
+  { code: "+91", country: "IN" },
+  { code: "+44", country: "UK" },
+  { code: "+61", country: "AU" },
+  { code: "+49", country: "DE" },
+  { code: "+33", country: "FR" },
+  { code: "+81", country: "JP" },
+  { code: "+86", country: "CN" },
+  { code: "+55", country: "BR" },
+  { code: "+971", country: "UAE" },
+  { code: "+65", country: "SG" },
+];
 
 export default function AuthPage() {
   const router = useRouter();
-  const { login, googleLogin, sendOtp, verifyOtp, error, clearError, isAuthenticated, isLoading } = useAuthStore();
+  const {
+    login,
+    googleLogin,
+    sendEmailOtp,
+    verifyEmailOtp,
+    sendWhatsAppOtp,
+    verifyWhatsAppOtp,
+    error,
+    clearError,
+    isAuthenticated,
+    isLoading,
+  } = useAuthStore();
 
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
@@ -30,11 +59,14 @@ export default function AuthPage() {
   }, [isAuthenticated, isLoading, router]);
 
   const [mode, setMode] = useState<Mode>("signup");
+  const [verificationMethod, setVerificationMethod] = useState<VerificationMethod>("email");
   const [step, setStep] = useState<Step>("form");
 
   // Form fields
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
+  const [countryCode, setCountryCode] = useState("+1");
+  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
@@ -78,7 +110,7 @@ export default function AuthPage() {
     setLocalError("Google sign-in popup was closed or failed to initialize.");
   };
 
-  // Step 1: Send OTP for Email Signup
+  // Step 1: Send OTP for Email or WhatsApp Signup
   const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     clearError();
@@ -88,10 +120,19 @@ export default function AuthPage() {
       setLocalError("Username is required.");
       return;
     }
-    if (!email.trim()) {
-      setLocalError("Email address is required.");
-      return;
+
+    if (verificationMethod === "email") {
+      if (!email.trim()) {
+        setLocalError("Email address is required.");
+        return;
+      }
+    } else {
+      if (!phone.trim()) {
+        setLocalError("WhatsApp phone number is required.");
+        return;
+      }
     }
+
     if (!password) {
       setLocalError("Password is required.");
       return;
@@ -107,7 +148,11 @@ export default function AuthPage() {
 
     setIsSubmitting(true);
     try {
-      await sendOtp(email.trim());
+      if (verificationMethod === "email") {
+        await sendEmailOtp(email.trim());
+      } else {
+        await sendWhatsAppOtp({ countryCode, phone: phone.trim() });
+      }
       setOtp(["", "", "", "", "", ""]);
       setStep("verify");
     } catch (err: unknown) {
@@ -132,13 +177,24 @@ export default function AuthPage() {
 
     setIsSubmitting(true);
     try {
-      await verifyOtp({
-        username: username.trim(),
-        email: email.trim(),
-        password,
-        confirmPassword,
-        otp: otpCode,
-      });
+      if (verificationMethod === "email") {
+        await verifyEmailOtp({
+          username: username.trim(),
+          email: email.trim(),
+          password,
+          confirmPassword,
+          otp: otpCode,
+        });
+      } else {
+        await verifyWhatsAppOtp({
+          username: username.trim(),
+          countryCode,
+          phone: phone.trim(),
+          password,
+          confirmPassword,
+          otp: otpCode,
+        });
+      }
       setStep("done");
     } catch (err: unknown) {
       const msg = (err as { message?: string })?.message || "OTP verification failed.";
@@ -148,14 +204,14 @@ export default function AuthPage() {
     }
   };
 
-  // Manual Email/Password Sign In
+  // Manual Email/Phone Sign In
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     clearError();
     setLocalError(null);
 
-    if (!email.trim()) {
-      setLocalError("Email address is required.");
+    if (!email.trim() && !phone.trim()) {
+      setLocalError("Email address or Phone number is required.");
       return;
     }
     if (!password) {
@@ -165,7 +221,8 @@ export default function AuthPage() {
 
     setIsSubmitting(true);
     try {
-      await login({ email: email.trim(), password });
+      const identifier = email.trim() || `${countryCode}${phone.trim()}`;
+      await login({ emailOrPhone: identifier, password });
       router.push("/demo");
     } catch (err: unknown) {
       const msg = (err as { message?: string })?.message || "Sign in failed.";
@@ -271,11 +328,51 @@ export default function AuthPage() {
                 </div>
               </div>
 
-              <Divider label="OR WITH EMAIL" />
+              <Divider label={mode === "signup" ? "OR WITH OTP VERIFICATION" : "OR WITH CREDENTIALS"} />
 
               {/* Sign Up Form */}
               {mode === "signup" ? (
                 <form onSubmit={handleSendOtp} className="space-y-4">
+                  {/* Verify With Selector */}
+                  <div className="mb-4">
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-ink-soft mb-2">
+                      Verify With
+                    </label>
+                    <div className="grid grid-cols-2 gap-2 p-1 bg-surface rounded-xl border border-border">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          clearError();
+                          setLocalError(null);
+                          setVerificationMethod("email");
+                        }}
+                        className={`py-2 text-xs font-semibold rounded-lg transition flex items-center justify-center gap-1.5 ${
+                          verificationMethod === "email"
+                            ? "bg-white text-ink shadow-sm border border-border font-bold"
+                            : "text-ink-soft hover:text-ink"
+                        }`}
+                      >
+                        <Mail className="w-3.5 h-3.5" /> Email
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          clearError();
+                          setLocalError(null);
+                          setVerificationMethod("whatsapp");
+                        }}
+                        className={`py-2 text-xs font-semibold rounded-lg transition flex items-center justify-center gap-1.5 ${
+                          verificationMethod === "whatsapp"
+                            ? "bg-white text-ink shadow-sm border border-border font-bold text-emerald-600"
+                            : "text-ink-soft hover:text-ink"
+                        }`}
+                      >
+                        <MessageSquare className="w-3.5 h-3.5 text-emerald-500" /> WhatsApp
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Username Field */}
                   <Field label="Username">
                     <div className="relative">
                       <User className="w-4 h-4 text-ink-soft absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -290,20 +387,58 @@ export default function AuthPage() {
                     </div>
                   </Field>
 
-                  <Field label="Email Address">
-                    <div className="relative">
-                      <Mail className="w-4 h-4 text-ink-soft absolute left-3.5 top-1/2 -translate-y-1/2" />
-                      <input
-                        type="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        placeholder="name@company.com"
-                        className="input-base pl-10"
-                        required
-                      />
+                  {/* Conditional Email vs WhatsApp Fields */}
+                  {verificationMethod === "email" ? (
+                    <Field label="Email Address">
+                      <div className="relative">
+                        <Mail className="w-4 h-4 text-ink-soft absolute left-3.5 top-1/2 -translate-y-1/2" />
+                        <input
+                          type="email"
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          placeholder="name@company.com"
+                          className="input-base pl-10"
+                          required
+                        />
+                      </div>
+                    </Field>
+                  ) : (
+                    <div className="grid grid-cols-3 gap-3">
+                      <Field label="Country Code">
+                        <div className="relative">
+                          <Globe className="w-3.5 h-3.5 text-ink-soft absolute left-2.5 top-1/2 -translate-y-1/2" />
+                          <select
+                            value={countryCode}
+                            onChange={(e) => setCountryCode(e.target.value)}
+                            className="input-base pl-8 text-xs appearance-none font-semibold cursor-pointer"
+                          >
+                            {COUNTRY_CODES.map((c) => (
+                              <option key={c.code} value={c.code}>
+                                {c.code} ({c.country})
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      </Field>
+                      <div className="col-span-2">
+                        <Field label="WhatsApp Number">
+                          <div className="relative">
+                            <Phone className="w-4 h-4 text-ink-soft absolute left-3.5 top-1/2 -translate-y-1/2" />
+                            <input
+                              type="tel"
+                              value={phone}
+                              onChange={(e) => setPhone(e.target.value)}
+                              placeholder="1234567890"
+                              className="input-base pl-10"
+                              required
+                            />
+                          </div>
+                        </Field>
+                      </div>
                     </div>
-                  </Field>
+                  )}
 
+                  {/* Password & Confirm Password Fields */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <Field label="Password">
                       <div className="relative">
@@ -350,21 +485,27 @@ export default function AuthPage() {
                         <Loader2 className="w-4 h-4 animate-spin" /> Sending Verification Code…
                       </>
                     ) : (
-                      <>Send Verification OTP</>
+                      <>
+                        {verificationMethod === "email" ? (
+                          <>Send Email OTP</>
+                        ) : (
+                          <>Send WhatsApp OTP</>
+                        )}
+                      </>
                     )}
                   </button>
                 </form>
               ) : (
                 /* Sign In Form */
                 <form onSubmit={handleSignIn} className="space-y-4">
-                  <Field label="Email Address">
+                  <Field label="Email or Phone Number">
                     <div className="relative">
                       <Mail className="w-4 h-4 text-ink-soft absolute left-3.5 top-1/2 -translate-y-1/2" />
                       <input
-                        type="email"
+                        type="text"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        placeholder="name@company.com"
+                        placeholder="email@example.com or +11234567890"
                         className="input-base pl-10"
                         required
                       />
@@ -422,10 +563,14 @@ export default function AuthPage() {
                 <ShieldCheck className="w-7 h-7 text-primary-glow" />
               </div>
               <h1 className="text-3xl font-extrabold text-ink tracking-tight">
-                Verify your Email
+                {verificationMethod === "email" ? "Verify your Email" : "Verify your WhatsApp"}
               </h1>
               <p className="text-ink-soft mt-2 text-sm">
-                We sent a 6-digit code to <span className="font-medium text-ink">{email}</span>.
+                We sent a 6-digit code to{" "}
+                <span className="font-medium text-ink">
+                  {verificationMethod === "email" ? email : `${countryCode}${phone}`}
+                </span>
+                .
               </p>
 
               <form onSubmit={handleVerifyOtp} className="mt-8 space-y-5">
@@ -476,7 +621,7 @@ export default function AuthPage() {
                     onClick={() => setStep("form")}
                     className="text-primary-glow font-medium hover:underline"
                   >
-                    Resend or change email
+                    Resend or change details
                   </button>
                 </p>
               </form>

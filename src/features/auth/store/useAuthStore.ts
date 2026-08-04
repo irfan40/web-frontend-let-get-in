@@ -8,16 +8,36 @@ interface AuthState {
   isLoading: boolean; // Alias for loading
   error: string | null;
 
-  login: (data: { email: string; password: string }) => Promise<UserProfile>;
+  login: (data: { email?: string; phone?: string; emailOrPhone?: string; password: string }) => Promise<UserProfile>;
   googleLogin: (credential: string) => Promise<UserProfile>;
-  sendOtp: (email: string) => Promise<{ cooldown: number }>;
-  verifyOtp: (data: {
+  sendEmailOtp: (email: string) => Promise<{ cooldown: number }>;
+  verifyEmailOtp: (data: {
     email: string;
     username: string;
     password: string;
     confirmPassword: string;
     otp: string;
   }) => Promise<UserProfile>;
+
+  sendOtp: (email: string) => Promise<{ cooldown: number }>; // Alias for sendEmailOtp
+  verifyOtp: (data: {
+    email: string;
+    username: string;
+    password: string;
+    confirmPassword: string;
+    otp: string;
+  }) => Promise<UserProfile>; // Alias for verifyEmailOtp
+
+  sendWhatsAppOtp: (data: { countryCode: string; phone: string }) => Promise<{ cooldown: number }>;
+  verifyWhatsAppOtp: (data: {
+    username: string;
+    countryCode?: string;
+    phone: string;
+    password: string;
+    confirmPassword: string;
+    otp: string;
+  }) => Promise<UserProfile>;
+
   emailSignup: (data: {
     email: string;
     username: string;
@@ -25,6 +45,7 @@ interface AuthState {
     confirmPassword: string;
     otp: string;
   }) => Promise<UserProfile>;
+
   logout: () => Promise<void>;
   refresh: () => Promise<UserProfile | null>;
   fetchCurrentUser: () => Promise<UserProfile | null>;
@@ -99,38 +120,76 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
-  sendOtp: async (email: string) => {
+  sendEmailOtp: async (email: string) => {
     set({ error: null });
     try {
-      return await AuthService.sendOtp(email);
+      return await AuthService.sendEmailOtp(email);
     } catch (err: unknown) {
       const errorMsg =
         (err as { error?: { message?: string } })?.error?.message ||
         (err as { message?: string })?.message ||
-        'Failed to send verification OTP';
+        'Failed to send Email OTP';
       set({ error: errorMsg });
       throw new Error(errorMsg);
     }
   },
 
-  verifyOtp: async (data) => {
+  verifyEmailOtp: async (data) => {
     set({ loading: true, isLoading: true, error: null });
     try {
-      const user = await AuthService.verifyOtp(data);
+      const user = await AuthService.verifyEmailOtp(data);
       set({ user, isAuthenticated: true, loading: false, isLoading: false });
       return user;
     } catch (err: unknown) {
       const errorMsg =
         (err as { error?: { message?: string } })?.error?.message ||
         (err as { message?: string })?.message ||
-        'OTP verification failed';
+        'Email OTP verification failed';
+      set({ error: errorMsg, loading: false, isLoading: false });
+      throw new Error(errorMsg);
+    }
+  },
+
+  sendOtp: async (email: string) => {
+    return get().sendEmailOtp(email);
+  },
+
+  verifyOtp: async (data) => {
+    return get().verifyEmailOtp(data);
+  },
+
+  sendWhatsAppOtp: async (data) => {
+    set({ error: null });
+    try {
+      return await AuthService.sendWhatsAppOtp(data);
+    } catch (err: unknown) {
+      const errorMsg =
+        (err as { error?: { message?: string } })?.error?.message ||
+        (err as { message?: string })?.message ||
+        'Failed to send WhatsApp OTP';
+      set({ error: errorMsg });
+      throw new Error(errorMsg);
+    }
+  },
+
+  verifyWhatsAppOtp: async (data) => {
+    set({ loading: true, isLoading: true, error: null });
+    try {
+      const user = await AuthService.verifyWhatsAppOtp(data);
+      set({ user, isAuthenticated: true, loading: false, isLoading: false });
+      return user;
+    } catch (err: unknown) {
+      const errorMsg =
+        (err as { error?: { message?: string } })?.error?.message ||
+        (err as { message?: string })?.message ||
+        'WhatsApp OTP verification failed';
       set({ error: errorMsg, loading: false, isLoading: false });
       throw new Error(errorMsg);
     }
   },
 
   emailSignup: async (data) => {
-    return get().verifyOtp(data);
+    return get().verifyEmailOtp(data);
   },
 
   refresh: async () => {
