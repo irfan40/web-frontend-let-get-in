@@ -21,7 +21,9 @@ function BuilderContent() {
   const { loadResume } = useResumeStore();
   const { isAuthenticated } = useAuthStore();
   const [isChatOpen, setIsChatOpen] = useState(true);
-  const [activeMobileTab, setActiveMobileTab] = useState<"form" | "chat" | "preview">("form");
+  const [activeMobileTab, setActiveMobileTab] = useState<
+    "form" | "chat" | "preview"
+  >("form");
 
   // Initialize Autosave Hook
   useAutosave();
@@ -90,9 +92,9 @@ function BuilderContent() {
           <FormAtsHeader />
 
           {/* 2. Horizontal Form Navigation Tabs */}
-          <div className="mb-3">
+          {/* <div className="mb-3">
             <SectionNav />
-          </div>
+          </div> */}
 
           {/* 3. Active Form Fields Container */}
           <div className="flex-1 overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-border">
