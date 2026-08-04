@@ -59,7 +59,8 @@ export default function AuthPage() {
   }, [isAuthenticated, isLoading, router]);
 
   const [mode, setMode] = useState<Mode>("signup");
-  const [verificationMethod, setVerificationMethod] = useState<VerificationMethod>("email");
+  const [verificationMethod, setVerificationMethod] =
+    useState<VerificationMethod>("email");
   const [step, setStep] = useState<Step>("form");
 
   // Form fields
@@ -85,7 +86,9 @@ export default function AuthPage() {
   };
 
   // Google Login Callback
-  const handleGoogleSuccess = async (credentialResponse: CredentialResponse) => {
+  const handleGoogleSuccess = async (
+    credentialResponse: CredentialResponse,
+  ) => {
     clearError();
     setLocalError(null);
 
@@ -99,7 +102,9 @@ export default function AuthPage() {
       await googleLogin(credentialResponse.credential);
       router.push("/demo");
     } catch (err: unknown) {
-      const msg = (err as { message?: string })?.message || "Google Authentication failed";
+      const msg =
+        (err as { message?: string })?.message ||
+        "Google Authentication failed";
       setLocalError(msg);
     } finally {
       setIsSubmitting(false);
@@ -156,7 +161,9 @@ export default function AuthPage() {
       setOtp(["", "", "", "", "", ""]);
       setStep("verify");
     } catch (err: unknown) {
-      const msg = (err as { message?: string })?.message || "Failed to send verification code.";
+      const msg =
+        (err as { message?: string })?.message ||
+        "Failed to send verification code.";
       setLocalError(msg);
     } finally {
       setIsSubmitting(false);
@@ -197,7 +204,8 @@ export default function AuthPage() {
       }
       setStep("done");
     } catch (err: unknown) {
-      const msg = (err as { message?: string })?.message || "OTP verification failed.";
+      const msg =
+        (err as { message?: string })?.message || "OTP verification failed.";
       setLocalError(msg);
     } finally {
       setIsSubmitting(false);
@@ -238,7 +246,9 @@ export default function AuthPage() {
     next[i] = digit;
     setOtp(next);
     if (digit && i < 5) {
-      const el = document.getElementById(`otp-${i + 1}`) as HTMLInputElement | null;
+      const el = document.getElementById(
+        `otp-${i + 1}`,
+      ) as HTMLInputElement | null;
       el?.focus();
     }
   };
@@ -272,7 +282,8 @@ export default function AuthPage() {
                 <h1 className="text-3xl sm:text-4xl font-extrabold text-ink tracking-tight">
                   {mode === "signup" ? (
                     <>
-                      Create your <span className="text-gradient-brand">Account</span>
+                      Create your{" "}
+                      <span className="text-gradient-brand">Account</span>
                     </>
                   ) : (
                     <>
@@ -315,20 +326,26 @@ export default function AuthPage() {
 
               {/* Official Google OAuth Component */}
               <div className="w-full mb-6">
-                <div className="w-full flex justify-center">
+                <div className="flex p-1 bg-surface rounded-xl border border-border justify-center">
                   <GoogleLogin
                     onSuccess={handleGoogleSuccess}
                     onError={handleGoogleError}
-                    shape="rectangular"
                     theme="outline"
+                    shape="pill"
                     size="large"
                     text={mode === "signup" ? "signup_with" : "signin_with"}
-                    width="384"
+                    width="500"
                   />
                 </div>
               </div>
 
-              <Divider label={mode === "signup" ? "OR WITH OTP VERIFICATION" : "OR WITH CREDENTIALS"} />
+              <Divider
+                label={
+                  mode === "signup"
+                    ? "OR WITH OTP VERIFICATION"
+                    : "OR WITH CREDENTIALS"
+                }
+              />
 
               {/* Sign Up Form */}
               {mode === "signup" ? (
@@ -367,7 +384,8 @@ export default function AuthPage() {
                             : "text-ink-soft hover:text-ink"
                         }`}
                       >
-                        <MessageSquare className="w-3.5 h-3.5 text-emerald-500" /> WhatsApp
+                        <MessageSquare className="w-3.5 h-3.5 text-emerald-500" />{" "}
+                        WhatsApp
                       </button>
                     </div>
                   </div>
@@ -482,7 +500,8 @@ export default function AuthPage() {
                   >
                     {isSubmitting ? (
                       <>
-                        <Loader2 className="w-4 h-4 animate-spin" /> Sending Verification Code…
+                        <Loader2 className="w-4 h-4 animate-spin" /> Sending
+                        Verification Code…
                       </>
                     ) : (
                       <>
@@ -563,12 +582,16 @@ export default function AuthPage() {
                 <ShieldCheck className="w-7 h-7 text-primary-glow" />
               </div>
               <h1 className="text-3xl font-extrabold text-ink tracking-tight">
-                {verificationMethod === "email" ? "Verify your Email" : "Verify your WhatsApp"}
+                {verificationMethod === "email"
+                  ? "Verify your Email"
+                  : "Verify your WhatsApp"}
               </h1>
               <p className="text-ink-soft mt-2 text-sm">
                 We sent a 6-digit code to{" "}
                 <span className="font-medium text-ink">
-                  {verificationMethod === "email" ? email : `${countryCode}${phone}`}
+                  {verificationMethod === "email"
+                    ? email
+                    : `${countryCode}${phone}`}
                 </span>
                 .
               </p>
@@ -585,7 +608,9 @@ export default function AuthPage() {
                       onChange={(e) => setOtpAt(i, e.target.value)}
                       onKeyDown={(e) => {
                         if (e.key === "Backspace" && !otp[i] && i > 0) {
-                          const el = document.getElementById(`otp-${i - 1}`) as HTMLInputElement | null;
+                          const el = document.getElementById(
+                            `otp-${i - 1}`,
+                          ) as HTMLInputElement | null;
                           el?.focus();
                         }
                       }}
@@ -607,7 +632,8 @@ export default function AuthPage() {
                 >
                   {isSubmitting ? (
                     <>
-                      <Loader2 className="w-4 h-4 animate-spin" /> Verifying OTP…
+                      <Loader2 className="w-4 h-4 animate-spin" /> Verifying
+                      OTP…
                     </>
                   ) : (
                     <>Verify & Create Account</>
@@ -637,7 +663,8 @@ export default function AuthPage() {
                 Account Verified! 🎉
               </h1>
               <p className="text-ink-soft mt-3 max-w-sm mx-auto text-sm">
-                Your account has been created and verified. You are now logged in.
+                Your account has been created and verified. You are now logged
+                in.
               </p>
               <button
                 type="button"
@@ -662,10 +689,13 @@ export default function AuthPage() {
             <Sparkles className="w-3.5 h-3.5" /> AI-Powered Career Suite
           </div>
           <h2 className="text-4xl font-extrabold leading-tight">
-            Production-Grade<br />Resume & Identity.
+            Production-Grade
+            <br />
+            Resume & Identity.
           </h2>
           <p className="mt-4 text-white/80 text-lg leading-relaxed">
-            Build ATS-optimized resumes backed by robust authentication, real-time AI scoring, and secure cloud storage.
+            Build ATS-optimized resumes backed by robust authentication,
+            real-time AI scoring, and secure cloud storage.
           </p>
 
           <div className="mt-10 space-y-3">
@@ -686,7 +716,13 @@ export default function AuthPage() {
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
   return (
     <label className="block">
       <span className="block text-sm font-medium text-ink mb-1.5">{label}</span>
@@ -699,7 +735,9 @@ function Divider({ label }: { label: string }) {
   return (
     <div className="flex items-center gap-3 my-6">
       <div className="flex-1 h-px bg-border" />
-      <span className="text-xs font-semibold tracking-wider text-ink-soft">{label}</span>
+      <span className="text-xs font-semibold tracking-wider text-ink-soft">
+        {label}
+      </span>
       <div className="flex-1 h-px bg-border" />
     </div>
   );
