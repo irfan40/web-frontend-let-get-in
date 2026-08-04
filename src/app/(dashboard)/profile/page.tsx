@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/features/auth/store/useAuthStore";
 import {
@@ -20,7 +20,20 @@ import {
   Check,
   Trash2,
   ExternalLink,
+  Clock,
+  AlertCircle,
+  FileCheck,
+  TrendingUp,
 } from "lucide-react";
+import {
+  VerificationService,
+  VerificationResponse,
+  VerificationDocument,
+  SectionType,
+  VerificationStatus,
+} from "@/features/profile/services/verificationService";
+import { VerificationBadge } from "@/features/profile/components/VerificationBadge";
+import { SectionVerificationBox } from "@/features/profile/components/SectionVerificationBox";
 
 export type Track = "fresher" | "experienced";
 export type Mode = "resume" | "manual";
@@ -154,13 +167,13 @@ const DEFAULT_PROFILE: ProfileData = {
 };
 
 /* --- Circular Progress Ring --- */
-function ProgressRing({ percent }: { percent: number }) {
+function ProgressRing({ percent, label }: { percent: number; label?: string }) {
   const radius = 36;
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference - (percent / 100) * circumference;
 
   return (
-    <div className="relative w-24 h-24 flex items-center justify-center">
+    <div className="relative w-24 h-24 flex flex-col items-center justify-center">
       <svg className="w-full h-full transform -rotate-90" viewBox="0 0 96 96">
         <circle
           cx="48"
@@ -182,7 +195,10 @@ function ProgressRing({ percent }: { percent: number }) {
           fill="transparent"
         />
       </svg>
-      <span className="absolute text-xl font-extrabold text-white">{percent}%</span>
+      <div className="absolute text-center">
+        <span className="text-xl font-extrabold text-white block">{percent}%</span>
+        {label && <span className="text-[9px] uppercase tracking-wider text-white/80">{label}</span>}
+      </div>
     </div>
   );
 }
@@ -225,7 +241,7 @@ function PreviewCard({
   emptyText,
   cta,
   onCta,
-  verified,
+  verifiedStatus,
 }: {
   title: string;
   icon: React.ElementType;
@@ -235,7 +251,7 @@ function PreviewCard({
   emptyText: string;
   cta: string;
   onCta: () => void;
-  verified?: "verified" | "unverified";
+  verifiedStatus?: VerificationStatus;
 }) {
   return (
     <div className="p-5 rounded-2xl bg-surface border border-border shadow-xs flex flex-col justify-between space-y-4">
@@ -246,17 +262,7 @@ function PreviewCard({
           </div>
           <h3 className="font-bold text-ink text-sm">{title}</h3>
         </div>
-        {verified && (
-          <span
-            className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
-              verified === "verified"
-                ? "bg-success/10 text-success border border-success/20"
-                : "bg-amber-500/10 text-amber-600 border border-amber-500/20"
-            }`}
-          >
-            {verified}
-          </span>
-        )}
+        {verifiedStatus && <VerificationBadge status={verifiedStatus} size="sm" />}
       </div>
 
       {filled ? (
@@ -279,11 +285,22 @@ function PreviewCard({
 }
 
 /* --- Section Layout Utilities --- */
-function SectionHeader({ title, subtitle }: { title: string; subtitle: string }) {
+function SectionHeader({
+  title,
+  subtitle,
+  status,
+}: {
+  title: string;
+  subtitle: string;
+  status?: VerificationStatus;
+}) {
   return (
-    <div className="mb-2">
-      <h2 className="text-xl font-extrabold text-ink tracking-tight">{title}</h2>
-      <p className="text-xs text-ink-soft mt-0.5">{subtitle}</p>
+    <div className="flex items-center justify-between flex-wrap gap-2 mb-2">
+      <div>
+        <h2 className="text-xl font-extrabold text-ink tracking-tight">{title}</h2>
+        <p className="text-xs text-ink-soft mt-0.5">{subtitle}</p>
+      </div>
+      {status && <VerificationBadge status={status} size="lg" />}
     </div>
   );
 }
@@ -292,13 +309,13 @@ function Card({
   icon: Icon,
   iconColor = "text-primary-glow",
   title,
-  verified,
+  verifiedStatus,
   children,
 }: {
   icon: React.ElementType;
   iconColor?: string;
   title: string;
-  verified?: "verified" | "unverified";
+  verifiedStatus?: VerificationStatus;
   children: React.ReactNode;
 }) {
   return (
@@ -310,17 +327,7 @@ function Card({
           </div>
           <h3 className="font-bold text-ink text-sm">{title}</h3>
         </div>
-        {verified && (
-          <span
-            className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider ${
-              verified === "verified"
-                ? "bg-success/10 text-success border border-success/20"
-                : "bg-amber-500/10 text-amber-600 border border-amber-500/20"
-            }`}
-          >
-            {verified}
-          </span>
-        )}
+        {verifiedStatus && <VerificationBadge status={verifiedStatus} size="sm" />}
       </div>
       <div>{children}</div>
     </div>
@@ -360,13 +367,15 @@ function EmptyList({ title, subtitle }: { title: string; subtitle: string }) {
   );
 }
 
-/* --- OVERVIEW SECTION --- */
+/* --- OVERVIEW SECTION ENHANCED --- */
 function Overview({
   profile,
+  verificationData,
   onNavigate,
   onCompleteProfile,
 }: {
   profile: ProfileData;
+  verificationData?: VerificationResponse | null;
   onNavigate: (s: SectionId) => void;
   onCompleteProfile: () => void;
 }) {
@@ -396,22 +405,32 @@ function Overview({
   }, [profile]);
 
   const requiredChecks = checks.filter((c) => !("optional" in c && c.optional));
-  const percent = Math.round(
-    (requiredChecks.filter((c) => c.done).length / requiredChecks.length) * 100,
+  const profilePercent = Math.round(
+    (requiredChecks.filter((c) => c.done).length / requiredChecks.length) * 100
   );
-  const nextStep = checks.find((c) => !c.done);
+
+  const verificationPercent = verificationData?.stats.verificationPercent ?? 0;
+  const verifiedCount = verificationData?.stats.verifiedCount ?? 0;
+  const pendingCount = verificationData?.stats.pendingCount ?? 0;
+  const rejectedCount = verificationData?.stats.rejectedCount ?? 0;
+  const totalDocs = verificationData?.stats.totalDocuments ?? 0;
+  const timeline = verificationData?.timeline || [];
 
   const displayName =
     profile.contact.fullName.trim().split(" ")[0] ||
     profile.personal.firstName.trim() ||
     "there";
 
+  const getSectionDocStatus = (sec: SectionType): VerificationStatus => {
+    return verificationData?.sections?.[sec]?.status || "unsubmitted";
+  };
+
   return (
     <div className="space-y-6 animate-fade-up">
-      {/* Welcome + progress hero */}
+      {/* Welcome + Progress Hero */}
       <section className="relative overflow-hidden rounded-2xl bg-gradient-brand p-6 sm:p-8 text-white shadow-elegant">
         <div className="absolute -right-16 -top-16 w-64 h-64 rounded-full bg-white/10 blur-3xl" />
-        <div className="relative grid lg:grid-cols-[1fr_auto] gap-6 items-center">
+        <div className="relative grid lg:grid-cols-[1fr_auto_auto] gap-6 items-center">
           <div>
             <div className="flex flex-wrap items-center gap-3 mb-2">
               <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
@@ -425,10 +444,9 @@ function Overview({
                   : "Candidate"}
               </span>
             </div>
-            <p className="text-white/85 max-w-xl">
-              {percent === 100
-                ? "Your profile is complete — you're ready to be discovered by employers."
-                : `Your profile is ${percent}% complete. ${nextStep ? `Next up: ${nextStep.label.toLowerCase()}.` : ""}`}
+            <p className="text-white/85 max-w-xl text-sm">
+              Profile Completion: <strong>{profilePercent}%</strong> • Identity Verification:{" "}
+              <strong>{verificationPercent}%</strong> ({verifiedCount} of 5 sections verified)
             </p>
             <div className="flex flex-wrap gap-3 mt-6">
               <button
@@ -436,7 +454,7 @@ function Overview({
                 className="inline-flex items-center gap-2 bg-white text-primary font-semibold px-4 py-2 rounded-full text-sm hover:shadow-glow transition cursor-pointer"
               >
                 <Sparkles className="w-4 h-4 text-primary-glow" />
-                {percent === 0 ? "Start profile" : percent === 100 ? "Review profile" : "Continue profile"}
+                {profilePercent === 100 ? "Review profile" : "Continue profile"}
               </button>
               <button
                 onClick={() => onNavigate("generate")}
@@ -447,19 +465,62 @@ function Overview({
             </div>
           </div>
 
-          {/* Circular progress */}
-          <div className="justify-self-center lg:justify-self-end">
-            <ProgressRing percent={percent} />
+          {/* Progress Rings */}
+          <div className="flex items-center gap-4 justify-self-center lg:justify-self-end">
+            <ProgressRing percent={profilePercent} label="Profile" />
+            <ProgressRing percent={verificationPercent} label="Verified" />
           </div>
         </div>
       </section>
 
-      {/* Profile checklist */}
+      {/* Verification Status Summary Grid */}
+      <section className="grid sm:grid-cols-4 gap-4">
+        <div className="p-4 rounded-2xl bg-surface border border-border shadow-xs flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center">
+            <CheckCircle2 className="w-5 h-5" />
+          </div>
+          <div>
+            <p className="text-xl font-extrabold text-ink">{verifiedCount} / 5</p>
+            <p className="text-xs text-ink-soft">Verified Sections</p>
+          </div>
+        </div>
+        <div className="p-4 rounded-2xl bg-surface border border-border shadow-xs flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center">
+            <Clock className="w-5 h-5" />
+          </div>
+          <div>
+            <p className="text-xl font-extrabold text-ink">{pendingCount}</p>
+            <p className="text-xs text-ink-soft">Pending Review</p>
+          </div>
+        </div>
+        <div className="p-4 rounded-2xl bg-surface border border-border shadow-xs flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-rose-500/10 text-rose-500 flex items-center justify-center">
+            <AlertCircle className="w-5 h-5" />
+          </div>
+          <div>
+            <p className="text-xl font-extrabold text-ink">{rejectedCount}</p>
+            <p className="text-xs text-ink-soft">Rejected Documents</p>
+          </div>
+        </div>
+        <div className="p-4 rounded-2xl bg-surface border border-border shadow-xs flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary-glow flex items-center justify-center">
+            <FileCheck className="w-5 h-5" />
+          </div>
+          <div>
+            <p className="text-xl font-extrabold text-ink">{totalDocs}</p>
+            <p className="text-xs text-ink-soft">Total Documents</p>
+          </div>
+        </div>
+      </section>
+
+      {/* Profile Checklist & Verification Statuses */}
       <section className="rounded-2xl bg-surface border border-border p-6 shadow-sm">
         <div className="flex items-center justify-between flex-wrap gap-2">
           <div>
-            <h2 className="text-lg font-bold text-ink">Profile checklist</h2>
-            <p className="text-sm text-ink-soft">Complete each step to unlock your verified CV.</p>
+            <h2 className="text-lg font-bold text-ink">Profile & Verification Checklist</h2>
+            <p className="text-sm text-ink-soft">
+              Complete profile sections and upload documents for AI verification.
+            </p>
           </div>
           <span className="text-xs font-semibold text-ink-soft">
             {requiredChecks.filter((c) => c.done).length} of {requiredChecks.length} done
@@ -468,60 +529,78 @@ function Overview({
         <div className="mt-4 h-2 rounded-full bg-secondary overflow-hidden">
           <div
             className="h-full bg-gradient-brand transition-all duration-500"
-            style={{ width: `${percent}%` }}
+            style={{ width: `${profilePercent}%` }}
           />
         </div>
         <ul className="mt-5 divide-y divide-border">
-          {checks.map((c) => (
-            <li key={c.key} className="flex items-center justify-between py-3">
-              <div className="flex items-center gap-3">
-                {c.done ? (
-                  <CheckCircle2 className="w-5 h-5 text-success" />
-                ) : (
-                  <span className="w-5 h-5 rounded-full border-2 border-border" />
-                )}
-                <span className={c.done ? "text-ink font-medium text-sm" : "text-ink-soft text-sm"}>
-                  {c.label}
-                </span>
-                {"optional" in c && c.optional && (
-                  <span className="text-[10px] font-semibold uppercase tracking-wide text-ink-soft/70 bg-secondary px-1.5 py-0.5 rounded">
-                    Optional
+          {checks.map((c) => {
+            const secStatus = getSectionDocStatus(c.section as SectionType);
+            return (
+              <li key={c.key} className="flex items-center justify-between py-3">
+                <div className="flex items-center gap-3">
+                  {c.done ? (
+                    <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                  ) : (
+                    <span className="w-5 h-5 rounded-full border-2 border-border" />
+                  )}
+                  <span className={c.done ? "text-ink font-medium text-sm" : "text-ink-soft text-sm"}>
+                    {c.label}
                   </span>
-                )}
-              </div>
-              <button
-                onClick={() => onNavigate(c.section)}
-                className="text-sm font-semibold text-primary-glow hover:underline cursor-pointer"
-              >
-                {c.done ? "Edit" : "Add"}
-              </button>
-            </li>
-          ))}
+                  {"optional" in c && c.optional && (
+                    <span className="text-[10px] font-semibold uppercase tracking-wide text-ink-soft/70 bg-secondary px-1.5 py-0.5 rounded">
+                      Optional
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-3">
+                  <VerificationBadge status={secStatus} size="sm" />
+                  <button
+                    onClick={() => onNavigate(c.section)}
+                    className="text-sm font-semibold text-primary-glow hover:underline cursor-pointer"
+                  >
+                    {c.done ? "Edit & Verify" : "Add"}
+                  </button>
+                </div>
+              </li>
+            );
+          })}
         </ul>
       </section>
 
-      {/* Helpful tips */}
-      <section className="grid md:grid-cols-3 gap-4">
-        <TipCard
-          icon={ShieldCheck}
-          title="Get verified"
-          body="Verified candidates get 3x more views from recruiters."
-        />
-        <TipCard
-          icon={Compass}
-          title="Explore roles"
-          body="See jobs ranked by how well they match your skills."
-          onClick={() => onNavigate("overview")}
-        />
-        <TipCard
-          icon={FileText}
-          title="Generate CV"
-          body="Turn your verified profile into a polished, downloadable CV."
-          onClick={() => onNavigate("generate")}
-        />
-      </section>
+      {/* Verification Timeline Card */}
+      {timeline.length > 0 && (
+        <section className="rounded-2xl bg-surface border border-border p-6 shadow-sm space-y-4">
+          <h2 className="text-lg font-bold text-ink flex items-center gap-2">
+            <TrendingUp className="w-5 h-5 text-primary-glow" /> Verification Timeline
+          </h2>
+          <div className="relative border-l border-border ml-3 space-y-4 pl-4">
+            {timeline.map((item) => (
+              <div key={item.id} className="relative space-y-1">
+                <div className="absolute -left-[21px] top-1.5 w-2.5 h-2.5 rounded-full bg-primary-glow" />
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <span className="font-bold text-ink text-xs">
+                    {item.documentType.replace(/_/g, " ").toUpperCase()} ({item.section})
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] text-ink-soft">
+                      {new Date(item.timestamp).toLocaleString()}
+                    </span>
+                    <VerificationBadge status={item.status} size="sm" />
+                  </div>
+                </div>
+                <p className="text-xs text-ink-soft">{item.originalName}</p>
+                {item.summary && (
+                  <p className="text-[11px] text-ink bg-secondary/40 p-2 rounded-lg mt-1">
+                    {item.summary}
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
-      {/* Preview cards */}
+      {/* Preview Cards */}
       <section className="grid md:grid-cols-2 gap-4">
         <PreviewCard
           title="Work Experience"
@@ -529,10 +608,14 @@ function Overview({
           filled={!!profile.experience.company.trim() || profile.experiencesList.length > 0}
           filledTitle={profile.experience.title || profile.experiencesList[0]?.title}
           filledSubtitle={profile.experience.company || profile.experiencesList[0]?.company}
-          emptyText={profile.track === "fresher" ? "You've marked yourself as a fresher" : "No work experience added yet"}
+          emptyText={
+            profile.track === "fresher"
+              ? "You've marked yourself as a fresher"
+              : "No work experience added yet"
+          }
           cta={profile.track === "fresher" ? "Add an internship" : "Add your first role"}
           onCta={() => onNavigate("experience")}
-          verified={!!profile.experience.company.trim() || profile.experiencesList.length > 0 ? "unverified" : undefined}
+          verifiedStatus={getSectionDocStatus("experience")}
         />
         <PreviewCard
           title="Education"
@@ -543,7 +626,7 @@ function Overview({
           emptyText="No education added yet"
           cta="Add your first degree"
           onCta={() => onNavigate("education")}
-          verified={!!profile.education.institution.trim() || profile.educationsList.length > 0 ? "unverified" : undefined}
+          verifiedStatus={getSectionDocStatus("education")}
         />
       </section>
     </div>
@@ -553,19 +636,30 @@ function Overview({
 /* --- PERSONAL DETAILS SECTION --- */
 function PersonalSection({
   profile,
+  verificationDocs,
+  verificationStatus,
   onUpdate,
   onSave,
+  onRefreshVerifications,
 }: {
   profile: ProfileData;
+  verificationDocs: VerificationDocument[];
+  verificationStatus: VerificationStatus;
   onUpdate: (updater: (prev: ProfileData) => ProfileData) => void;
   onSave: () => void;
+  onRefreshVerifications: () => void;
 }) {
   const { personal, experience } = profile;
 
   return (
     <div className="space-y-6 animate-fade-up">
-      <SectionHeader title="Personal Details" subtitle="Your public profile information." />
-      <Card icon={User} iconColor="text-primary-glow" title="Basic Info">
+      <SectionHeader
+        title="Personal Details"
+        subtitle="Your public profile and personal identity information."
+        status={verificationStatus}
+      />
+
+      <Card icon={User} iconColor="text-primary-glow" title="Basic Info" verifiedStatus={verificationStatus}>
         <div className="grid sm:grid-cols-2 gap-4">
           <Field label="First name">
             <input
@@ -650,6 +744,16 @@ function PersonalSection({
         </div>
         <SaveBar onSave={onSave} />
       </Card>
+
+      {/* Verification Document Pipeline Upload Component */}
+      <SectionVerificationBox
+        section="personal"
+        title="Personal Identity (Passport, Driving License, PAN)"
+        documents={verificationDocs}
+        status={verificationStatus}
+        profileData={personal}
+        onRefresh={onRefreshVerifications}
+      />
     </div>
   );
 }
@@ -657,21 +761,31 @@ function PersonalSection({
 /* --- CONTACT DETAILS SECTION --- */
 function ContactsSection({
   profile,
+  verificationDocs,
+  verificationStatus,
   onUpdate,
   onSave,
+  onRefreshVerifications,
 }: {
   profile: ProfileData;
+  verificationDocs: VerificationDocument[];
+  verificationStatus: VerificationStatus;
   onUpdate: (updater: (prev: ProfileData) => ProfileData) => void;
   onSave: () => void;
+  onRefreshVerifications: () => void;
 }) {
   const { contact } = profile;
   const [otpSent, setOtpSent] = useState(false);
 
   return (
     <div className="space-y-6 animate-fade-up">
-      <SectionHeader title="Contact Details" subtitle="How recruiters and companies can reach you." />
+      <SectionHeader
+        title="Contact Details"
+        subtitle="How recruiters and companies can reach you."
+        status={verificationStatus}
+      />
 
-      <Card icon={Mail} iconColor="text-primary-glow" title="Email Address" verified="verified">
+      <Card icon={Mail} iconColor="text-primary-glow" title="Email Address" verifiedStatus="verified">
         <Field label="Email" hint="Email is tied to your account. Change it from account settings.">
           <input
             className="input-base bg-secondary/60 cursor-not-allowed text-ink-soft"
@@ -681,7 +795,12 @@ function ContactsSection({
         </Field>
       </Card>
 
-      <Card icon={Phone} iconColor="text-[oklch(0.6_0.18_160)]" title="Phone Number" verified="unverified">
+      <Card
+        icon={Phone}
+        iconColor="text-[oklch(0.6_0.18_160)]"
+        title="Phone Number"
+        verifiedStatus={contact.phone ? "verified" : "unsubmitted"}
+      >
         <Field label="Phone Number">
           <input
             className="input-base"
@@ -697,7 +816,7 @@ function ContactsSection({
         </Field>
         <div className="mt-4 flex items-center justify-between">
           {otpSent ? (
-            <span className="text-xs font-semibold text-success flex items-center gap-1.5">
+            <span className="text-xs font-semibold text-emerald-500 flex items-center gap-1.5">
               <Check className="w-4 h-4" /> OTP sent to WhatsApp
             </span>
           ) : (
@@ -715,7 +834,12 @@ function ContactsSection({
         </div>
       </Card>
 
-      <Card icon={MapPin} iconColor="text-[oklch(0.6_0.22_25)]" title="Address" verified="unverified">
+      <Card
+        icon={MapPin}
+        iconColor="text-[oklch(0.6_0.22_25)]"
+        title="Address & Links"
+        verifiedStatus={verificationStatus}
+      >
         <div className="grid gap-4">
           <Field label="Street Address">
             <input
@@ -800,6 +924,16 @@ function ContactsSection({
         </div>
         <SaveBar onSave={onSave} />
       </Card>
+
+      {/* Verification Document Pipeline Upload Component */}
+      <SectionVerificationBox
+        section="contacts"
+        title="Contact Proof (Government ID, Address Proof)"
+        documents={verificationDocs}
+        status={verificationStatus}
+        profileData={contact}
+        onRefresh={onRefreshVerifications}
+      />
     </div>
   );
 }
@@ -807,12 +941,18 @@ function ContactsSection({
 /* --- EDUCATION SECTION --- */
 function EducationSection({
   profile,
+  verificationDocs,
+  verificationStatus,
   onUpdate,
   onSave,
+  onRefreshVerifications,
 }: {
   profile: ProfileData;
+  verificationDocs: VerificationDocument[];
+  verificationStatus: VerificationStatus;
   onUpdate: (updater: (prev: ProfileData) => ProfileData) => void;
   onSave: () => void;
+  onRefreshVerifications: () => void;
 }) {
   const list = profile.educationsList || [];
   const [institution, setInstitution] = useState("");
@@ -872,6 +1012,7 @@ function EducationSection({
       <SectionHeader
         title="Education"
         subtitle="Add every degree and certification — verified ones earn extra points."
+        status={verificationStatus}
       />
 
       {/* Render list of added degrees */}
@@ -881,7 +1022,7 @@ function EducationSection({
           icon={GraduationCap}
           iconColor="text-[oklch(0.55_0.22_285)]"
           title={edu.degree || "Your Degree"}
-          verified="unverified"
+          verifiedStatus={verificationStatus}
         >
           <div className="flex items-start justify-between">
             <div>
@@ -902,7 +1043,7 @@ function EducationSection({
             </div>
             <button
               onClick={() => handleRemove(edu.id)}
-              className="text-ink-soft hover:text-destructive p-1 rounded transition"
+              className="text-ink-soft hover:text-rose-500 p-1 rounded transition"
               title="Delete degree"
             >
               <Trash2 className="w-4 h-4" />
@@ -980,6 +1121,16 @@ function EducationSection({
           subtitle="Once added, degrees will show up here with verification status."
         />
       )}
+
+      {/* Verification Document Pipeline Upload Component */}
+      <SectionVerificationBox
+        section="education"
+        title="Education Verification (Degree Certificate, Marksheet, Transcript)"
+        documents={verificationDocs}
+        status={verificationStatus}
+        profileData={profile.education}
+        onRefresh={onRefreshVerifications}
+      />
     </div>
   );
 }
@@ -987,12 +1138,18 @@ function EducationSection({
 /* --- WORK EXPERIENCE SECTION --- */
 function ExperienceSection({
   profile,
+  verificationDocs,
+  verificationStatus,
   onUpdate,
   onSave,
+  onRefreshVerifications,
 }: {
   profile: ProfileData;
+  verificationDocs: VerificationDocument[];
+  verificationStatus: VerificationStatus;
   onUpdate: (updater: (prev: ProfileData) => ProfileData) => void;
   onSave: () => void;
+  onRefreshVerifications: () => void;
 }) {
   const list = profile.experiencesList || [];
   const [company, setCompany] = useState("");
@@ -1052,6 +1209,7 @@ function ExperienceSection({
       <SectionHeader
         title="Work Experience"
         subtitle="Every role you've held. Verified experiences unlock offers."
+        status={verificationStatus}
       />
 
       {/* Render list of added experiences */}
@@ -1061,7 +1219,7 @@ function ExperienceSection({
           icon={Briefcase}
           iconColor="text-[oklch(0.65_0.18_45)]"
           title={exp.title || "Your Role"}
-          verified="unverified"
+          verifiedStatus={verificationStatus}
         >
           <div className="flex items-start justify-between">
             <div>
@@ -1073,7 +1231,7 @@ function ExperienceSection({
             </div>
             <button
               onClick={() => handleRemove(exp.id)}
-              className="text-ink-soft hover:text-destructive p-1 rounded transition"
+              className="text-ink-soft hover:text-rose-500 p-1 rounded transition"
               title="Delete role"
             >
               <Trash2 className="w-4 h-4" />
@@ -1146,6 +1304,16 @@ function ExperienceSection({
       {list.length === 0 && (
         <EmptyList title="No work experience added yet" subtitle="Your roles will appear here." />
       )}
+
+      {/* Verification Document Pipeline Upload Component */}
+      <SectionVerificationBox
+        section="experience"
+        title="Experience Proof (Experience Letter, Offer Letter, Relieving Letter, Salary Slip)"
+        documents={verificationDocs}
+        status={verificationStatus}
+        profileData={profile.experience}
+        onRefresh={onRefreshVerifications}
+      />
     </div>
   );
 }
@@ -1153,12 +1321,18 @@ function ExperienceSection({
 /* --- SKILLS SECTION --- */
 function SkillsSection({
   profile,
+  verificationDocs,
+  verificationStatus,
   onUpdate,
   onSave,
+  onRefreshVerifications,
 }: {
   profile: ProfileData;
+  verificationDocs: VerificationDocument[];
+  verificationStatus: VerificationStatus;
   onUpdate: (updater: (prev: ProfileData) => ProfileData) => void;
   onSave: () => void;
+  onRefreshVerifications: () => void;
 }) {
   const [newSkill, setNewSkill] = useState("");
   const suggested = ["React", "TypeScript", "Figma", "Product Strategy", "SQL", "Node.js", "System Design", "GraphQL"].filter(
@@ -1189,11 +1363,17 @@ function SkillsSection({
     <div className="space-y-6 animate-fade-up">
       <SectionHeader
         title="Skills"
-        subtitle="Add skills and take a verification test to earn a badge."
+        subtitle="Add skills and upload certificates to earn verification badges."
+        status={verificationStatus}
       />
 
       {profile.skills.length > 0 && (
-        <Card icon={Zap} iconColor="text-[oklch(0.5_0.2_265)]" title="Your Skills">
+        <Card
+          icon={Zap}
+          iconColor="text-[oklch(0.5_0.2_265)]"
+          title="Your Skills"
+          verifiedStatus={verificationStatus}
+        >
           <div className="flex flex-wrap gap-2">
             {profile.skills.map((s) => (
               <span
@@ -1203,7 +1383,7 @@ function SkillsSection({
                 <span>{s}</span>
                 <button
                   onClick={() => handleRemoveSkill(s)}
-                  className="hover:text-rose-200 transition"
+                  className="hover:text-rose-200 transition cursor-pointer"
                   title={`Remove ${s}`}
                 >
                   <Trash2 className="w-3.5 h-3.5" />
@@ -1260,16 +1440,43 @@ function SkillsSection({
           subtitle="Skills you add will show verification status here."
         />
       )}
+
+      {/* Verification Document Pipeline Upload Component */}
+      <SectionVerificationBox
+        section="skills"
+        title="Skill Verification (Certification PDFs, Course Certificates)"
+        documents={verificationDocs}
+        status={verificationStatus}
+        profileData={{ skills: profile.skills }}
+        onRefresh={onRefreshVerifications}
+      />
     </div>
   );
 }
 
-/* --- MAIN PROFILE PAGE --- */
+/* --- MAIN PROFILE PAGE WITH FULL IDENTITY VERIFICATION SYSTEM --- */
 export default function ProfilePage() {
   const router = useRouter();
   const { user } = useAuthStore();
   const [activeSection, setActiveSection] = useState<SectionId>("overview");
   const [saveNotice, setSaveNotice] = useState(false);
+
+  // Verification state from backend
+  const [verificationData, setVerificationData] = useState<VerificationResponse | null>(null);
+
+  // Fetch verification documents & statuses from backend
+  const fetchVerifications = useCallback(async () => {
+    try {
+      const data = await VerificationService.getVerifications();
+      setVerificationData(data);
+    } catch (err) {
+      console.warn("Failed to fetch verification status from server:", err);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchVerifications();
+  }, [fetchVerifications]);
 
   // Profile data state persisted in local state & pre-populated from user store
   const [profile, setProfile] = useState<ProfileData>(() => {
@@ -1327,6 +1534,14 @@ export default function ProfilePage() {
     { id: "skills" as SectionId, label: "Skills", icon: Zap },
   ];
 
+  const getSectionDocs = (sec: SectionType): VerificationDocument[] => {
+    return (verificationData?.documents || []).filter((d) => d.section === sec);
+  };
+
+  const getSectionStatus = (sec: SectionType): VerificationStatus => {
+    return verificationData?.sections?.[sec]?.status || "unsubmitted";
+  };
+
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-6xl mx-auto space-y-6">
       {/* Save Notification Alert */}
@@ -1342,6 +1557,7 @@ export default function ProfilePage() {
         {PROFILE_SECTIONS.map((sec) => {
           const Icon = sec.icon;
           const isActive = activeSection === sec.id;
+          const secStatus = sec.id !== "overview" && sec.id !== "generate" ? getSectionStatus(sec.id as SectionType) : undefined;
           return (
             <button
               key={sec.id}
@@ -1354,6 +1570,9 @@ export default function ProfilePage() {
             >
               <Icon className={`w-4 h-4 ${isActive ? "text-white" : "text-primary-glow"}`} />
               <span>{sec.label}</span>
+              {secStatus && secStatus !== "unsubmitted" && (
+                <span className={`w-2 h-2 rounded-full ${secStatus === "verified" ? "bg-emerald-400" : secStatus === "pending" ? "bg-amber-400" : "bg-rose-400"}`} />
+              )}
             </button>
           );
         })}
@@ -1364,6 +1583,7 @@ export default function ProfilePage() {
         {activeSection === "overview" && (
           <Overview
             profile={profile}
+            verificationData={verificationData}
             onNavigate={handleNavigate}
             onCompleteProfile={() => handleNavigate("contacts")}
           />
@@ -1372,40 +1592,55 @@ export default function ProfilePage() {
         {activeSection === "personal" && (
           <PersonalSection
             profile={profile}
+            verificationDocs={getSectionDocs("personal")}
+            verificationStatus={getSectionStatus("personal")}
             onUpdate={setProfile}
             onSave={handleSave}
+            onRefreshVerifications={fetchVerifications}
           />
         )}
 
         {activeSection === "contacts" && (
           <ContactsSection
             profile={profile}
+            verificationDocs={getSectionDocs("contacts")}
+            verificationStatus={getSectionStatus("contacts")}
             onUpdate={setProfile}
             onSave={handleSave}
+            onRefreshVerifications={fetchVerifications}
           />
         )}
 
         {activeSection === "education" && (
           <EducationSection
             profile={profile}
+            verificationDocs={getSectionDocs("education")}
+            verificationStatus={getSectionStatus("education")}
             onUpdate={setProfile}
             onSave={handleSave}
+            onRefreshVerifications={fetchVerifications}
           />
         )}
 
         {activeSection === "experience" && (
           <ExperienceSection
             profile={profile}
+            verificationDocs={getSectionDocs("experience")}
+            verificationStatus={getSectionStatus("experience")}
             onUpdate={setProfile}
             onSave={handleSave}
+            onRefreshVerifications={fetchVerifications}
           />
         )}
 
         {activeSection === "skills" && (
           <SkillsSection
             profile={profile}
+            verificationDocs={getSectionDocs("skills")}
+            verificationStatus={getSectionStatus("skills")}
             onUpdate={setProfile}
             onSave={handleSave}
+            onRefreshVerifications={fetchVerifications}
           />
         )}
       </div>
