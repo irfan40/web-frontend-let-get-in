@@ -40,6 +40,12 @@ export function DashboardSidebar({
 
   const navItems = [
     {
+      name: "AI Onboarding",
+      href: "/demo",
+      icon: Sparkles,
+      description: "Smart career onboarding suite",
+    },
+    {
       name: "Explore Opportunities",
       href: "/explore",
       icon: Compass,
@@ -57,12 +63,7 @@ export function DashboardSidebar({
       icon: User,
       description: "Manage your professional identity",
     },
-    {
-      name: "AI Onboarding",
-      href: "/demo",
-      icon: Sparkles,
-      description: "Smart career onboarding suite",
-    },
+
     {
       name: "My Drive",
       href: "/drive",
