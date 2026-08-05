@@ -26,7 +26,7 @@ export const useAutosave = () => {
         return;
       }
 
-      saveResume(isAuthenticated);
+      saveResume();
     }, AUTOSAVE_DEBOUNCE_MS);
 
     return () => {
@@ -40,7 +40,7 @@ export const useAutosave = () => {
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (isDirty) {
-        saveResume(isAuthenticated);
+        saveResume();
         e.preventDefault();
         e.returnValue = '';
       }

@@ -80,8 +80,8 @@ interface ResumeStoreState {
   setResume: (resume: IResume) => void;
   
   // Storage Synchronization & Persistence
-  saveResume: (isAuthenticated: boolean) => Promise<void>;
-  loadResume: (id: string, isAuthenticated: boolean) => Promise<void>;
+  saveResume: (isAuthenticated?: boolean) => Promise<void>;
+  loadResume: (id: string, isAuthenticated?: boolean) => Promise<void>;
   resetToDefault: () => void;
   resetToBlank: () => void;
 }
@@ -489,11 +489,11 @@ export const useResumeStore = create<ResumeStoreState>((set, get) => ({
     });
   },
 
-  saveResume: async (isAuthenticated = true) => {
+  saveResume: async () => {
     const { resume } = get();
     set({ saveStatus: 'saving' });
     try {
-      const provider = StorageProviderFactory.getProvider(isAuthenticated);
+      const provider = StorageProviderFactory.getProvider();
       const savedResume = await provider.save(resume);
       set({
         resume: savedResume,
@@ -507,10 +507,10 @@ export const useResumeStore = create<ResumeStoreState>((set, get) => ({
     }
   },
 
-  loadResume: async (id, isAuthenticated = true) => {
+  loadResume: async (id) => {
     set({ saveStatus: 'saving' });
     try {
-      const provider = StorageProviderFactory.getProvider(isAuthenticated);
+      const provider = StorageProviderFactory.getProvider();
       const loaded = await provider.load(id);
 
       if (loaded) {

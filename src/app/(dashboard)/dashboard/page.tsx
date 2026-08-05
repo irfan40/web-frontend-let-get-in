@@ -21,7 +21,7 @@ export default function DashboardPage() {
     const fetchResumes = async () => {
       setIsLoading(true);
       try {
-        const provider = StorageProviderFactory.getProvider(isAuthenticated);
+        const provider = StorageProviderFactory.getProvider();
         const list = await provider.list();
         if (isMounted) {
           setResumes(Array.isArray(list) ? list : []);
@@ -48,7 +48,7 @@ export default function DashboardPage() {
 
   const handleDelete = async (id: string) => {
     try {
-      const provider = StorageProviderFactory.getProvider(isAuthenticated);
+      const provider = StorageProviderFactory.getProvider();
       await provider.delete(id);
       setResumes((prev) => prev.filter((r) => r.id !== id));
     } catch (err: unknown) {

@@ -4,7 +4,7 @@ import { MongoStorage } from './mongo';
 export class StorageProviderFactory {
   private static mongoInstance: MongoStorage | null = null;
 
-  static getProvider(_isAuthenticated: boolean = true): IStorageProvider {
+  static getProvider(): IStorageProvider {
     if (!this.mongoInstance) {
       this.mongoInstance = new MongoStorage();
     }

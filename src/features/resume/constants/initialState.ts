@@ -1,7 +1,7 @@
 import { IResume } from '../types';
 
 export const INITIAL_RESUME_STATE: IResume = {
-  id: 'guest-draft-resume',
+  id: '',
   title: 'Software Engineer Resume',
   templateId: 'modern-sleek',
   content: {
@@ -106,7 +106,7 @@ export const INITIAL_RESUME_STATE: IResume = {
 };
 
 export const BLANK_RESUME_STATE: IResume = {
-  id: 'guest-active-resume',
+  id: '',
   title: 'My Resume',
   templateId: 'modern-sleek',
   content: {

@@ -74,7 +74,7 @@ export class ResumeImportService {
 
     // 3. Construct Complete Resume State Object
     const newResume: IResume = {
-      id: 'guest-active-resume',
+      id: '',
       templateId: 'modern-clean',
       title: normalizedContent.personalInfo.fullName
         ? `${normalizedContent.personalInfo.fullName}'s Resume`
@@ -94,12 +94,12 @@ export class ResumeImportService {
     const store = useResumeStore.getState();
     store.setResume(newResume);
 
-    // 5. Trigger Persistence / Autosave
-    await store.saveResume(false).catch((err) => {
-      console.warn('Autosave sync after import warning:', err);
+    // 5. Save resume for authenticated user
+    await store.saveResume(true).catch((err) => {
+      console.warn('Save after import warning:', err);
     });
 
-    return newResume;
+    return useResumeStore.getState().resume;
   }
 
   private static async clientFallbackFileParse(file: File): Promise<unknown> {

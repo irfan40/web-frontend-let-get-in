@@ -31,9 +31,9 @@ function BuilderContent() {
 
   useEffect(() => {
     if (resumeId) {
-      loadResume(resumeId, isAuthenticated);
+      loadResume(resumeId);
     }
-  }, [resumeId, isAuthenticated, loadResume]);
+  }, [resumeId, loadResume]);
 
   return (
     <div className="h-screen flex flex-col bg-background text-foreground overflow-hidden">

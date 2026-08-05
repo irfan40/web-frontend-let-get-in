@@ -5,5 +5,4 @@ export interface IStorageProvider {
   load(id: string): Promise<IResume | null>;
   list(): Promise<IResume[]>;
   delete(id: string): Promise<void>;
-  migrateGuestResume?(guestResume: IResume): Promise<IResume>;
 }

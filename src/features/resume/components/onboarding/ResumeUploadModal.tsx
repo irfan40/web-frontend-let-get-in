@@ -49,25 +49,30 @@ export const ResumeUploadModal: React.FC<ResumeUploadModalProps> = ({ isOpen, on
     setError(null);
 
     try {
+      let imported: any = null;
       if (inputMode === 'file') {
         if (!file) {
           setError('Please select a file to upload.');
           setIsParsing(false);
           return;
         }
-        await ResumeImportService.importFromFile(file);
+        imported = await ResumeImportService.importFromFile(file);
       } else {
         if (!pasteText.trim()) {
           setError('Please paste your resume text.');
           setIsParsing(false);
           return;
         }
-        await ResumeImportService.importFromText(pasteText);
+        imported = await ResumeImportService.importFromText(pasteText);
       }
 
       setIsParsing(false);
       onClose();
-      router.push('/builder?id=guest-active-resume');
+      if (imported?.id) {
+        router.push(`/builder?id=${imported.id}`);
+      } else {
+        router.push('/builder');
+      }
     } catch (err: any) {
       console.error('Resume Import Error:', err);
       setError(err.message || 'Failed to import resume. Please verify your file or text content.');

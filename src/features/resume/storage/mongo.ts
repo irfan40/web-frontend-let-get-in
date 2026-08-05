@@ -11,7 +11,7 @@ interface ApiResponse<T> {
 export class MongoStorage implements IStorageProvider {
   async save(resume: IResume): Promise<IResume> {
     try {
-      if (resume.id && !resume.id.startsWith('guest-')) {
+      if (resume.id) {
         // Patch existing resume
         const response = await apiClient.patch<never, ApiResponse<{ resume: IResume }>>(
           `/resumes/${resume.id}`,
@@ -64,19 +64,6 @@ export class MongoStorage implements IStorageProvider {
       await apiClient.delete(`/resumes/${id}`);
     } catch (error) {
       console.error('MongoStorage delete error:', error);
-      throw error;
-    }
-  }
-
-  async migrateGuestResume(guestResume: IResume): Promise<IResume> {
-    try {
-      const response = await apiClient.post<never, ApiResponse<{ resume: IResume }>>(
-        '/resumes/migrate-guest',
-        { guestResume }
-      );
-      return response?.data?.resume || guestResume;
-    } catch (error) {
-      console.error('MongoStorage migrateGuestResume error:', error);
       throw error;
     }
   }
