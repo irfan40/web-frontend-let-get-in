@@ -23,7 +23,10 @@ export function UserDropdown() {
   // Close dropdown on click outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
         setIsOpen(false);
       }
     }
@@ -62,7 +65,9 @@ export function UserDropdown() {
           </div>
         )}
         <div className="hidden md:flex flex-col text-left">
-          <span className="text-xs font-bold text-ink leading-none">{displayName}</span>
+          <span className="text-xs font-bold text-ink leading-none">
+            {displayName}
+          </span>
           <span className="text-[10px] text-ink-soft leading-tight mt-0.5 truncate max-w-[120px]">
             {email}
           </span>
@@ -92,7 +97,9 @@ export function UserDropdown() {
                 </div>
               )}
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-bold text-ink truncate">{displayName}</p>
+                <p className="text-xs font-bold text-ink truncate">
+                  {displayName}
+                </p>
                 <p className="text-[11px] text-ink-soft truncate">{email}</p>
                 <div className="inline-flex items-center gap-1 text-[9px] font-semibold text-success bg-success/10 px-2 py-0.5 rounded-full mt-1">
                   <ShieldCheck className="w-2.5 h-2.5" /> Verified User
@@ -112,14 +119,14 @@ export function UserDropdown() {
               <span>Dashboard</span>
             </Link>
 
-            <Link
+            {/* <Link
               href="/builder"
               onClick={() => setIsOpen(false)}
               className="flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-ink hover:text-primary-glow hover:bg-surface-alt rounded-xl transition"
             >
               <FileText className="w-4 h-4 text-primary-glow" />
               <span>Resume Builder</span>
-            </Link>
+            </Link> */}
 
             <Link
               href="/demo"
