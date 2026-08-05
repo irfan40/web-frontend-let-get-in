@@ -2,9 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useResumeStore } from '../store/useResumeStore';
-import axios from 'axios';
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
+import { apiClient } from '../../../shared/services/apiClient';
 
 export interface HealthMetric {
   id: string;
@@ -273,12 +271,12 @@ export const useAtsAnalysis = () => {
     const heuristic = calculateHeuristics();
 
     try {
-      const response = await axios.post(`${API_BASE_URL}/ai/ats-analyze`, {
+      const response: any = await apiClient.post('/ai/ats-analyze', {
         resumeContent: resume.content,
       });
 
-      if (response.data?.data) {
-        const aiData = response.data.data;
+      const aiData = response?.data;
+      if (aiData) {
         setResult({
           ...heuristic,
           overallScore: aiData.score || heuristic.overallScore,

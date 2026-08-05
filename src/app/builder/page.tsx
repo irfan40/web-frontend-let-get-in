@@ -13,6 +13,7 @@ import { ResumeFormContainer } from "@/features/resume/components/editor/ResumeF
 import { EmbeddedAiChat } from "@/features/resume/components/ai/EmbeddedAiChat";
 import { LivePreviewCanvas } from "@/features/resume/components/preview/LivePreviewCanvas";
 import { triggerPdfDownload } from "@/features/resume/utils/downloadPdf";
+import { AuthGuard } from "@/components/auth/AuthGuard";
 import { Loader2, FileText, MessageSquare, Eye, Sparkles } from "lucide-react";
 
 function BuilderContent() {
@@ -154,15 +155,17 @@ function BuilderContent() {
 
 export default function BuilderPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="h-screen bg-background flex flex-col items-center justify-center text-ink-soft gap-3">
-          <Loader2 className="w-8 h-8 animate-spin text-primary-glow" />
-          <p className="text-sm font-medium">Loading Builder Workspace...</p>
-        </div>
-      }
-    >
-      <BuilderContent />
-    </Suspense>
+    <AuthGuard>
+      <Suspense
+        fallback={
+          <div className="h-screen bg-background flex flex-col items-center justify-center text-ink-soft gap-3">
+            <Loader2 className="w-8 h-8 animate-spin text-primary-glow" />
+            <p className="text-sm font-medium">Loading Builder Workspace...</p>
+          </div>
+        }
+      >
+        <BuilderContent />
+      </Suspense>
+    </AuthGuard>
   );
 }

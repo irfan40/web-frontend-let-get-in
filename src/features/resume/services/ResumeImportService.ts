@@ -1,10 +1,8 @@
-import axios from 'axios';
+import { apiClient } from '@/shared/services/apiClient';
 import { useResumeStore } from '../store/useResumeStore';
 import { ResumeValidationService } from './ResumeValidationService';
 import { ResumeNormalizationService } from './ResumeNormalizationService';
 import { IResume, IResumeContent } from '../types';
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
 
 export class ResumeImportService {
   /**
@@ -21,11 +19,11 @@ export class ResumeImportService {
 
     let parsedContent: unknown = null;
     try {
-      const response = await axios.post(`${API_BASE_URL}/ai/import-resume`, {
+      const response: any = await apiClient.post('/ai/import-resume', {
         fileBufferBase64,
         fileType,
       });
-      parsedContent = response.data?.data?.parsedContent;
+      parsedContent = response?.data?.parsedContent;
     } catch (err: any) {
       console.warn('Backend import endpoint unavailable, running client fallback parsing:', err?.message || err);
       parsedContent = await this.clientFallbackFileParse(file);
@@ -48,10 +46,10 @@ export class ResumeImportService {
 
     let parsedContent: unknown = null;
     try {
-      const response = await axios.post(`${API_BASE_URL}/ai/import-resume`, {
+      const response: any = await apiClient.post('/ai/import-resume', {
         rawText,
       });
-      parsedContent = response.data?.data?.parsedContent;
+      parsedContent = response?.data?.parsedContent;
     } catch (err: any) {
       console.warn('Backend import endpoint unavailable, running client text fallback:', err?.message || err);
       parsedContent = this.clientFallbackTextParse(rawText);

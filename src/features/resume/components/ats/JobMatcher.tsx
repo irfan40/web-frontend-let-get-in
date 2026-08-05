@@ -3,9 +3,7 @@
 import React, { useState } from 'react';
 import { Target, Sparkles, Loader2, CheckCircle2, XCircle, Wand2 } from 'lucide-react';
 import { useResumeStore } from '../../store/useResumeStore';
-import axios from 'axios';
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
+import { apiClient } from '@/shared/services/apiClient';
 
 interface JobMatcherProps {
   onTailorAction: (tailoredSummary: string, tailoredBullets: string[]) => void;
@@ -29,13 +27,13 @@ export const JobMatcher: React.FC<JobMatcherProps> = ({ onTailorAction }) => {
     if (!jobDescription.trim()) return;
     setIsMatching(true);
     try {
-      const response = await axios.post(`${API_BASE_URL}/ai/job-match`, {
+      const response: any = await apiClient.post('/ai/job-match', {
         resumeContent: resume.content,
         jobDescription,
       });
 
-      if (response.data?.data) {
-        setMatchData(response.data.data);
+      if (response?.data) {
+        setMatchData(response.data);
       }
     } catch (error) {
       console.warn('Fallback local JD match:', error);

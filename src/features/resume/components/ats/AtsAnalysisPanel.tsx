@@ -10,9 +10,7 @@ import { JobMatcher } from './JobMatcher';
 import { AiCareerCoachTab } from './AiCareerCoachTab';
 import { AiDiffModal } from '../ai/AiDiffModal';
 import { useResumeStore } from '../../store/useResumeStore';
-import axios from 'axios';
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
+import { apiClient } from '@/shared/services/apiClient';
 
 interface AtsAnalysisPanelProps {
   isEmbedded?: boolean;
@@ -46,11 +44,11 @@ export const AtsAnalysisPanel: React.FC<AtsAnalysisPanelProps> = ({ isEmbedded =
     if (actionType === 'summary') {
       const currentSummary = resume.content.summary || '';
       try {
-        const res = await axios.post(`${API_BASE_URL}/ai/improve-summary`, {
+        const res: any = await apiClient.post('/ai/improve-summary', {
           currentSummary,
           targetRole: resume.content.personalInfo.headline || 'Software Professional',
         });
-        const suggestions = res.data?.data?.suggestions || [];
+        const suggestions = res?.data?.suggestions || [];
         const improved = suggestions[0] || 'Results-driven software engineer with proven experience building scalable, high-performance web systems and optimizing user engagement.';
 
         setDiffModal({

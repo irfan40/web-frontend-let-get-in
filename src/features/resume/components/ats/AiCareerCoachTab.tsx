@@ -3,9 +3,7 @@
 import React, { useState } from 'react';
 import { Bot, Sparkles, Wand2, Send, FileText, Briefcase, Award, Zap, HelpCircle, Loader2 } from 'lucide-react';
 import { useResumeStore } from '../../store/useResumeStore';
-import axios from 'axios';
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
+import { apiClient } from '@/shared/services/apiClient';
 
 interface AiCareerCoachTabProps {
   onCoachSuggestion: (title: string, currentVal: string, improvedVal: string) => void;
@@ -32,15 +30,15 @@ export const AiCareerCoachTab: React.FC<AiCareerCoachTabProps> = ({ onCoachSugge
     setIsLoading(true);
 
     try {
-      const response = await axios.post(`${API_BASE_URL}/ai/chat`, {
+      const response: any = await apiClient.post('/ai/chat', {
         message: userMsg,
         resumeContext: resume.content,
       });
 
-      if (response.data?.data?.reply) {
+      if (response?.data?.reply) {
         setMessages((prev) => [
           ...prev,
-          { sender: 'ai', text: response.data.data.reply },
+          { sender: 'ai', text: response.data.reply },
         ]);
       } else {
         throw new Error('No reply');
