@@ -62,20 +62,20 @@ export default function DashboardPage() {
   );
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col">
+    <div className="min-h-screen bg-background text-white shadow-elegant flex flex-col">
       <main className="flex-1 max-w-7xl w-full mx-auto p-6 sm:p-8 space-y-8">
         {/* Banner */}
-        <div className="bg-gradient-dark rounded-3xl p-6 sm:p-8 border border-white/10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-elegant relative overflow-hidden">
+        <div className="bg-gradient-brand rounded-3xl p-6 sm:p-8 border border-white/10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-elegant relative overflow-hidden">
           <div className="absolute top-0 right-0 w-1/2 h-full opacity-10 bg-[radial-gradient(ellipse_at_top_right,_var(--primary-glow)_0%,_transparent_70%)] pointer-events-none" />
           <div className="relative space-y-2">
             <div className="flex items-center gap-2 text-xs font-semibold text-primary-glow bg-primary/10 px-3 py-1 rounded-full w-fit border border-primary/20">
               <Sparkles className="w-3.5 h-3.5" /> Intelligent Career Assistant
             </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-ink tracking-tight">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-white shadow-elegant">
               Welcome back to{" "}
-              <span className="text-gradient-brand">LetGetIn AI</span>
+              <span className="text-white shadow-elegant">LetGetIn AI</span>
             </h1>
-            <p className="text-sm text-ink-soft max-w-xl leading-relaxed">
+            <p className="text-sm text-white/85 mt-1  max-w-xl leading-relaxed">
               Build verified, ATS-optimized, high-converting professional
               profiles and resumes in minutes.
             </p>

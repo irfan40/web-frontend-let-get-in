@@ -89,16 +89,10 @@ export function DashboardSidebar({
       description: "Proctored certification exams",
     },
     {
-      name: "Edupye",
-      href: "/edupye",
+      name: "Edupie",
+      href: "/edupie",
       icon: BookOpenCheck,
       description: "Learning paths & course recommendations",
-    },
-    {
-      name: "My Dive",
-      href: "/mydive",
-      icon: Activity,
-      description: "Deep career analytics & market demand",
     },
   ];
 

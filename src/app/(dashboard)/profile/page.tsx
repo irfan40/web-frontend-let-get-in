@@ -1478,6 +1478,20 @@ export default function ProfilePage() {
     fetchVerifications();
   }, [fetchVerifications]);
 
+  // Global polling for pending documents across all sections
+  useEffect(() => {
+    const hasPending = (verificationData?.documents || []).some(
+      (doc) => doc.verification.status === "pending"
+    );
+    if (!hasPending) return;
+
+    const interval = setInterval(() => {
+      fetchVerifications();
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [verificationData, fetchVerifications]);
+
   // Profile data state persisted in local state & pre-populated from user store
   const [profile, setProfile] = useState<ProfileData>(() => {
     if (typeof window !== "undefined") {

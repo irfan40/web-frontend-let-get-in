@@ -67,6 +67,16 @@ export class VerificationService {
   }
 
   /**
+   * Fetch single verification document status by ID
+   */
+  static async getVerificationById(id: string): Promise<VerificationDocument> {
+    const res = await apiClient.get<never, { success: boolean; data: VerificationDocument }>(
+      `/profile/verifications/${id}`
+    );
+    return res.data;
+  }
+
+  /**
    * Upload supporting document for verification
    */
   static async uploadDocument(

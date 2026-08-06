@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   UploadCloud,
   FileText,
@@ -7,8 +7,9 @@ import {
   Loader2,
   AlertCircle,
   Sparkles,
-  RefreshCw,
   FileCheck,
+  CheckCircle2,
+  XCircle,
 } from 'lucide-react';
 import {
   SectionType,
@@ -73,6 +74,24 @@ export const SectionVerificationBox: React.FC<SectionVerificationBoxProps> = ({
 
   const docOptions = DOCUMENT_OPTIONS[section] || [{ value: 'other', label: 'Document' }];
 
+  // Check if any document in this section is currently pending processing
+  const hasPendingDocs = documents.some((d) => d.verification.status === 'pending');
+
+  // Automatic Polling Mechanism: Polls every 3 seconds while documents are pending
+  useEffect(() => {
+    if (!hasPendingDocs) return;
+
+    console.log(`[Polling] Active for section '${section}' - checking every 3s...`);
+    const pollInterval = setInterval(() => {
+      onRefresh();
+    }, 3000);
+
+    return () => {
+      console.log(`[Polling] Stopped for section '${section}'.`);
+      clearInterval(pollInterval);
+    };
+  }, [hasPendingDocs, onRefresh, section]);
+
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -91,7 +110,7 @@ export const SectionVerificationBox: React.FC<SectionVerificationBoxProps> = ({
       onRefresh();
     } catch (err: any) {
       setErrorMessage(
-        err?.error?.message || err?.message || 'Failed to upload and verify document.'
+        err?.error?.message || err?.message || 'Failed to upload document for verification.'
       );
     } finally {
       setIsUploading(false);
@@ -144,7 +163,7 @@ export const SectionVerificationBox: React.FC<SectionVerificationBoxProps> = ({
           </div>
           <button
             onClick={() => setErrorMessage(null)}
-            className="text-rose-500 hover:text-rose-700 text-xs font-bold"
+            className="text-rose-500 hover:text-rose-700 text-xs font-bold cursor-pointer"
           >
             Dismiss
           </button>
@@ -194,7 +213,7 @@ export const SectionVerificationBox: React.FC<SectionVerificationBoxProps> = ({
               {isUploading ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>AI Analyzing & Verifying...</span>
+                  <span>Uploading File...</span>
                 </>
               ) : (
                 <>
@@ -206,7 +225,7 @@ export const SectionVerificationBox: React.FC<SectionVerificationBoxProps> = ({
           </div>
         </div>
         <p className="text-[10px] text-ink-soft">
-          Supported Formats: PDF, PNG, JPG, WEBP, DOCX (Max 15MB). Automatically analyzed by Gemini 2.5 Flash Vision AI.
+          Supported Formats: PDF, PNG, JPG, WEBP, DOCX (Max 15MB). Fast upload with async background Gemini 2.5 Vision AI verification.
         </p>
       </div>
 
@@ -216,76 +235,148 @@ export const SectionVerificationBox: React.FC<SectionVerificationBoxProps> = ({
           <h5 className="text-xs font-bold text-ink uppercase tracking-wider">
             Uploaded Documents ({documents.length})
           </h5>
-          <div className="space-y-2.5">
-            {documents.map((doc) => (
-              <div
-                key={doc._id}
-                className="bg-surface border border-border rounded-xl p-3.5 space-y-2.5 text-xs shadow-xs"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <FileText className="w-4 h-4 text-primary-glow shrink-0" />
-                    <div className="min-w-0">
-                      <p className="font-bold text-ink truncate">{doc.cloudinary.originalName}</p>
-                      <p className="text-[10px] text-ink-soft mt-0.5">
-                        {doc.documentType.replace(/_/g, ' ')} • {formatSize(doc.cloudinary.size)} •{' '}
-                        {new Date(doc.cloudinary.uploadedAt).toLocaleDateString()}
-                      </p>
-                    </div>
-                  </div>
+          <div className="space-y-3">
+            {documents.map((doc) => {
+              const isPending = doc.verification.status === 'pending';
+              const isVerified = doc.verification.status === 'verified';
+              const isRejected = doc.verification.status === 'rejected';
 
-                  <div className="flex items-center gap-2 shrink-0">
-                    <VerificationBadge status={doc.verification.status} size="sm" />
-                    <a
-                      href={doc.cloudinary.cloudinaryUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="p-1.5 text-ink-soft hover:text-primary-glow rounded-lg hover:bg-secondary transition"
-                      title="View / Download Document"
-                    >
-                      <ExternalLink className="w-3.5 h-3.5" />
-                    </a>
-                    <button
-                      onClick={() => handleDelete(doc._id)}
-                      disabled={deletingId === doc._id}
-                      className="p-1.5 text-ink-soft hover:text-rose-500 rounded-lg hover:bg-rose-50 transition disabled:opacity-30"
-                      title="Delete document"
-                    >
-                      {deletingId === doc._id ? (
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      ) : (
-                        <Trash2 className="w-3.5 h-3.5" />
-                      )}
-                    </button>
-                  </div>
-                </div>
-
-                {/* AI Analysis Summary Box */}
-                {doc.ai && (
-                  <div className="bg-secondary/50 border border-border rounded-lg p-2.5 text-[11px] space-y-1">
-                    <div className="flex items-center justify-between">
-                      <span className="font-semibold text-primary-glow flex items-center gap-1">
-                        <Sparkles className="w-3 h-3 text-primary-glow" /> Gemini AI Verification Summary
-                      </span>
-                      <span className="font-bold text-ink">
-                        Confidence: {doc.verification.confidence}%
-                      </span>
-                    </div>
-                    <p className="text-ink-soft leading-relaxed">{doc.ai.summary}</p>
-
-                    {doc.ai.issues && doc.ai.issues.length > 0 && (
-                      <div className="pt-1 text-rose-600 font-medium space-y-0.5">
-                        {doc.ai.issues.map((issue, idx) => (
-                          <div key={idx} className="flex items-center gap-1">
-                            <span>• {issue}</span>
-                          </div>
-                        ))}
+              return (
+                <div
+                  key={doc._id}
+                  className={`bg-surface border rounded-xl p-4 space-y-3 text-xs shadow-xs transition-all ${
+                    isPending
+                      ? 'border-amber-500/40 bg-amber-500/5 ring-1 ring-amber-500/20'
+                      : isVerified
+                      ? 'border-emerald-500/30'
+                      : isRejected
+                      ? 'border-rose-500/30'
+                      : 'border-border'
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div
+                        className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
+                          isPending
+                            ? 'bg-amber-500/10 text-amber-500'
+                            : isVerified
+                            ? 'bg-emerald-500/10 text-emerald-500'
+                            : isRejected
+                            ? 'bg-rose-500/10 text-rose-500'
+                            : 'bg-secondary text-primary-glow'
+                        }`}
+                      >
+                        {isPending ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <FileText className="w-4 h-4" />
+                        )}
                       </div>
-                    )}
+                      <div className="min-w-0">
+                        <p className="font-bold text-ink truncate">{doc.cloudinary.originalName}</p>
+                        <p className="text-[10px] text-ink-soft mt-0.5">
+                          {doc.documentType.replace(/_/g, ' ')} • {formatSize(doc.cloudinary.size)} •{' '}
+                          {new Date(doc.cloudinary.uploadedAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 shrink-0">
+                      <VerificationBadge status={doc.verification.status} size="sm" />
+                      <a
+                        href={doc.cloudinary.cloudinaryUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="p-1.5 text-ink-soft hover:text-primary-glow rounded-lg hover:bg-secondary transition"
+                        title="View / Download Document"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </a>
+                      <button
+                        onClick={() => handleDelete(doc._id)}
+                        disabled={deletingId === doc._id}
+                        className="p-1.5 text-ink-soft hover:text-rose-500 rounded-lg hover:bg-rose-50 transition disabled:opacity-30 cursor-pointer"
+                        title="Delete document"
+                      >
+                        {deletingId === doc._id ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <Trash2 className="w-3.5 h-3.5" />
+                        )}
+                      </button>
+                    </div>
                   </div>
-                )}
-              </div>
-            ))}
+
+                  {/* PENDING PROCESSING CARD */}
+                  {isPending && (
+                    <div className="bg-amber-500/10 border border-amber-500/25 rounded-xl p-3 text-[11px] space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-amber-700 dark:text-amber-300 flex items-center gap-1.5">
+                          <Sparkles className="w-3.5 h-3.5 text-amber-500 animate-spin" />
+                          Gemini 2.5 Flash Vision AI Processing...
+                        </span>
+                        <span className="text-[10px] font-semibold bg-amber-500/20 text-amber-700 dark:text-amber-200 px-2 py-0.5 rounded-full">
+                          Live Polling Active
+                        </span>
+                      </div>
+                      <p className="text-amber-800/80 dark:text-amber-200/80 leading-relaxed">
+                        Extracting text & analyzing document authenticity in the background. Status will update automatically.
+                      </p>
+                      {/* Animated Shimmer Bar */}
+                      <div className="h-1.5 w-full bg-amber-500/20 rounded-full overflow-hidden">
+                        <div className="h-full bg-amber-500 rounded-full animate-pulse w-3/4" />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* VERIFIED SUCCESS SUMMARY CARD */}
+                  {isVerified && doc.ai && (
+                    <div className="bg-emerald-500/10 border border-emerald-500/25 rounded-xl p-3 text-[11px] space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-emerald-700 dark:text-emerald-300 flex items-center gap-1.5">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                          Gemini AI Verification Summary
+                        </span>
+                        <span className="font-extrabold text-emerald-700 dark:text-emerald-300">
+                          Confidence: {doc.verification.confidence}%
+                        </span>
+                      </div>
+                      <p className="text-ink-soft leading-relaxed">{doc.ai.summary}</p>
+                    </div>
+                  )}
+
+                  {/* REJECTED SUMMARY CARD */}
+                  {isRejected && (
+                    <div className="bg-rose-500/10 border border-rose-500/25 rounded-xl p-3 text-[11px] space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-rose-700 dark:text-rose-300 flex items-center gap-1.5">
+                          <XCircle className="w-3.5 h-3.5 text-rose-500" />
+                          Gemini AI Verification Rejected
+                        </span>
+                        <span className="font-extrabold text-rose-700 dark:text-rose-300">
+                          Confidence: {doc.verification.confidence}%
+                        </span>
+                      </div>
+                      <p className="text-rose-900/80 dark:text-rose-200/80 leading-relaxed">
+                        {doc.ai?.summary || doc.verification.reason || 'Document verification rejected.'}
+                      </p>
+
+                      {doc.ai?.issues && doc.ai.issues.length > 0 && (
+                        <div className="pt-1 text-rose-700 dark:text-rose-300 font-medium space-y-1">
+                          {doc.ai.issues.map((issue, idx) => (
+                            <div key={idx} className="flex items-start gap-1.5">
+                              <span className="text-rose-500 font-bold">•</span>
+                              <span>{issue}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
