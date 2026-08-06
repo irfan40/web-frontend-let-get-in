@@ -1,33 +1,56 @@
-import React, { useState } from 'react';
-import { X, Sparkles, LayoutTemplate } from 'lucide-react';
-import { useRouter } from 'next/navigation';
-import { useResumeStore } from '../../resume/store/useResumeStore';
+import React, { useState } from "react";
+import { X, Sparkles, LayoutTemplate } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useResumeStore } from "../../resume/store/useResumeStore";
 
 interface CreateResumeModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-export const CreateResumeModal: React.FC<CreateResumeModalProps> = ({ isOpen, onClose }) => {
+export const CreateResumeModal: React.FC<CreateResumeModalProps> = ({
+  isOpen,
+  onClose,
+}) => {
   const router = useRouter();
   const { updateTitle, updateTemplateId } = useResumeStore();
-  const [title, setTitle] = useState('My Professional Resume');
-  const [selectedTemplate, setSelectedTemplate] = useState('modern-sleek');
+  const [title, setTitle] = useState("My Professional Resume");
+  const [selectedTemplate, setSelectedTemplate] = useState("modern-sleek");
 
   if (!isOpen) return null;
 
   const templates = [
-    { id: 'modern-sleek', name: 'Modern Sleek', category: 'Contemporary Accent', desc: 'Vibrant colors, dark mode accents' },
-    { id: 'classic-ats', name: 'Classic ATS', category: 'High ATS Compatibility', desc: 'Traditional serif structure for scanners' },
-    { id: 'minimal-clean', name: 'Minimal Clean', category: 'Clean & Spacious', desc: 'Minimalist whitespace design' },
-    { id: 'executive-pro', name: 'Executive Pro', category: 'Two-Column Layout', desc: 'Sidebar contact and core skills' },
+    {
+      id: "modern-sleek",
+      name: "Modern Sleek",
+      category: "Contemporary Accent",
+      desc: "Vibrant colors, dark mode accents",
+    },
+    {
+      id: "classic-ats",
+      name: "Classic ATS",
+      category: "High ATS Compatibility",
+      desc: "Traditional serif structure for scanners",
+    },
+    {
+      id: "minimal-clean",
+      name: "Minimal Clean",
+      category: "Clean & Spacious",
+      desc: "Minimalist whitespace design",
+    },
+    {
+      id: "executive-pro",
+      name: "Executive Pro",
+      category: "Two-Column Layout",
+      desc: "Sidebar contact and core skills",
+    },
   ];
 
   const handleCreate = () => {
-    updateTitle(title.trim() || 'My Professional Resume');
+    updateTitle(title.trim() || "My Professional Resume");
     updateTemplateId(selectedTemplate);
     onClose();
-    router.push('/builder');
+    router.push("/builder");
   };
 
   return (
@@ -40,13 +63,18 @@ export const CreateResumeModal: React.FC<CreateResumeModalProps> = ({ isOpen, on
             </div>
             <h2 className="text-lg font-bold text-ink">Create New Resume</h2>
           </div>
-          <button onClick={onClose} className="text-ink-soft hover:text-ink p-1 rounded-xl hover:bg-surface-alt transition-colors">
+          <button
+            onClick={onClose}
+            className="text-ink-soft hover:text-ink p-1 rounded-xl hover:bg-surface-alt transition-colors"
+          >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-ink mb-1.5">Document Title</label>
+          <label className="block text-xs font-semibold text-ink mb-1.5">
+            Document Title
+          </label>
           <input
             type="text"
             value={title}
@@ -57,7 +85,9 @@ export const CreateResumeModal: React.FC<CreateResumeModalProps> = ({ isOpen, on
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-ink mb-3">Select Initial Template</label>
+          <label className="block text-xs font-semibold text-ink mb-3">
+            Select Initial Template
+          </label>
           <div className="grid grid-cols-2 gap-3">
             {templates.map((tpl) => (
               <div
@@ -65,15 +95,19 @@ export const CreateResumeModal: React.FC<CreateResumeModalProps> = ({ isOpen, on
                 onClick={() => setSelectedTemplate(tpl.id)}
                 className={`p-4 rounded-2xl border cursor-pointer transition-all ${
                   selectedTemplate === tpl.id
-                    ? 'bg-primary/10 border-primary-glow text-ink ring-2 ring-primary-glow/40 shadow-glow'
-                    : 'bg-surface-alt border-border text-ink-soft hover:border-primary-glow/40'
+                    ? "bg-primary/10 border-primary-glow text-ink ring-2 ring-primary-glow/40 shadow-glow"
+                    : "bg-surface-alt border-border text-ink-soft hover:border-primary-glow/40"
                 }`}
               >
-                <div className="flex items-center gap-2 mb-1.5">
-                  <LayoutTemplate className={`w-4 h-4 ${selectedTemplate === tpl.id ? 'text-primary-glow' : 'text-ink-soft'}`} />
+                <div className="flex items-center  p-0 gap-2 mb-1.5">
+                  <LayoutTemplate
+                    className={`w-4 h-4 ${selectedTemplate === tpl.id ? "text-primary-glow" : "text-ink-soft"}`}
+                  />
                   <span className="text-xs font-bold text-ink">{tpl.name}</span>
                 </div>
-                <p className="text-[11px] text-ink-soft leading-tight">{tpl.desc}</p>
+                <p className="text-[11px] text-ink-soft leading-tight">
+                  {tpl.desc}
+                </p>
               </div>
             ))}
           </div>
