@@ -24,6 +24,7 @@ import {
   AlertCircle,
   FileCheck,
   TrendingUp,
+  Eye,
 } from "lucide-react";
 import {
   VerificationService,
@@ -34,6 +35,7 @@ import {
 } from "@/features/profile/services/verificationService";
 import { VerificationBadge } from "@/features/profile/components/VerificationBadge";
 import { SectionVerificationBox } from "@/features/profile/components/SectionVerificationBox";
+import { DocumentViewerModal } from "@/features/profile/components/DocumentViewerModal";
 
 export type Track = "fresher" | "experienced";
 export type Mode = "resume" | "manual";
@@ -373,11 +375,13 @@ function Overview({
   verificationData,
   onNavigate,
   onCompleteProfile,
+  onViewDoc,
 }: {
   profile: ProfileData;
   verificationData?: VerificationResponse | null;
   onNavigate: (s: SectionId) => void;
   onCompleteProfile: () => void;
+  onViewDoc?: (doc: VerificationDocument) => void;
 }) {
   const checks = useMemo(() => {
     const hasContact =
@@ -574,28 +578,41 @@ function Overview({
             <TrendingUp className="w-5 h-5 text-primary-glow" /> Verification Timeline
           </h2>
           <div className="relative border-l border-border ml-3 space-y-4 pl-4">
-            {timeline.map((item) => (
-              <div key={item.id} className="relative space-y-1">
-                <div className="absolute -left-[21px] top-1.5 w-2.5 h-2.5 rounded-full bg-primary-glow" />
-                <div className="flex items-center justify-between flex-wrap gap-2">
-                  <span className="font-bold text-ink text-xs">
-                    {item.documentType.replace(/_/g, " ").toUpperCase()} ({item.section})
-                  </span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] text-ink-soft">
-                      {new Date(item.timestamp).toLocaleString()}
+            {timeline.map((item) => {
+              const matchingDoc = verificationData?.documents?.find((d) => d._id === item.id);
+              return (
+                <div
+                  key={item.id}
+                  onClick={() => matchingDoc && onViewDoc?.(matchingDoc)}
+                  className={`relative space-y-1 ${matchingDoc ? "cursor-pointer group hover:bg-secondary/40 p-2 rounded-xl transition" : ""}`}
+                  title={matchingDoc ? "Click to view document in modal" : undefined}
+                >
+                  <div className="absolute -left-[21px] top-1.5 w-2.5 h-2.5 rounded-full bg-primary-glow" />
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <span className="font-bold text-ink text-xs group-hover:text-primary-glow transition">
+                      {item.documentType.replace(/_/g, " ").toUpperCase()} ({item.section})
                     </span>
-                    <VerificationBadge status={item.status} size="sm" />
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] text-ink-soft">
+                        {new Date(item.timestamp).toLocaleString()}
+                      </span>
+                      <VerificationBadge status={item.status} size="sm" />
+                      {matchingDoc && (
+                        <span className="p-1 text-ink-soft group-hover:text-primary-glow">
+                          <Eye className="w-3.5 h-3.5" />
+                        </span>
+                      )}
+                    </div>
                   </div>
+                  <p className="text-xs text-ink-soft">{item.originalName}</p>
+                  {item.summary && (
+                    <p className="text-[11px] text-ink bg-secondary/40 p-2 rounded-lg mt-1">
+                      {item.summary}
+                    </p>
+                  )}
                 </div>
-                <p className="text-xs text-ink-soft">{item.originalName}</p>
-                {item.summary && (
-                  <p className="text-[11px] text-ink bg-secondary/40 p-2 rounded-lg mt-1">
-                    {item.summary}
-                  </p>
-                )}
-              </div>
-            ))}
+              );
+            })}
           </div>
         </section>
       )}
@@ -641,6 +658,7 @@ function PersonalSection({
   onUpdate,
   onSave,
   onRefreshVerifications,
+  onViewDoc,
 }: {
   profile: ProfileData;
   verificationDocs: VerificationDocument[];
@@ -648,6 +666,7 @@ function PersonalSection({
   onUpdate: (updater: (prev: ProfileData) => ProfileData) => void;
   onSave: () => void;
   onRefreshVerifications: () => void;
+  onViewDoc?: (doc: VerificationDocument) => void;
 }) {
   const { personal, experience } = profile;
 
@@ -753,6 +772,7 @@ function PersonalSection({
         status={verificationStatus}
         profileData={personal}
         onRefresh={onRefreshVerifications}
+        onViewDoc={onViewDoc}
       />
     </div>
   );
@@ -766,6 +786,7 @@ function ContactsSection({
   onUpdate,
   onSave,
   onRefreshVerifications,
+  onViewDoc,
 }: {
   profile: ProfileData;
   verificationDocs: VerificationDocument[];
@@ -773,6 +794,7 @@ function ContactsSection({
   onUpdate: (updater: (prev: ProfileData) => ProfileData) => void;
   onSave: () => void;
   onRefreshVerifications: () => void;
+  onViewDoc?: (doc: VerificationDocument) => void;
 }) {
   const { contact } = profile;
   const [otpSent, setOtpSent] = useState(false);
@@ -933,6 +955,7 @@ function ContactsSection({
         status={verificationStatus}
         profileData={contact}
         onRefresh={onRefreshVerifications}
+        onViewDoc={onViewDoc}
       />
     </div>
   );
@@ -946,6 +969,7 @@ function EducationSection({
   onUpdate,
   onSave,
   onRefreshVerifications,
+  onViewDoc,
 }: {
   profile: ProfileData;
   verificationDocs: VerificationDocument[];
@@ -953,6 +977,7 @@ function EducationSection({
   onUpdate: (updater: (prev: ProfileData) => ProfileData) => void;
   onSave: () => void;
   onRefreshVerifications: () => void;
+  onViewDoc?: (doc: VerificationDocument) => void;
 }) {
   const list = profile.educationsList || [];
   const [institution, setInstitution] = useState("");
@@ -1130,6 +1155,7 @@ function EducationSection({
         status={verificationStatus}
         profileData={profile.education}
         onRefresh={onRefreshVerifications}
+        onViewDoc={onViewDoc}
       />
     </div>
   );
@@ -1143,6 +1169,7 @@ function ExperienceSection({
   onUpdate,
   onSave,
   onRefreshVerifications,
+  onViewDoc,
 }: {
   profile: ProfileData;
   verificationDocs: VerificationDocument[];
@@ -1150,6 +1177,7 @@ function ExperienceSection({
   onUpdate: (updater: (prev: ProfileData) => ProfileData) => void;
   onSave: () => void;
   onRefreshVerifications: () => void;
+  onViewDoc?: (doc: VerificationDocument) => void;
 }) {
   const list = profile.experiencesList || [];
   const [company, setCompany] = useState("");
@@ -1313,6 +1341,7 @@ function ExperienceSection({
         status={verificationStatus}
         profileData={profile.experience}
         onRefresh={onRefreshVerifications}
+        onViewDoc={onViewDoc}
       />
     </div>
   );
@@ -1326,6 +1355,7 @@ function SkillsSection({
   onUpdate,
   onSave,
   onRefreshVerifications,
+  onViewDoc,
 }: {
   profile: ProfileData;
   verificationDocs: VerificationDocument[];
@@ -1333,6 +1363,7 @@ function SkillsSection({
   onUpdate: (updater: (prev: ProfileData) => ProfileData) => void;
   onSave: () => void;
   onRefreshVerifications: () => void;
+  onViewDoc?: (doc: VerificationDocument) => void;
 }) {
   const [newSkill, setNewSkill] = useState("");
   const suggested = ["React", "TypeScript", "Figma", "Product Strategy", "SQL", "Node.js", "System Design", "GraphQL"].filter(
@@ -1449,6 +1480,7 @@ function SkillsSection({
         status={verificationStatus}
         profileData={{ skills: profile.skills }}
         onRefresh={onRefreshVerifications}
+        onViewDoc={onViewDoc}
       />
     </div>
   );
@@ -1460,6 +1492,7 @@ export default function ProfilePage() {
   const { user } = useAuthStore();
   const [activeSection, setActiveSection] = useState<SectionId>("overview");
   const [saveNotice, setSaveNotice] = useState(false);
+  const [previewDoc, setPreviewDoc] = useState<VerificationDocument | null>(null);
 
   // Verification state from backend
   const [verificationData, setVerificationData] = useState<VerificationResponse | null>(null);
@@ -1600,6 +1633,7 @@ export default function ProfilePage() {
             verificationData={verificationData}
             onNavigate={handleNavigate}
             onCompleteProfile={() => handleNavigate("contacts")}
+            onViewDoc={(doc) => setPreviewDoc(doc)}
           />
         )}
 
@@ -1658,6 +1692,9 @@ export default function ProfilePage() {
           />
         )}
       </div>
+
+      {/* Global Document Viewer Modal */}
+      <DocumentViewerModal document={previewDoc} onClose={() => setPreviewDoc(null)} />
     </div>
   );
 }

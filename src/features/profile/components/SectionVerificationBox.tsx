@@ -10,6 +10,7 @@ import {
   FileCheck,
   CheckCircle2,
   XCircle,
+  Eye,
 } from 'lucide-react';
 import {
   SectionType,
@@ -18,6 +19,7 @@ import {
   VerificationStatus,
 } from '../services/verificationService';
 import { VerificationBadge } from './VerificationBadge';
+import { DocumentViewerModal } from './DocumentViewerModal';
 
 interface SectionVerificationBoxProps {
   section: SectionType;
@@ -26,6 +28,7 @@ interface SectionVerificationBoxProps {
   status: VerificationStatus;
   profileData?: Record<string, any>;
   onRefresh: () => void;
+  onViewDoc?: (doc: VerificationDocument) => void;
 }
 
 const DOCUMENT_OPTIONS: Record<SectionType, Array<{ value: string; label: string }>> = {
@@ -63,6 +66,7 @@ export const SectionVerificationBox: React.FC<SectionVerificationBoxProps> = ({
   status,
   profileData,
   onRefresh,
+  onViewDoc,
 }) => {
   const [selectedDocType, setSelectedDocType] = useState<string>(
     DOCUMENT_OPTIONS[section]?.[0]?.value || 'other'
@@ -70,8 +74,17 @@ export const SectionVerificationBox: React.FC<SectionVerificationBoxProps> = ({
   const [isUploading, setIsUploading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [previewDoc, setPreviewDoc] = useState<VerificationDocument | null>(null);
 
+  const handleOpenPreview = (doc: VerificationDocument) => {
+    if (onViewDoc) {
+      onViewDoc(doc);
+    } else {
+      setPreviewDoc(doc);
+    }
+  };
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const docOptions = DOCUMENT_OPTIONS[section] || [{ value: 'other', label: 'Document' }];
 
   // Check if any document in this section is currently pending processing
@@ -81,16 +94,14 @@ export const SectionVerificationBox: React.FC<SectionVerificationBoxProps> = ({
   useEffect(() => {
     if (!hasPendingDocs) return;
 
-    console.log(`[Polling] Active for section '${section}' - checking every 3s...`);
     const pollInterval = setInterval(() => {
       onRefresh();
     }, 3000);
 
     return () => {
-      console.log(`[Polling] Stopped for section '${section}'.`);
       clearInterval(pollInterval);
     };
-  }, [hasPendingDocs, onRefresh, section]);
+  }, [hasPendingDocs, onRefresh]);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -244,7 +255,7 @@ export const SectionVerificationBox: React.FC<SectionVerificationBoxProps> = ({
               return (
                 <div
                   key={doc._id}
-                  className={`bg-surface border rounded-xl p-4 space-y-3 text-xs shadow-xs transition-all ${
+                  className={`bg-surface border rounded-xl p-4 space-y-3 text-xs shadow-xs transition-all hover:border-primary-glow/40 ${
                     isPending
                       ? 'border-amber-500/40 bg-amber-500/5 ring-1 ring-amber-500/20'
                       : isVerified
@@ -255,9 +266,13 @@ export const SectionVerificationBox: React.FC<SectionVerificationBoxProps> = ({
                   }`}
                 >
                   <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-center gap-3 min-w-0">
+                    <div
+                      onClick={() => handleOpenPreview(doc)}
+                      className="flex items-center gap-3 min-w-0 cursor-pointer group"
+                      title="Click to view document in modal"
+                    >
                       <div
-                        className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
+                        className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 group-hover:scale-105 transition ${
                           isPending
                             ? 'bg-amber-500/10 text-amber-500'
                             : isVerified
@@ -274,7 +289,9 @@ export const SectionVerificationBox: React.FC<SectionVerificationBoxProps> = ({
                         )}
                       </div>
                       <div className="min-w-0">
-                        <p className="font-bold text-ink truncate">{doc.cloudinary.originalName}</p>
+                        <p className="font-bold text-ink truncate group-hover:text-primary-glow transition">
+                          {doc.cloudinary.originalName}
+                        </p>
                         <p className="text-[10px] text-ink-soft mt-0.5">
                           {doc.documentType.replace(/_/g, ' ')} • {formatSize(doc.cloudinary.size)} •{' '}
                           {new Date(doc.cloudinary.uploadedAt).toLocaleDateString()}
@@ -284,15 +301,30 @@ export const SectionVerificationBox: React.FC<SectionVerificationBoxProps> = ({
 
                     <div className="flex items-center gap-2 shrink-0">
                       <VerificationBadge status={doc.verification.status} size="sm" />
+
+                      {/* Modal Preview Button */}
+                      <button
+                        type="button"
+                        onClick={() => handleOpenPreview(doc)}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 bg-secondary hover:bg-primary/10 text-ink-soft hover:text-primary-glow text-xs font-semibold rounded-lg border border-border transition cursor-pointer"
+                        title="View document modal"
+                      >
+                        <Eye className="w-3.5 h-3.5" />
+                        <span className="hidden sm:inline">View</span>
+                      </button>
+
+                      {/* External Direct Link */}
                       <a
                         href={doc.cloudinary.cloudinaryUrl}
                         target="_blank"
                         rel="noreferrer"
                         className="p-1.5 text-ink-soft hover:text-primary-glow rounded-lg hover:bg-secondary transition"
-                        title="View / Download Document"
+                        title="Open direct file link"
                       >
                         <ExternalLink className="w-3.5 h-3.5" />
                       </a>
+
+                      {/* Delete Button */}
                       <button
                         onClick={() => handleDelete(doc._id)}
                         disabled={deletingId === doc._id}
@@ -380,6 +412,9 @@ export const SectionVerificationBox: React.FC<SectionVerificationBoxProps> = ({
           </div>
         </div>
       )}
+
+      {/* Document Preview Modal */}
+      <DocumentViewerModal document={previewDoc} onClose={() => setPreviewDoc(null)} />
     </div>
   );
 };
