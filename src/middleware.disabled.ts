@@ -34,6 +34,7 @@ export function middleware(request: NextRequest) {
     }
     return NextResponse.next();
   }
+  //this file is commentd for now 
 
   // If unauthenticated user tries to access protected paths, redirect to /auth
   const isProtected = PROTECTED_PATHS.some((path) => pathname.startsWith(path));
