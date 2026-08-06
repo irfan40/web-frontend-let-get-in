@@ -186,7 +186,7 @@ export const DocumentViewerModal: React.FC<DocumentViewerModalProps> = ({
               </div>
             )}
 
-            <a
+            {/* <a
               href={cleanUrl}
               target="_blank"
               rel="noreferrer"
@@ -196,7 +196,7 @@ export const DocumentViewerModal: React.FC<DocumentViewerModalProps> = ({
             >
               <Download className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Download</span>
-            </a>
+            </a> */}
 
             {/* <a
               href={cleanUrl}

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from "react";
 import {
   UploadCloud,
   FileText,
@@ -11,15 +11,15 @@ import {
   CheckCircle2,
   XCircle,
   Eye,
-} from 'lucide-react';
+} from "lucide-react";
 import {
   SectionType,
   VerificationDocument,
   VerificationService,
   VerificationStatus,
-} from '../services/verificationService';
-import { VerificationBadge } from './VerificationBadge';
-import { DocumentViewerModal } from './DocumentViewerModal';
+} from "../services/verificationService";
+import { VerificationBadge } from "./VerificationBadge";
+import { DocumentViewerModal } from "./DocumentViewerModal";
 
 interface SectionVerificationBoxProps {
   section: SectionType;
@@ -31,31 +31,34 @@ interface SectionVerificationBoxProps {
   onViewDoc?: (doc: VerificationDocument) => void;
 }
 
-const DOCUMENT_OPTIONS: Record<SectionType, Array<{ value: string; label: string }>> = {
+const DOCUMENT_OPTIONS: Record<
+  SectionType,
+  Array<{ value: string; label: string }>
+> = {
   education: [
-    { value: 'degree_certificate', label: 'Degree Certificate' },
-    { value: 'marksheet', label: 'Marksheet' },
-    { value: 'transcript', label: 'Transcript' },
+    { value: "degree_certificate", label: "Degree Certificate" },
+    { value: "marksheet", label: "Marksheet" },
+    { value: "transcript", label: "Transcript" },
   ],
   experience: [
-    { value: 'experience_letter', label: 'Experience Letter' },
-    { value: 'offer_letter', label: 'Offer Letter' },
-    { value: 'relieving_letter', label: 'Relieving Letter' },
-    { value: 'salary_slip', label: 'Salary Slip' },
-    { value: 'appointment_letter', label: 'Appointment Letter' },
+    { value: "experience_letter", label: "Experience Letter" },
+    { value: "offer_letter", label: "Offer Letter" },
+    { value: "relieving_letter", label: "Relieving Letter" },
+    { value: "salary_slip", label: "Salary Slip" },
+    { value: "appointment_letter", label: "Appointment Letter" },
   ],
   contacts: [
-    { value: 'government_id', label: 'Government ID' },
-    { value: 'address_proof', label: 'Address Proof' },
+    { value: "government_id", label: "Government ID" },
+    { value: "address_proof", label: "Address Proof" },
   ],
   personal: [
-    { value: 'passport', label: 'Passport' },
-    { value: 'driving_license', label: 'Driving License' },
-    { value: 'pan_card', label: 'PAN Card' },
+    { value: "passport", label: "Passport" },
+    { value: "driving_license", label: "Driving License" },
+    { value: "pan_card", label: "PAN Card" },
   ],
   skills: [
-    { value: 'certification_pdf', label: 'Certification PDF' },
-    { value: 'course_completion', label: 'Course Certificate' },
+    { value: "certification_pdf", label: "Certification PDF" },
+    { value: "course_completion", label: "Course Certificate" },
   ],
 };
 
@@ -69,12 +72,14 @@ export const SectionVerificationBox: React.FC<SectionVerificationBoxProps> = ({
   onViewDoc,
 }) => {
   const [selectedDocType, setSelectedDocType] = useState<string>(
-    DOCUMENT_OPTIONS[section]?.[0]?.value || 'other'
+    DOCUMENT_OPTIONS[section]?.[0]?.value || "other",
   );
   const [isUploading, setIsUploading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [previewDoc, setPreviewDoc] = useState<VerificationDocument | null>(null);
+  const [previewDoc, setPreviewDoc] = useState<VerificationDocument | null>(
+    null,
+  );
 
   const handleOpenPreview = (doc: VerificationDocument) => {
     if (onViewDoc) {
@@ -85,10 +90,14 @@ export const SectionVerificationBox: React.FC<SectionVerificationBoxProps> = ({
   };
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const docOptions = DOCUMENT_OPTIONS[section] || [{ value: 'other', label: 'Document' }];
+  const docOptions = DOCUMENT_OPTIONS[section] || [
+    { value: "other", label: "Document" },
+  ];
 
   // Check if any document in this section is currently pending processing
-  const hasPendingDocs = documents.some((d) => d.verification.status === 'pending');
+  const hasPendingDocs = documents.some(
+    (d) => d.verification.status === "pending",
+  );
 
   // Automatic Polling Mechanism: Polls every 3 seconds while documents are pending
   useEffect(() => {
@@ -109,7 +118,7 @@ export const SectionVerificationBox: React.FC<SectionVerificationBoxProps> = ({
 
     // Check size limit (15MB)
     if (file.size > 15 * 1024 * 1024) {
-      setErrorMessage('File size exceeds 15MB limit.');
+      setErrorMessage("File size exceeds 15MB limit.");
       return;
     }
 
@@ -117,16 +126,23 @@ export const SectionVerificationBox: React.FC<SectionVerificationBoxProps> = ({
     setIsUploading(true);
 
     try {
-      await VerificationService.uploadDocument(file, section, selectedDocType, profileData);
+      await VerificationService.uploadDocument(
+        file,
+        section,
+        selectedDocType,
+        profileData,
+      );
       onRefresh();
     } catch (err: any) {
       setErrorMessage(
-        err?.error?.message || err?.message || 'Failed to upload document for verification.'
+        err?.error?.message ||
+          err?.message ||
+          "Failed to upload document for verification.",
       );
     } finally {
       setIsUploading(false);
       if (fileInputRef.current) {
-        fileInputRef.current.value = '';
+        fileInputRef.current.value = "";
       }
     }
   };
@@ -137,7 +153,7 @@ export const SectionVerificationBox: React.FC<SectionVerificationBoxProps> = ({
       await VerificationService.deleteDocument(id);
       onRefresh();
     } catch (err: any) {
-      alert(err?.message || 'Failed to delete document');
+      alert(err?.message || "Failed to delete document");
     } finally {
       setDeletingId(null);
     }
@@ -159,7 +175,7 @@ export const SectionVerificationBox: React.FC<SectionVerificationBoxProps> = ({
         </div>
         <div className="flex items-center gap-2">
           <span className="text-xs text-ink-soft">
-            {documents.length} {documents.length === 1 ? 'doc' : 'docs'}
+            {documents.length} {documents.length === 1 ? "doc" : "docs"}
           </span>
           <VerificationBadge status={status} size="sm" />
         </div>
@@ -236,7 +252,8 @@ export const SectionVerificationBox: React.FC<SectionVerificationBoxProps> = ({
           </div>
         </div>
         <p className="text-[10px] text-ink-soft">
-          Supported Formats: PDF, PNG, JPG, WEBP, DOCX (Max 15MB). Fast upload with async background Gemini 2.5 Vision AI verification.
+          Supported Formats: PDF, PNG, JPG, WEBP, DOCX (Max 15MB). Fast upload
+          with async background Gemini 2.5 Vision AI verification.
         </p>
       </div>
 
@@ -248,21 +265,21 @@ export const SectionVerificationBox: React.FC<SectionVerificationBoxProps> = ({
           </h5>
           <div className="space-y-3">
             {documents.map((doc) => {
-              const isPending = doc.verification.status === 'pending';
-              const isVerified = doc.verification.status === 'verified';
-              const isRejected = doc.verification.status === 'rejected';
+              const isPending = doc.verification.status === "pending";
+              const isVerified = doc.verification.status === "verified";
+              const isRejected = doc.verification.status === "rejected";
 
               return (
                 <div
                   key={doc._id}
                   className={`bg-surface border rounded-xl p-4 space-y-3 text-xs shadow-xs transition-all hover:border-primary-glow/40 ${
                     isPending
-                      ? 'border-amber-500/40 bg-amber-500/5 ring-1 ring-amber-500/20'
+                      ? "border-amber-500/40 bg-amber-500/5 ring-1 ring-amber-500/20"
                       : isVerified
-                      ? 'border-emerald-500/30'
-                      : isRejected
-                      ? 'border-rose-500/30'
-                      : 'border-border'
+                        ? "border-emerald-500/30"
+                        : isRejected
+                          ? "border-rose-500/30"
+                          : "border-border"
                   }`}
                 >
                   <div className="flex items-start justify-between gap-3">
@@ -274,12 +291,12 @@ export const SectionVerificationBox: React.FC<SectionVerificationBoxProps> = ({
                       <div
                         className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 group-hover:scale-105 transition ${
                           isPending
-                            ? 'bg-amber-500/10 text-amber-500'
+                            ? "bg-amber-500/10 text-amber-500"
                             : isVerified
-                            ? 'bg-emerald-500/10 text-emerald-500'
-                            : isRejected
-                            ? 'bg-rose-500/10 text-rose-500'
-                            : 'bg-secondary text-primary-glow'
+                              ? "bg-emerald-500/10 text-emerald-500"
+                              : isRejected
+                                ? "bg-rose-500/10 text-rose-500"
+                                : "bg-secondary text-primary-glow"
                         }`}
                       >
                         {isPending ? (
@@ -293,14 +310,20 @@ export const SectionVerificationBox: React.FC<SectionVerificationBoxProps> = ({
                           {doc.cloudinary.originalName}
                         </p>
                         <p className="text-[10px] text-ink-soft mt-0.5">
-                          {doc.documentType.replace(/_/g, ' ')} • {formatSize(doc.cloudinary.size)} •{' '}
-                          {new Date(doc.cloudinary.uploadedAt).toLocaleDateString()}
+                          {doc.documentType.replace(/_/g, " ")} •{" "}
+                          {formatSize(doc.cloudinary.size)} •{" "}
+                          {new Date(
+                            doc.cloudinary.uploadedAt,
+                          ).toLocaleDateString()}
                         </p>
                       </div>
                     </div>
 
                     <div className="flex items-center gap-2 shrink-0">
-                      <VerificationBadge status={doc.verification.status} size="sm" />
+                      <VerificationBadge
+                        status={doc.verification.status}
+                        size="sm"
+                      />
 
                       {/* Modal Preview Button */}
                       <button
@@ -314,7 +337,7 @@ export const SectionVerificationBox: React.FC<SectionVerificationBoxProps> = ({
                       </button>
 
                       {/* External Direct Link */}
-                      <a
+                      {/* <a
                         href={doc.cloudinary.cloudinaryUrl}
                         target="_blank"
                         rel="noreferrer"
@@ -322,7 +345,7 @@ export const SectionVerificationBox: React.FC<SectionVerificationBoxProps> = ({
                         title="Open direct file link"
                       >
                         <ExternalLink className="w-3.5 h-3.5" />
-                      </a>
+                      </a> */}
 
                       {/* Delete Button */}
                       <button
@@ -353,7 +376,8 @@ export const SectionVerificationBox: React.FC<SectionVerificationBoxProps> = ({
                         </span>
                       </div>
                       <p className="text-amber-800/80 dark:text-amber-200/80 leading-relaxed">
-                        Extracting text & analyzing document authenticity in the background. Status will update automatically.
+                        Extracting text & analyzing document authenticity in the
+                        background. Status will update automatically.
                       </p>
                       {/* Animated Shimmer Bar */}
                       <div className="h-1.5 w-full bg-amber-500/20 rounded-full overflow-hidden">
@@ -374,7 +398,9 @@ export const SectionVerificationBox: React.FC<SectionVerificationBoxProps> = ({
                           Confidence: {doc.verification.confidence}%
                         </span>
                       </div>
-                      <p className="text-ink-soft leading-relaxed">{doc.ai.summary}</p>
+                      <p className="text-ink-soft leading-relaxed">
+                        {doc.ai.summary}
+                      </p>
                     </div>
                   )}
 
@@ -391,7 +417,9 @@ export const SectionVerificationBox: React.FC<SectionVerificationBoxProps> = ({
                         </span>
                       </div>
                       <p className="text-rose-900/80 dark:text-rose-200/80 leading-relaxed">
-                        {doc.ai?.summary || doc.verification.reason || 'Document verification rejected.'}
+                        {doc.ai?.summary ||
+                          doc.verification.reason ||
+                          "Document verification rejected."}
                       </p>
 
                       {doc.ai?.issues && doc.ai.issues.length > 0 && (
@@ -414,7 +442,10 @@ export const SectionVerificationBox: React.FC<SectionVerificationBoxProps> = ({
       )}
 
       {/* Document Preview Modal */}
-      <DocumentViewerModal document={previewDoc} onClose={() => setPreviewDoc(null)} />
+      <DocumentViewerModal
+        document={previewDoc}
+        onClose={() => setPreviewDoc(null)}
+      />
     </div>
   );
 };
