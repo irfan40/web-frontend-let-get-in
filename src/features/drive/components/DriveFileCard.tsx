@@ -15,6 +15,7 @@ import {
   ExternalLink,
 } from "lucide-react";
 import { DriveFile, DriveCategory } from "../services/driveService";
+import { downloadDriveFile } from "../utils/downloadHelper";
 
 interface DriveFileCardProps {
   file: DriveFile;
@@ -51,13 +52,7 @@ export const DriveFileCard: React.FC<DriveFileCardProps> = ({
 
   const handleDownload = (e: React.MouseEvent) => {
     e.stopPropagation();
-    const link = document.createElement("a");
-    link.href = fileUrl;
-    link.download = file.originalName;
-    link.target = "_blank";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    downloadDriveFile(fileUrl, file.originalName);
   };
 
   const categoryBadgeColors: Record<DriveCategory, string> = {

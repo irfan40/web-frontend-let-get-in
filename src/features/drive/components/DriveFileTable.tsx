@@ -13,6 +13,7 @@ import {
   Edit2,
 } from "lucide-react";
 import { DriveFile, DriveCategory } from "../services/driveService";
+import { downloadDriveFile } from "../utils/downloadHelper";
 
 interface DriveFileTableProps {
   files: DriveFile[];
@@ -48,13 +49,7 @@ export const DriveFileTable: React.FC<DriveFileTableProps> = ({
   const handleDownload = (e: React.MouseEvent, file: DriveFile) => {
     e.stopPropagation();
     const url = file.cloudinary.secureUrl || file.cloudinary.url;
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = file.originalName;
-    link.target = "_blank";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    downloadDriveFile(url, file.originalName);
   };
 
   return (

@@ -3,7 +3,6 @@ import { createPortal } from "react-dom";
 import {
   X,
   Download,
-  ExternalLink,
   ZoomIn,
   ZoomOut,
   RotateCcw,
@@ -12,8 +11,13 @@ import {
   HardDrive,
   Star,
   FileCheck,
+  Loader2,
+  FileSearch,
+  Eye,
+  BookOpen,
 } from "lucide-react";
 import { DriveFile } from "../services/driveService";
+import { downloadDriveFile } from "../utils/downloadHelper";
 
 interface DriveFilePreviewModalProps {
   file: DriveFile | null;
@@ -29,7 +33,9 @@ export const DriveFilePreviewModal: React.FC<DriveFilePreviewModalProps> = ({
   const [zoomLevel, setZoomLevel] = useState<number>(100);
   const [imageError, setImageError] = useState<boolean>(false);
   const [iframeError, setIframeError] = useState<boolean>(false);
+  const [isDownloading, setIsDownloading] = useState<boolean>(false);
   const [mounted, setMounted] = useState<boolean>(false);
+  const [viewMode, setViewMode] = useState<"snapshot" | "full">("snapshot");
 
   useEffect(() => {
     setMounted(true);
@@ -40,6 +46,8 @@ export const DriveFilePreviewModal: React.FC<DriveFilePreviewModalProps> = ({
     setZoomLevel(100);
     setImageError(false);
     setIframeError(false);
+    setIsDownloading(false);
+    setViewMode("snapshot");
   }, [file]);
 
   // Handle ESC key press & body scroll locking
@@ -62,7 +70,11 @@ export const DriveFilePreviewModal: React.FC<DriveFilePreviewModalProps> = ({
   if (!file || !mounted) return null;
 
   const mimeType = file.mimeType || "";
-  const rawUrl = file.cloudinary.secureUrl || file.cloudinary.url || "";
+  const rawUrl =
+    file.cloudinary?.secureUrl ||
+    file.cloudinary?.url ||
+    (file.cloudinary as any)?.cloudinaryUrl ||
+    "";
   const fileName = file.originalName || "";
 
   // Clean raw Cloudinary URLs for inline delivery
@@ -80,7 +92,7 @@ export const DriveFilePreviewModal: React.FC<DriveFilePreviewModalProps> = ({
     file.category === "pdf" ||
     mimeType === "application/pdf" ||
     /\.pdf$/i.test(fileName) ||
-    cleanUrl.includes(".pdf");
+    cleanUrl.toLowerCase().includes(".pdf");
 
   const isDocx = /\.(docx|doc|pptx|ppt|xlsx|xls)$/i.test(fileName);
 
@@ -107,21 +119,22 @@ export const DriveFilePreviewModal: React.FC<DriveFilePreviewModalProps> = ({
   const handleZoomOut = () => setZoomLevel((prev) => Math.max(prev - 25, 50));
   const handleZoomReset = () => setZoomLevel(100);
 
-  // Effective image source for canvas rendering
+  // Effective image source for rendering inside zoomable canvas
   const displayImageUrl = isImage
     ? cleanUrl
-    : isPdf && pdfPngPreviewUrl && !imageError
+    : (isPdf || isDocx) && pdfPngPreviewUrl && !imageError
       ? pdfPngPreviewUrl
       : null;
 
-  const handleDownload = () => {
-    const link = document.createElement("a");
-    link.href = cleanUrl;
-    link.download = fileName;
-    link.target = "_blank";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const handleDownload = async () => {
+    setIsDownloading(true);
+    try {
+      await downloadDriveFile(cleanUrl, fileName);
+    } catch (err) {
+      console.error("Download error:", err);
+    } finally {
+      setIsDownloading(false);
+    }
   };
 
   return createPortal(
@@ -159,7 +172,38 @@ export const DriveFilePreviewModal: React.FC<DriveFilePreviewModalProps> = ({
 
           {/* Action Toolbar */}
           <div className="flex items-center gap-2 shrink-0">
-            {displayImageUrl && (
+            {/* View Mode Toggle for PDFs & Office Docs */}
+            {(isPdf || isDocx) && (
+              <div className="flex items-center bg-secondary/80 border border-border p-1 rounded-xl mr-1">
+                <button
+                  type="button"
+                  onClick={() => setViewMode("snapshot")}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 transition ${
+                    viewMode === "snapshot"
+                      ? "bg-surface text-primary-glow shadow-xs font-bold"
+                      : "text-ink-soft hover:text-ink"
+                  }`}
+                >
+                  <Eye className="w-3.5 h-3.5" />
+                  <span>Snapshot</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewMode("full")}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 transition ${
+                    viewMode === "full"
+                      ? "bg-surface text-primary-glow shadow-xs font-bold"
+                      : "text-ink-soft hover:text-ink"
+                  }`}
+                >
+                  <BookOpen className="w-3.5 h-3.5" />
+                  <span>Full Reader</span>
+                </button>
+              </div>
+            )}
+
+            {/* Zoom Controls for Images & Snapshots */}
+            {displayImageUrl && (isImage || viewMode === "snapshot") && (
               <div className="hidden sm:flex items-center gap-1 bg-secondary/60 border border-border p-1 rounded-xl mr-1">
                 <button
                   type="button"
@@ -209,22 +253,19 @@ export const DriveFilePreviewModal: React.FC<DriveFilePreviewModalProps> = ({
             <button
               type="button"
               onClick={handleDownload}
-              className="inline-flex items-center gap-1.5 bg-gradient-brand text-white text-xs font-semibold px-3.5 py-2 rounded-xl shadow-elegant hover:shadow-glow transition cursor-pointer"
+              disabled={isDownloading}
+              className="inline-flex items-center gap-1.5 bg-gradient-brand text-white text-xs font-semibold px-3.5 py-2 rounded-xl shadow-elegant hover:shadow-glow transition cursor-pointer disabled:opacity-50"
               title="Download File"
             >
-              <Download className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Download</span>
+              {isDownloading ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Download className="w-3.5 h-3.5" />
+              )}
+              <span className="hidden sm:inline">
+                {isDownloading ? "Downloading..." : "Download"}
+              </span>
             </button>
-
-            <a
-              href={cleanUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="p-2 text-ink-soft hover:text-ink rounded-xl border border-border hover:bg-secondary transition cursor-pointer"
-              title="Open Original Link"
-            >
-              <ExternalLink className="w-4 h-4" />
-            </a>
 
             <button
               type="button"
@@ -239,7 +280,7 @@ export const DriveFilePreviewModal: React.FC<DriveFilePreviewModalProps> = ({
 
         {/* Modal Main Body (Document Display Canvas) */}
         <div className="flex-1 relative flex items-center justify-center p-4 overflow-auto min-h-0 bg-slate-900/10 dark:bg-slate-950/60">
-          {displayImageUrl ? (
+          {displayImageUrl && (isImage || viewMode === "snapshot") ? (
             <div className="w-full h-full flex items-center justify-center overflow-auto p-2">
               <img
                 src={displayImageUrl}
@@ -252,14 +293,7 @@ export const DriveFilePreviewModal: React.FC<DriveFilePreviewModalProps> = ({
                 className="max-w-full max-h-full object-contain rounded-2xl shadow-xl transition-transform duration-200"
               />
             </div>
-          ) : isPdf && !iframeError ? (
-            <iframe
-              src={`${cleanUrl}#toolbar=1`}
-              title={fileName}
-              onError={() => setIframeError(true)}
-              className="w-full h-full rounded-2xl border border-border bg-white shadow-inner"
-            />
-          ) : isDocx && !iframeError ? (
+          ) : (isPdf || isDocx) && !iframeError ? (
             <iframe
               src={googleDocsViewerUrl}
               title={fileName}
@@ -274,18 +308,23 @@ export const DriveFilePreviewModal: React.FC<DriveFilePreviewModalProps> = ({
               <div className="space-y-1">
                 <h4 className="font-bold text-ink text-base">{fileName}</h4>
                 <p className="text-xs text-ink-soft">
-                  Document is ready. Click below to view or download original file.
+                  Document is ready. Click below to download original file.
                 </p>
               </div>
               <div className="flex items-center justify-center gap-3">
-                <a
-                  href={cleanUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-2 bg-gradient-brand text-white font-semibold text-xs px-5 py-2.5 rounded-xl shadow-elegant hover:shadow-glow transition cursor-pointer"
+                <button
+                  type="button"
+                  onClick={handleDownload}
+                  disabled={isDownloading}
+                  className="inline-flex items-center gap-2 bg-gradient-brand text-white font-semibold text-xs px-5 py-2.5 rounded-xl shadow-elegant hover:shadow-glow transition cursor-pointer disabled:opacity-50"
                 >
-                  <ExternalLink className="w-4 h-4" /> Open Original Document
-                </a>
+                  {isDownloading ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Download className="w-4 h-4" />
+                  )}
+                  <span>{isDownloading ? "Downloading..." : `Download File (${formatFileSize(file.size)})`}</span>
+                </button>
               </div>
             </div>
           )}
