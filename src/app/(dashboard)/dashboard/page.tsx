@@ -44,7 +44,7 @@ export default function DashboardPage() {
     return () => {
       isMounted = false;
     };
-  }, [isAuthenticated]);
+  }, []);
 
   const handleDelete = async (id: string) => {
     try {

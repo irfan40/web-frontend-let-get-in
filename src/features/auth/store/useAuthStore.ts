@@ -6,6 +6,7 @@ interface AuthState {
   isAuthenticated: boolean;
   loading: boolean;
   isLoading: boolean; // Alias for loading
+  isInitialized: boolean;
   error: string | null;
 
   login: (data: { email?: string; phone?: string; emailOrPhone?: string; password: string }) => Promise<UserProfile>;
@@ -48,8 +49,8 @@ interface AuthState {
 
   logout: () => Promise<void>;
   refresh: () => Promise<UserProfile | null>;
-  fetchCurrentUser: () => Promise<UserProfile | null>;
-  checkAuth: () => Promise<UserProfile | null>; // Alias for fetchCurrentUser
+  fetchCurrentUser: (force?: boolean) => Promise<UserProfile | null>;
+  checkAuth: (force?: boolean) => Promise<UserProfile | null>; // Deduplicated session check
   clearError: () => void;
 }
 
@@ -60,9 +61,15 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   isAuthenticated: false,
   loading: true,
   isLoading: true,
+  isInitialized: false,
   error: null,
 
-  fetchCurrentUser: async () => {
+  fetchCurrentUser: async (force: boolean = false) => {
+    // If already checked and not forced, return cached user without duplicate network call
+    if (!force && get().isInitialized) {
+      return get().user;
+    }
+
     if (authCheckPromise) {
       return authCheckPromise;
     }
@@ -71,10 +78,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     authCheckPromise = (async () => {
       try {
         const user = await AuthService.fetchCurrentUser();
-        set({ user, isAuthenticated: true, loading: false, isLoading: false });
+        set({ user, isAuthenticated: true, loading: false, isLoading: false, isInitialized: true });
         return user;
       } catch {
-        set({ user: null, isAuthenticated: false, loading: false, isLoading: false });
+        set({ user: null, isAuthenticated: false, loading: false, isLoading: false, isInitialized: true });
         return null;
       } finally {
         authCheckPromise = null;
@@ -84,15 +91,15 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     return authCheckPromise;
   },
 
-  checkAuth: async () => {
-    return get().fetchCurrentUser();
+  checkAuth: async (force: boolean = false) => {
+    return get().fetchCurrentUser(force);
   },
 
   login: async (credentials) => {
     set({ loading: true, isLoading: true, error: null });
     try {
       const user = await AuthService.login(credentials);
-      set({ user, isAuthenticated: true, loading: false, isLoading: false });
+      set({ user, isAuthenticated: true, loading: false, isLoading: false, isInitialized: true });
       return user;
     } catch (err: unknown) {
       const errorMsg =
@@ -108,7 +115,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ loading: true, isLoading: true, error: null });
     try {
       const user = await AuthService.googleLogin(credential);
-      set({ user, isAuthenticated: true, loading: false, isLoading: false });
+      set({ user, isAuthenticated: true, loading: false, isLoading: false, isInitialized: true });
       return user;
     } catch (err: unknown) {
       const errorMsg =
@@ -138,7 +145,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ loading: true, isLoading: true, error: null });
     try {
       const user = await AuthService.verifyEmailOtp(data);
-      set({ user, isAuthenticated: true, loading: false, isLoading: false });
+      set({ user, isAuthenticated: true, loading: false, isLoading: false, isInitialized: true });
       return user;
     } catch (err: unknown) {
       const errorMsg =
@@ -176,7 +183,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ loading: true, isLoading: true, error: null });
     try {
       const user = await AuthService.verifyWhatsAppOtp(data);
-      set({ user, isAuthenticated: true, loading: false, isLoading: false });
+      set({ user, isAuthenticated: true, loading: false, isLoading: false, isInitialized: true });
       return user;
     } catch (err: unknown) {
       const errorMsg =
@@ -195,10 +202,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   refresh: async () => {
     try {
       const user = await AuthService.refresh();
-      set({ user, isAuthenticated: true, loading: false, isLoading: false });
+      set({ user, isAuthenticated: true, loading: false, isLoading: false, isInitialized: true });
       return user;
     } catch {
-      set({ user: null, isAuthenticated: false, loading: false, isLoading: false });
+      set({ user: null, isAuthenticated: false, loading: false, isLoading: false, isInitialized: true });
       return null;
     }
   },
@@ -210,7 +217,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     } catch (err) {
       console.error('Logout error:', err);
     } finally {
-      set({ user: null, isAuthenticated: false, loading: false, isLoading: false });
+      set({ user: null, isAuthenticated: false, loading: false, isLoading: false, isInitialized: true });
     }
   },
 

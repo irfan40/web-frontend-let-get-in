@@ -46,12 +46,20 @@ apiClient.interceptors.response.use(
 
     const status = error.response ? error.response.status : null;
 
-    // Check if error is 401 Unauthorized and not already retrying, and not the refresh or login endpoint itself
+    // Check if error is 401 Unauthorized and not already retrying, and not an auth/guest check endpoint
     const isAuthEndpoint =
       originalRequest.url?.includes('/auth/login') ||
       originalRequest.url?.includes('/auth/google') ||
       originalRequest.url?.includes('/auth/refresh') ||
-      originalRequest.url?.includes('/auth/logout');
+      originalRequest.url?.includes('/auth/logout') ||
+      originalRequest.url?.includes('/auth/me') ||
+      originalRequest.url?.includes('/auth/send-email-otp') ||
+      originalRequest.url?.includes('/auth/verify-email-otp') ||
+      originalRequest.url?.includes('/auth/send-whatsapp-otp') ||
+      originalRequest.url?.includes('/auth/verify-whatsapp-otp') ||
+      originalRequest.url?.includes('/auth/send-otp') ||
+      originalRequest.url?.includes('/auth/verify-otp') ||
+      originalRequest.url?.includes('/auth/signup');
 
     if (status === 401 && !originalRequest._retry && !isAuthEndpoint) {
       if (isRefreshing) {
@@ -89,6 +97,7 @@ apiClient.interceptors.response.use(
           '/dashboard',
           '/builder',
           '/demo',
+          '/explore',
           '/settings',
           '/account',
           '/profile',
