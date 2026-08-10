@@ -1,11 +1,20 @@
-import React, { useState } from 'react';
-import { useResumeStore } from '../../store/useResumeStore';
-import { useAuthStore } from '../../../auth/store/useAuthStore';
-import { Logo } from '@/components/landing/Logo';
-import { UserDropdown } from '@/components/layout/UserDropdown';
-import { Check, Cloud, RefreshCw, AlertCircle, Download, Sparkles, LayoutTemplate, User } from 'lucide-react';
-import Link from 'next/link';
-import { TemplateModal } from '@/features/templates/components/TemplateModal';
+import React, { useState } from "react";
+import { useResumeStore } from "../../store/useResumeStore";
+import { useAuthStore } from "../../../auth/store/useAuthStore";
+import { Logo } from "@/components/landing/Logo";
+import { UserDropdown } from "@/components/layout/UserDropdown";
+import {
+  Check,
+  Cloud,
+  RefreshCw,
+  AlertCircle,
+  Download,
+  Sparkles,
+  LayoutTemplate,
+  User,
+} from "lucide-react";
+import Link from "next/link";
+import { TemplateModal } from "@/features/templates/components/TemplateModal";
 
 interface EditorHeaderProps {
   onToggleAi: () => void;
@@ -13,8 +22,13 @@ interface EditorHeaderProps {
   onDownloadPdf: () => void;
 }
 
-export const EditorHeader: React.FC<EditorHeaderProps> = ({ onToggleAi, isAiOpen, onDownloadPdf }) => {
-  const { resume, updateTitle, saveStatus, lastSavedAt, isDirty } = useResumeStore();
+export const EditorHeader: React.FC<EditorHeaderProps> = ({
+  onToggleAi,
+  isAiOpen,
+  onDownloadPdf,
+}) => {
+  const { resume, updateTitle, saveStatus, lastSavedAt, isDirty } =
+    useResumeStore();
   const { isAuthenticated } = useAuthStore();
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [titleInput, setTitleInput] = useState(resume.title);
@@ -32,7 +46,7 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({ onToggleAi, isAiOpen
       <header className="glass border-b border-white/20 text-ink px-6 h-16 flex items-center justify-between sticky top-0 z-30 shadow-elegant no-print">
         {/* Left: Brand & Document Title */}
         <div className="flex items-center gap-4">
-          <Logo />
+          {/* <Logo /> */}
           <div className="h-5 w-px bg-border mx-1 hidden sm:block" />
 
           {isEditingTitle ? (
@@ -41,7 +55,7 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({ onToggleAi, isAiOpen
               value={titleInput}
               onChange={(e) => setTitleInput(e.target.value)}
               onBlur={handleTitleSubmit}
-              onKeyDown={(e) => e.key === 'Enter' && handleTitleSubmit()}
+              onKeyDown={(e) => e.key === "Enter" && handleTitleSubmit()}
               autoFocus
               className="input-base text-xs px-3 py-1 font-semibold max-w-[200px]"
             />
@@ -57,34 +71,40 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({ onToggleAi, isAiOpen
 
           {/* Save Status Indicator */}
           <div className="flex items-center gap-1.5 text-xs text-ink-soft bg-surface-alt px-3 py-1 rounded-full border border-border">
-            {saveStatus === 'saving' && (
+            {saveStatus === "saving" && (
               <>
                 <RefreshCw className="w-3.5 h-3.5 text-amber-400 animate-spin" />
                 <span className="text-amber-400 font-semibold">Saving...</span>
               </>
             )}
-            {saveStatus === 'saved' && (
+            {saveStatus === "saved" && (
               <>
                 <Check className="w-3.5 h-3.5 text-success" />
-                <span className="text-success font-semibold">Saved {lastSavedAt ? `at ${lastSavedAt}` : ''}</span>
+                <span className="text-success font-semibold">
+                  Saved {lastSavedAt ? `at ${lastSavedAt}` : ""}
+                </span>
               </>
             )}
-            {saveStatus === 'unsaved' && isDirty && (
+            {saveStatus === "unsaved" && isDirty && (
               <>
                 <Cloud className="w-3.5 h-3.5 text-primary-glow" />
                 <span>Unsaved changes</span>
               </>
             )}
-            {saveStatus === 'error' && (
+            {saveStatus === "error" && (
               <>
                 <AlertCircle className="w-3.5 h-3.5 text-destructive" />
-                <span className="text-destructive font-semibold">Save failed</span>
+                <span className="text-destructive font-semibold">
+                  Save failed
+                </span>
               </>
             )}
-            {saveStatus === 'idle' && (
+            {saveStatus === "idle" && (
               <>
                 <Cloud className="w-3.5 h-3.5 text-ink-soft" />
-                <span>{isAuthenticated ? 'Cloud Synced' : 'Offline Draft'}</span>
+                <span>
+                  {isAuthenticated ? "Cloud Synced" : "Offline Draft"}
+                </span>
               </>
             )}
           </div>
@@ -107,8 +127,8 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({ onToggleAi, isAiOpen
             onClick={onToggleAi}
             className={`flex items-center gap-2 text-xs font-semibold px-4 py-2 rounded-xl transition-all shadow-elegant ${
               isAiOpen
-                ? 'bg-gradient-brand text-primary-foreground ring-2 ring-primary-glow/50'
-                : 'bg-surface-alt hover:bg-surface text-primary-glow border border-primary/20'
+                ? "bg-gradient-brand text-primary-foreground ring-2 ring-primary-glow/50"
+                : "bg-surface-alt hover:bg-surface text-primary-glow border border-primary/20"
             }`}
           >
             <Sparkles className="w-4 h-4 text-primary-glow" />
@@ -125,7 +145,8 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({ onToggleAi, isAiOpen
           </button>
 
           {/* User Account Dropdown / Login */}
-          {isAuthenticated ? (
+
+          {/* {isAuthenticated ? (
             <UserDropdown />
           ) : (
             <Link
@@ -135,7 +156,7 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({ onToggleAi, isAiOpen
               <User className="w-3.5 h-3.5" />
               <span>Sign In</span>
             </Link>
-          )}
+          )} */}
         </div>
       </header>
 

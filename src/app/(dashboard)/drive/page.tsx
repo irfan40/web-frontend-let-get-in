@@ -19,6 +19,7 @@ import {
   FileText,
   Image as ImageIcon,
   FileArchive,
+  ShieldCheck,
 } from "lucide-react";
 import {
   DriveService,
@@ -122,6 +123,8 @@ export default function DrivePage() {
 
   const categoryFilterTabs = [
     { id: "all", label: "All Files", icon: FolderOpen },
+    { id: "profile", label: "Profile Docs", icon: ShieldCheck },
+    { id: "resume", label: "Resumes", icon: Sparkles },
     { id: "document", label: "Documents", icon: FileText },
     { id: "image", label: "Images", icon: ImageIcon },
     { id: "pdf", label: "PDFs", icon: FileText },
@@ -141,44 +144,12 @@ export default function DrivePage() {
         </div>
       )}
 
-      {/* Top Banner / SaaS Title Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-black text-ink tracking-tight">LetGetIn Cloud Drive</h1>
-            <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-primary-glow bg-primary/10 px-2.5 py-0.5 rounded-full border border-primary/20">
-              <Sparkles className="w-3 h-3" /> SaaS Storage
-            </span>
-          </div>
-          <p className="text-xs text-ink-soft mt-1">
-            Store up to 50 MB of PDFs, Images, DOCX, Certificates & Career Assets on high-speed Cloudinary storage.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <button
-            onClick={loadDriveData}
-            disabled={isLoading}
-            className="p-2.5 border border-border text-ink-soft hover:text-ink hover:bg-surface rounded-xl transition cursor-pointer"
-            title="Refresh Drive"
-          >
-            <RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`} />
-          </button>
-
-          <button
-            onClick={() => setIsUploadModalOpen(true)}
-            className="inline-flex items-center justify-center gap-2 bg-gradient-brand text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-elegant hover:shadow-glow transition cursor-pointer"
-          >
-            <FilePlus className="w-4 h-4" />
-            <span>Upload New File</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Storage Quota Bar Card */}
+      {/* Unified Storage Quota Header Bar Card */}
       <StorageQuotaBar
         stats={stats}
         onUploadClick={() => setIsUploadModalOpen(true)}
+        onRefresh={loadDriveData}
+        isLoading={isLoading}
       />
 
       {/* Control & Toolbar Row */}

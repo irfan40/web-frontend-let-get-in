@@ -1,21 +1,59 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Sparkles, FileText, Upload, ArrowRight, Wand2, ShieldCheck, Zap } from 'lucide-react';
+import { Sparkles, FileText, Upload, ArrowRight, Wand2, ShieldCheck, Zap, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useResumeStore } from '@/features/resume/store/useResumeStore';
+import { StorageProviderFactory } from '@/features/resume/storage/factory';
 import { ResumeUploadModal } from '@/features/resume/components/onboarding/ResumeUploadModal';
 
 export default function DemoOnboardingPage() {
   const router = useRouter();
   const { resetToBlank } = useResumeStore();
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [isChecking, setIsChecking] = useState(true);
+
+  // Check if user already has resumes. If so, redirect to dashboard
+  useEffect(() => {
+    let isMounted = true;
+    const verifyNewUser = async () => {
+      try {
+        const provider = StorageProviderFactory.getProvider();
+        const list = await provider.list();
+        if (isMounted && Array.isArray(list) && list.length > 0) {
+          // Old user already has resumes, redirect away from /demo to /dashboard
+          router.replace('/dashboard');
+          return;
+        }
+      } catch (err) {
+        console.warn('Error checking resumes on demo page:', err);
+      } finally {
+        if (isMounted) {
+          setIsChecking(false);
+        }
+      }
+    };
+
+    verifyNewUser();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [router]);
 
   const handleStartFromScratch = () => {
     resetToBlank();
     router.push('/builder');
   };
+
+  if (isChecking) {
+    return (
+      <div className="min-h-full flex items-center justify-center p-12">
+        <Loader2 className="w-8 h-8 text-primary-glow animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-full bg-background text-foreground flex flex-col justify-between relative overflow-hidden p-6 sm:p-8">

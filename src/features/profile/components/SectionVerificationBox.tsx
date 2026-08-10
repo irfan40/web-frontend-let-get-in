@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
+import Link from "next/link";
 import {
   UploadCloud,
   FileText,
@@ -11,6 +12,7 @@ import {
   CheckCircle2,
   XCircle,
   Eye,
+  HardDrive,
 } from "lucide-react";
 import {
   SectionType,
@@ -174,6 +176,14 @@ export const SectionVerificationBox: React.FC<SectionVerificationBoxProps> = ({
           <h4 className="font-bold text-ink text-sm">{title} Verification</h4>
         </div>
         <div className="flex items-center gap-2">
+          <Link
+            href="/drive?category=profile"
+            className="inline-flex items-center gap-1 text-[11px] font-semibold text-ink-soft hover:text-primary-glow hover:underline transition mr-1"
+            title="View all verification documents in Cloud Drive"
+          >
+            <HardDrive className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Drive</span>
+          </Link>
           <span className="text-xs text-ink-soft">
             {documents.length} {documents.length === 1 ? "doc" : "docs"}
           </span>
@@ -335,6 +345,15 @@ export const SectionVerificationBox: React.FC<SectionVerificationBoxProps> = ({
                         <Eye className="w-3.5 h-3.5" />
                         <span className="hidden sm:inline">View</span>
                       </button>
+
+                      {/* Open in Cloud Drive Button */}
+                      <Link
+                        href={`/drive?search=${encodeURIComponent(doc.cloudinary.originalName)}`}
+                        className="p-1.5 text-ink-soft hover:text-primary-glow rounded-lg hover:bg-secondary transition"
+                        title="View in Cloud Drive"
+                      >
+                        <HardDrive className="w-3.5 h-3.5" />
+                      </Link>
 
                       {/* External Direct Link */}
                       {/* <a

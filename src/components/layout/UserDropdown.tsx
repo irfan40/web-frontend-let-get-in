@@ -119,22 +119,13 @@ export function UserDropdown() {
               <span>Dashboard</span>
             </Link>
 
-            {/* <Link
-              href="/builder"
-              onClick={() => setIsOpen(false)}
-              className="flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-ink hover:text-primary-glow hover:bg-surface-alt rounded-xl transition"
-            >
-              <FileText className="w-4 h-4 text-primary-glow" />
-              <span>Resume Builder</span>
-            </Link> */}
-
             <Link
-              href="/demo"
+              href="/profile"
               onClick={() => setIsOpen(false)}
               className="flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-ink hover:text-primary-glow hover:bg-surface-alt rounded-xl transition"
             >
-              <Sparkles className="w-4 h-4 text-primary-glow" />
-              <span>AI Career Suite</span>
+              <UserIcon className="w-4 h-4 text-primary-glow" />
+              <span>My Profile</span>
             </Link>
           </div>
 

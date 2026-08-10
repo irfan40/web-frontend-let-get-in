@@ -19,6 +19,13 @@ export interface DriveFile {
   starred: boolean;
   tags: string[];
   description?: string;
+  source?: 'drive' | 'profile' | 'resume';
+  section?: string;
+  documentType?: string;
+  verificationStatus?: string;
+  resumeId?: string;
+  atsScore?: number;
+  templateId?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -30,6 +37,11 @@ export interface StorageStats {
   usedPercentage: number;
   fileCount: number;
   categoryBreakdown: Record<DriveCategory, number>;
+  sourcesBreakdown?: {
+    drive: number;
+    profile: number;
+    resume: number;
+  };
 }
 
 export interface DriveFilesResponse {
@@ -44,6 +56,7 @@ export class DriveService {
   static async getDriveFiles(params?: {
     search?: string;
     category?: string;
+    source?: string;
     starred?: boolean;
     sortBy?: string;
     sortOrder?: string;
@@ -51,6 +64,7 @@ export class DriveService {
     const query = new URLSearchParams();
     if (params?.search) query.append('search', params.search);
     if (params?.category && params.category !== 'all') query.append('category', params.category);
+    if (params?.source && params.source !== 'all') query.append('source', params.source);
     if (params?.starred) query.append('starred', 'true');
     if (params?.sortBy) query.append('sortBy', params.sortBy);
     if (params?.sortOrder) query.append('sortOrder', params.sortOrder);

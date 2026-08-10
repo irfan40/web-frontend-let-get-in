@@ -43,7 +43,8 @@ export default function DashboardLayout({
         {/* Main Content Area */}
         <div className="flex-1 flex flex-col min-w-0">
           {/* Top Bar Header */}
-          <header className="sticky top-0 z-20 h-16 border-b border-border glass px-4 sm:px-6 flex items-center justify-between">
+
+          {/* <header className="sticky top-0 z-20 h-16 border-b border-border glass px-4 sm:px-6 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <button
                 type="button"
@@ -63,7 +64,7 @@ export default function DashboardLayout({
               </div>
             </div>
 
-            {/* Top Right User Profile */}
+           
             <div className="flex items-center gap-3">
               <span className="hidden sm:inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-primary-glow bg-primary/10 px-2.5 py-1 rounded-full border border-primary/20">
                 <Sparkles className="w-3 h-3 text-primary-glow" /> Pro Career
@@ -71,7 +72,7 @@ export default function DashboardLayout({
               </span>
               <UserDropdown />
             </div>
-          </header>
+          </header> */}
 
           {/* Page Content */}
           <main className="flex-1 overflow-y-auto">{children}</main>

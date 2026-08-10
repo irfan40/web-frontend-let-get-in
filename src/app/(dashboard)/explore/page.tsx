@@ -74,57 +74,60 @@ export default function ExplorePage() {
   };
 
   // Fetch jobs based on current tab and filters
-  const fetchJobs = useCallback(async (isCancelledCheck: () => boolean = () => false) => {
-    setIsLoading(true);
-    setError(null);
+  const fetchJobs = useCallback(
+    async (isCancelledCheck: () => boolean = () => false) => {
+      setIsLoading(true);
+      setError(null);
 
-    try {
-      if (activeTab === "recommendations") {
-        const data = await jobService.getRecommendations(filters);
-        if (!isCancelledCheck()) {
-          const jobList = data?.jobs || (Array.isArray(data) ? data : []);
-          setJobs(jobList);
-          setTotal(data?.total ?? jobList.length);
-          setTotalPages(data?.totalPages ?? 1);
-          setCandidateProfile(data?.candidateProfile);
+      try {
+        if (activeTab === "recommendations") {
+          const data = await jobService.getRecommendations(filters);
+          if (!isCancelledCheck()) {
+            const jobList = data?.jobs || (Array.isArray(data) ? data : []);
+            setJobs(jobList);
+            setTotal(data?.total ?? jobList.length);
+            setTotalPages(data?.totalPages ?? 1);
+            setCandidateProfile(data?.candidateProfile);
+          }
+        } else if (activeTab === "all") {
+          const data = await jobService.getJobs(filters);
+          if (!isCancelledCheck()) {
+            const jobList = data?.jobs || (Array.isArray(data) ? data : []);
+            setJobs(jobList);
+            setTotal(data?.total ?? jobList.length);
+            setTotalPages(data?.totalPages ?? 1);
+          }
+        } else if (activeTab === "saved") {
+          const data = await jobService.getJobs({ limit: 100 });
+          if (!isCancelledCheck()) {
+            const jobList = data?.jobs || (Array.isArray(data) ? data : []);
+            const filtered = jobList.filter((j: any) =>
+              savedJobIds.includes(j._id),
+            );
+            setJobs(filtered);
+            setTotal(filtered.length);
+            setTotalPages(1);
+          }
         }
-      } else if (activeTab === "all") {
-        const data = await jobService.getJobs(filters);
+      } catch (err: any) {
         if (!isCancelledCheck()) {
-          const jobList = data?.jobs || (Array.isArray(data) ? data : []);
-          setJobs(jobList);
-          setTotal(data?.total ?? jobList.length);
-          setTotalPages(data?.totalPages ?? 1);
+          console.error("Failed to load jobs:", err);
+          const errMsg =
+            err?.error?.message ||
+            err?.message ||
+            (typeof err === "string"
+              ? err
+              : "Unable to connect to job recommendation service. Please check your backend connection.");
+          setError(errMsg);
         }
-      } else if (activeTab === "saved") {
-        const data = await jobService.getJobs({ limit: 100 });
+      } finally {
         if (!isCancelledCheck()) {
-          const jobList = data?.jobs || (Array.isArray(data) ? data : []);
-          const filtered = jobList.filter((j: any) =>
-            savedJobIds.includes(j._id),
-          );
-          setJobs(filtered);
-          setTotal(filtered.length);
-          setTotalPages(1);
+          setIsLoading(false);
         }
       }
-    } catch (err: any) {
-      if (!isCancelledCheck()) {
-        console.error("Failed to load jobs:", err);
-        const errMsg =
-          err?.error?.message ||
-          err?.message ||
-          (typeof err === "string"
-            ? err
-            : "Unable to connect to job recommendation service. Please check your backend connection.");
-        setError(errMsg);
-      }
-    } finally {
-      if (!isCancelledCheck()) {
-        setIsLoading(false);
-      }
-    }
-  }, [activeTab, filters, activeTab === "saved" ? savedJobIds : null]);
+    },
+    [activeTab, filters, activeTab === "saved" ? savedJobIds : null],
+  );
 
   useEffect(() => {
     let isCancelled = false;

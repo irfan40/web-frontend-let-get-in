@@ -18,6 +18,7 @@ import {
   Globe,
 } from "lucide-react";
 import { useAuthStore } from "@/features/auth/store/useAuthStore";
+import { StorageProviderFactory } from "@/features/resume/storage/factory";
 
 type Mode = "signin" | "signup";
 type Step = "form" | "verify" | "done";
@@ -52,11 +53,25 @@ export default function AuthPage() {
     isLoading,
   } = useAuthStore();
 
+  const routeUserAfterAuth = async () => {
+    try {
+      const provider = StorageProviderFactory.getProvider();
+      const list = await provider.list();
+      if (Array.isArray(list) && list.length > 0) {
+        router.replace("/dashboard");
+      } else {
+        router.replace("/demo");
+      }
+    } catch {
+      router.replace("/dashboard");
+    }
+  };
+
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
-      router.replace("/demo");
+      routeUserAfterAuth();
     }
-  }, [isAuthenticated, isLoading, router]);
+  }, [isAuthenticated, isLoading]);
 
   const [mode, setMode] = useState<Mode>("signup");
   const [verificationMethod, setVerificationMethod] =
@@ -100,7 +115,7 @@ export default function AuthPage() {
     setIsSubmitting(true);
     try {
       await googleLogin(credentialResponse.credential);
-      router.push("/demo");
+      await routeUserAfterAuth();
     } catch (err: unknown) {
       const msg =
         (err as { message?: string })?.message ||
@@ -121,34 +136,18 @@ export default function AuthPage() {
     clearError();
     setLocalError(null);
 
-    if (!username.trim()) {
-      setLocalError("Username is required.");
-      return;
-    }
+    const fullPhone = `${countryCode}${phone.trim()}`;
 
     if (verificationMethod === "email") {
-      if (!email.trim()) {
-        setLocalError("Email address is required.");
+      if (!email.trim() || !/^\S+@\S+\.\S+$/.test(email)) {
+        setLocalError("A valid email address is required.");
         return;
       }
     } else {
-      if (!phone.trim()) {
-        setLocalError("WhatsApp phone number is required.");
+      if (!phone.trim() || phone.trim().length < 6) {
+        setLocalError("A valid phone number is required for WhatsApp verification.");
         return;
       }
-    }
-
-    if (!password) {
-      setLocalError("Password is required.");
-      return;
-    }
-    if (password.length < 8) {
-      setLocalError("Password must be at least 8 characters long.");
-      return;
-    }
-    if (password !== confirmPassword) {
-      setLocalError("Passwords do not match.");
-      return;
     }
 
     setIsSubmitting(true);
@@ -158,19 +157,16 @@ export default function AuthPage() {
       } else {
         await sendWhatsAppOtp({ countryCode, phone: phone.trim() });
       }
-      setOtp(["", "", "", "", "", ""]);
       setStep("verify");
     } catch (err: unknown) {
-      const msg =
-        (err as { message?: string })?.message ||
-        "Failed to send verification code.";
+      const msg = (err as { message?: string })?.message || "Failed to dispatch verification code.";
       setLocalError(msg);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // Step 2: Verify OTP & Create Account
+  // Step 2: Verify OTP and finalize signup registration
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     clearError();
@@ -178,16 +174,32 @@ export default function AuthPage() {
 
     const otpCode = otp.join("");
     if (otpCode.length !== 6) {
-      setLocalError("Please enter all 6 digits of the OTP.");
+      setLocalError("Please enter the complete 6-digit OTP code.");
+      return;
+    }
+
+    if (!username.trim()) {
+      setLocalError("Full name is required.");
+      return;
+    }
+
+    if (password.length < 6) {
+      setLocalError("Password must be at least 6 characters long.");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setLocalError("Passwords do not match.");
       return;
     }
 
     setIsSubmitting(true);
+
     try {
       if (verificationMethod === "email") {
         await verifyEmailOtp({
-          username: username.trim(),
           email: email.trim(),
+          username: username.trim(),
           password,
           confirmPassword,
           otp: otpCode,
@@ -204,15 +216,14 @@ export default function AuthPage() {
       }
       setStep("done");
     } catch (err: unknown) {
-      const msg =
-        (err as { message?: string })?.message || "OTP verification failed.";
+      const msg = (err as { message?: string })?.message || "Verification failed.";
       setLocalError(msg);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // Manual Email/Phone Sign In
+  // Direct Sign In handler (Email/Phone + Password)
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     clearError();
@@ -231,7 +242,7 @@ export default function AuthPage() {
     try {
       const identifier = email.trim() || `${countryCode}${phone.trim()}`;
       await login({ emailOrPhone: identifier, password });
-      router.push("/demo");
+      await routeUserAfterAuth();
     } catch (err: unknown) {
       const msg = (err as { message?: string })?.message || "Sign in failed.";
       setLocalError(msg);

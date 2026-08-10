@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useAuthStore } from "@/features/auth/store/useAuthStore";
 import {
   User,
@@ -25,6 +26,8 @@ import {
   FileCheck,
   TrendingUp,
   Eye,
+  Loader2,
+  HardDrive,
 } from "lucide-react";
 import {
   VerificationService,
@@ -33,12 +36,20 @@ import {
   SectionType,
   VerificationStatus,
 } from "@/features/profile/services/verificationService";
+import {
+  ProfileService,
+  ProfileData,
+  Track,
+  Mode,
+  EducationItem,
+  ExperienceItem,
+} from "@/features/profile/services/profileService";
 import { VerificationBadge } from "@/features/profile/components/VerificationBadge";
 import { SectionVerificationBox } from "@/features/profile/components/SectionVerificationBox";
 import { DocumentViewerModal } from "@/features/profile/components/DocumentViewerModal";
 
-export type Track = "fresher" | "experienced";
-export type Mode = "resume" | "manual";
+export type { Track, Mode, EducationItem, ExperienceItem, ProfileData };
+
 export type SectionId =
   | "overview"
   | "personal"
@@ -48,123 +59,45 @@ export type SectionId =
   | "skills"
   | "generate";
 
-export type EducationItem = {
-  id: string;
-  institution: string;
-  degree: string;
-  startYear: string;
-  endYear: string;
-  certificateUrl?: string;
-};
-
-export type ExperienceItem = {
-  id: string;
-  company: string;
-  title: string;
-  start: string;
-  end: string;
-  highlights: string;
-};
-
-export type ProfileData = {
-  track: Track | null;
-  mode: Mode | null;
-  resumeName: string | null;
-  contact: {
-    fullName: string;
-    phone: string;
-    city: string;
-    country: string;
-    linkedin: string;
-    email?: string;
-    streetAddress?: string;
-    state?: string;
-    postalCode?: string;
-  };
-  personal: {
-    firstName: string;
-    lastName: string;
-    headline: string;
-    dob: string;
-    bio: string;
-  };
-  education: {
-    institution: string;
-    degree: string;
-    startYear: string;
-    endYear: string;
-    certificateUrl?: string;
-  };
-  educationsList: EducationItem[];
-  experience: {
-    company: string;
-    title: string;
-    start: string;
-    end: string;
-    highlights: string;
-  };
-  experiencesList: ExperienceItem[];
-  skills: string[];
-  videoName: string | null;
-};
-
 const DEFAULT_PROFILE: ProfileData = {
   track: "experienced",
   mode: "manual",
   resumeName: null,
   contact: {
-    fullName: "Irfan Rabeeh",
-    phone: "+91 98765 43210",
-    city: "Mumbai",
+    fullName: "",
+    phone: "",
+    city: "",
     country: "India",
-    linkedin: "https://linkedin.com/in/irfanrabeeh",
-    email: "irfanrabeeh@gmail.com",
-    streetAddress: "123 Main Street, Apt 4B",
-    state: "Maharashtra",
-    postalCode: "400001",
+    linkedin: "",
+    email: "",
+    streetAddress: "",
+    state: "",
+    postalCode: "",
   },
   personal: {
-    firstName: "Irfan",
-    lastName: "Rabeeh",
-    headline: "Product designer & builder",
-    dob: "1998-05-15",
-    bio: "Passionate product designer focused on creating intuitive digital experiences and high-performing web applications.",
+    firstName: "",
+    lastName: "",
+    headline: "",
+    dob: "",
+    bio: "",
   },
   education: {
-    institution: "Indian Institute of Technology",
-    degree: "B.Tech in Computer Science",
-    startYear: "2020",
-    endYear: "2024",
-    certificateUrl: "https://certificate.org/iit",
+    institution: "",
+    degree: "",
+    startYear: "",
+    endYear: "",
+    certificateUrl: "",
   },
-  educationsList: [
-    {
-      id: "edu-1",
-      institution: "Indian Institute of Technology",
-      degree: "B.Tech in Computer Science",
-      startYear: "2020",
-      endYear: "2024",
-      certificateUrl: "https://certificate.org/iit",
-    },
-  ],
+  educationsList: [],
   experience: {
-    company: "Acme Corp",
-    title: "Senior Product Designer",
-    start: "2022-06",
-    end: "Present",
-    highlights: "Shipped v2 redesign, led product design team, improved conversion by 42%.",
+    company: "",
+    title: "",
+    start: "",
+    end: "",
+    highlights: "",
   },
-  experiencesList: [
-    {
-      id: "exp-1",
-      company: "Acme Corp",
-      title: "Senior Product Designer",
-      start: "2022-06",
-      end: "Present",
-      highlights: "Shipped v2 redesign, led product design team, improved conversion by 42%.",
-    },
-  ],
-  skills: ["React", "TypeScript", "Figma", "Product Strategy"],
+  experiencesList: [],
+  skills: [],
   videoName: null,
 };
 
@@ -346,15 +279,27 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
   );
 }
 
-function SaveBar({ onSave }: { onSave?: () => void }) {
+function SaveBar({ onSave, isSaving }: { onSave?: () => void; isSaving?: boolean }) {
   return (
     <div className="pt-4 border-t border-border flex items-center justify-between">
-      <span className="text-xs text-ink-soft">Changes are saved to your profile</span>
+      <span className="text-xs text-ink-soft">Changes are saved to your profile in database</span>
       <button
+        type="button"
         onClick={onSave}
-        className="bg-gradient-brand text-white font-semibold px-5 py-2 rounded-xl text-xs shadow-elegant hover:shadow-glow transition cursor-pointer"
+        disabled={isSaving}
+        className="bg-gradient-brand text-white font-semibold px-5 py-2 rounded-xl text-xs shadow-elegant hover:shadow-glow transition cursor-pointer disabled:opacity-60 flex items-center gap-2"
       >
-        Save changes
+        {isSaving ? (
+          <>
+            <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            <span>Saving...</span>
+          </>
+        ) : (
+          <>
+            <Check className="w-3.5 h-3.5" />
+            <span>Save changes</span>
+          </>
+        )}
       </button>
     </div>
   );
@@ -506,15 +451,25 @@ function Overview({
             <p className="text-xs text-ink-soft">Rejected Documents</p>
           </div>
         </div>
-        <div className="p-4 rounded-2xl bg-surface border border-border shadow-xs flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary-glow flex items-center justify-center">
-            <FileCheck className="w-5 h-5" />
+        <Link
+          href="/drive?category=profile"
+          className="p-4 rounded-2xl bg-surface border border-border hover:border-primary-glow/50 shadow-xs flex items-center justify-between gap-3 group transition"
+          title="View and manage all your documents in Cloud Drive"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary-glow flex items-center justify-center group-hover:scale-105 transition">
+              <FileCheck className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-xl font-extrabold text-ink">{totalDocs}</p>
+              <p className="text-xs text-ink-soft">Total Documents</p>
+            </div>
           </div>
-          <div>
-            <p className="text-xl font-extrabold text-ink">{totalDocs}</p>
-            <p className="text-xs text-ink-soft">Total Documents</p>
-          </div>
-        </div>
+          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-primary-glow group-hover:underline">
+            <HardDrive className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Drive</span>
+          </span>
+        </Link>
       </section>
 
       {/* Profile Checklist & Verification Statuses */}
@@ -657,6 +612,7 @@ function PersonalSection({
   verificationStatus,
   onUpdate,
   onSave,
+  isSaving,
   onRefreshVerifications,
   onViewDoc,
 }: {
@@ -664,7 +620,8 @@ function PersonalSection({
   verificationDocs: VerificationDocument[];
   verificationStatus: VerificationStatus;
   onUpdate: (updater: (prev: ProfileData) => ProfileData) => void;
-  onSave: () => void;
+  onSave: (dataToSave?: ProfileData) => void;
+  isSaving?: boolean;
   onRefreshVerifications: () => void;
   onViewDoc?: (doc: VerificationDocument) => void;
 }) {
@@ -695,7 +652,7 @@ function PersonalSection({
                   },
                 }))
               }
-              placeholder="Irfan"
+              placeholder="First name"
             />
           </Field>
           <Field label="Last name">
@@ -713,7 +670,7 @@ function PersonalSection({
                   },
                 }))
               }
-              placeholder="Rabeeh"
+              placeholder="Last name"
             />
           </Field>
           <Field label="Headline" hint="One line describing your professional identity.">
@@ -728,7 +685,7 @@ function PersonalSection({
                   experience: { ...prev.experience, title: e.target.value },
                 }))
               }
-              placeholder="Product designer & builder"
+              placeholder="e.g. Senior Full-Stack Engineer"
             />
           </Field>
           <Field label="Date of birth">
@@ -761,7 +718,7 @@ function PersonalSection({
             </Field>
           </div>
         </div>
-        <SaveBar onSave={onSave} />
+        <SaveBar onSave={() => onSave(profile)} isSaving={isSaving} />
       </Card>
 
       {/* Verification Document Pipeline Upload Component */}
@@ -785,6 +742,7 @@ function ContactsSection({
   verificationStatus,
   onUpdate,
   onSave,
+  isSaving,
   onRefreshVerifications,
   onViewDoc,
 }: {
@@ -792,7 +750,8 @@ function ContactsSection({
   verificationDocs: VerificationDocument[];
   verificationStatus: VerificationStatus;
   onUpdate: (updater: (prev: ProfileData) => ProfileData) => void;
-  onSave: () => void;
+  onSave: (dataToSave?: ProfileData) => void;
+  isSaving?: boolean;
   onRefreshVerifications: () => void;
   onViewDoc?: (doc: VerificationDocument) => void;
 }) {
@@ -811,7 +770,7 @@ function ContactsSection({
         <Field label="Email" hint="Email is tied to your account. Change it from account settings.">
           <input
             className="input-base bg-secondary/60 cursor-not-allowed text-ink-soft"
-            value={contact.email || "irfanrabeeh@gmail.com"}
+            value={contact.email || ""}
             disabled
           />
         </Field>
@@ -845,6 +804,7 @@ function ContactsSection({
             <span className="text-xs text-ink-soft">Instant phone verification</span>
           )}
           <button
+            type="button"
             onClick={() => {
               setOtpSent(true);
               setTimeout(() => setOtpSent(false), 4000);
@@ -873,7 +833,7 @@ function ContactsSection({
                   contact: { ...prev.contact, streetAddress: e.target.value },
                 }))
               }
-              placeholder="123 Main Street, Apt 4B"
+              placeholder="Street Address / Flat No."
             />
           </Field>
           <div className="grid sm:grid-cols-2 gap-4">
@@ -887,7 +847,7 @@ function ContactsSection({
                     contact: { ...prev.contact, city: e.target.value },
                   }))
                 }
-                placeholder="Mumbai"
+                placeholder="e.g. Bengaluru"
               />
             </Field>
             <Field label="State / Province">
@@ -900,7 +860,7 @@ function ContactsSection({
                     contact: { ...prev.contact, state: e.target.value },
                   }))
                 }
-                placeholder="Maharashtra"
+                placeholder="e.g. Karnataka"
               />
             </Field>
             <Field label="Country">
@@ -926,7 +886,7 @@ function ContactsSection({
                     contact: { ...prev.contact, postalCode: e.target.value },
                   }))
                 }
-                placeholder="400001"
+                placeholder="560001"
               />
             </Field>
           </div>
@@ -944,7 +904,7 @@ function ContactsSection({
             />
           </Field>
         </div>
-        <SaveBar onSave={onSave} />
+        <SaveBar onSave={() => onSave(profile)} isSaving={isSaving} />
       </Card>
 
       {/* Verification Document Pipeline Upload Component */}
@@ -968,6 +928,7 @@ function EducationSection({
   verificationStatus,
   onUpdate,
   onSave,
+  isSaving,
   onRefreshVerifications,
   onViewDoc,
 }: {
@@ -975,7 +936,8 @@ function EducationSection({
   verificationDocs: VerificationDocument[];
   verificationStatus: VerificationStatus;
   onUpdate: (updater: (prev: ProfileData) => ProfileData) => void;
-  onSave: () => void;
+  onSave: (dataToSave?: ProfileData) => void;
+  isSaving?: boolean;
   onRefreshVerifications: () => void;
   onViewDoc?: (doc: VerificationDocument) => void;
 }) {
@@ -999,8 +961,8 @@ function EducationSection({
       certificateUrl: certificateUrl.trim(),
     };
 
-    onUpdate((prev) => ({
-      ...prev,
+    const updatedProfile: ProfileData = {
+      ...profile,
       education: {
         institution: newItem.institution,
         degree: newItem.degree,
@@ -1008,28 +970,29 @@ function EducationSection({
         endYear: newItem.endYear,
         certificateUrl: newItem.certificateUrl,
       },
-      educationsList: [newItem, ...prev.educationsList],
-    }));
+      educationsList: [newItem, ...(profile.educationsList || [])],
+    };
+
+    onUpdate(() => updatedProfile);
+    onSave(updatedProfile);
 
     setInstitution("");
     setDegree("");
     setStartYear("");
     setEndYear("");
     setCertificateUrl("");
-    onSave();
   };
 
   const handleRemove = (id: string) => {
-    onUpdate((prev) => {
-      const newList = prev.educationsList.filter((item) => item.id !== id);
-      const top = newList[0] || { institution: "", degree: "", startYear: "", endYear: "" };
-      return {
-        ...prev,
-        education: top,
-        educationsList: newList,
-      };
-    });
-    onSave();
+    const newList = (profile.educationsList || []).filter((item) => item.id !== id);
+    const top = newList[0] || { institution: "", degree: "", startYear: "", endYear: "", certificateUrl: "" };
+    const updatedProfile: ProfileData = {
+      ...profile,
+      education: top,
+      educationsList: newList,
+    };
+    onUpdate(() => updatedProfile);
+    onSave(updatedProfile);
   };
 
   return (
@@ -1068,7 +1031,7 @@ function EducationSection({
             </div>
             <button
               onClick={() => handleRemove(edu.id)}
-              className="text-ink-soft hover:text-rose-500 p-1 rounded transition"
+              className="text-ink-soft hover:text-rose-500 p-1 rounded transition cursor-pointer"
               title="Delete degree"
             >
               <Trash2 className="w-4 h-4" />
@@ -1086,7 +1049,7 @@ function EducationSection({
                 className="input-base"
                 value={institution}
                 onChange={(e) => setInstitution(e.target.value)}
-                placeholder="Indian Institute of Technology"
+                placeholder="e.g. Stanford University"
                 required
               />
             </Field>
@@ -1095,7 +1058,7 @@ function EducationSection({
                 className="input-base"
                 value={degree}
                 onChange={(e) => setDegree(e.target.value)}
-                placeholder="B.Tech in Computer Science"
+                placeholder="e.g. B.S. in Computer Science"
                 required
               />
             </Field>
@@ -1132,12 +1095,14 @@ function EducationSection({
           <div className="mt-5 flex justify-end">
             <button
               type="submit"
-              className="inline-flex items-center gap-2 bg-gradient-brand text-white font-semibold px-5 py-2.5 rounded-xl text-sm hover:shadow-glow transition cursor-pointer"
+              disabled={isSaving}
+              className="inline-flex items-center gap-2 bg-gradient-brand text-white font-semibold px-5 py-2.5 rounded-xl text-sm hover:shadow-glow transition cursor-pointer disabled:opacity-60"
             >
               <Plus className="w-4 h-4" /> Add education
             </button>
           </div>
         </form>
+        <SaveBar onSave={() => onSave(profile)} isSaving={isSaving} />
       </Card>
 
       {list.length === 0 && (
@@ -1161,6 +1126,7 @@ function EducationSection({
   );
 }
 
+
 /* --- WORK EXPERIENCE SECTION --- */
 function ExperienceSection({
   profile,
@@ -1168,6 +1134,7 @@ function ExperienceSection({
   verificationStatus,
   onUpdate,
   onSave,
+  isSaving,
   onRefreshVerifications,
   onViewDoc,
 }: {
@@ -1175,7 +1142,8 @@ function ExperienceSection({
   verificationDocs: VerificationDocument[];
   verificationStatus: VerificationStatus;
   onUpdate: (updater: (prev: ProfileData) => ProfileData) => void;
-  onSave: () => void;
+  onSave: (dataToSave?: ProfileData) => void;
+  isSaving?: boolean;
   onRefreshVerifications: () => void;
   onViewDoc?: (doc: VerificationDocument) => void;
 }) {
@@ -1199,8 +1167,8 @@ function ExperienceSection({
       highlights: highlights.trim(),
     };
 
-    onUpdate((prev) => ({
-      ...prev,
+    const updatedProfile: ProfileData = {
+      ...profile,
       experience: {
         company: newItem.company,
         title: newItem.title,
@@ -1208,28 +1176,29 @@ function ExperienceSection({
         end: newItem.end,
         highlights: newItem.highlights,
       },
-      experiencesList: [newItem, ...prev.experiencesList],
-    }));
+      experiencesList: [newItem, ...(profile.experiencesList || [])],
+    };
+
+    onUpdate(() => updatedProfile);
+    onSave(updatedProfile);
 
     setCompany("");
     setTitle("");
     setStart("");
     setEnd("");
     setHighlights("");
-    onSave();
   };
 
   const handleRemove = (id: string) => {
-    onUpdate((prev) => {
-      const newList = prev.experiencesList.filter((item) => item.id !== id);
-      const top = newList[0] || { company: "", title: "", start: "", end: "", highlights: "" };
-      return {
-        ...prev,
-        experience: top,
-        experiencesList: newList,
-      };
-    });
-    onSave();
+    const newList = (profile.experiencesList || []).filter((item) => item.id !== id);
+    const top = newList[0] || { company: "", title: "", start: "", end: "", highlights: "" };
+    const updatedProfile: ProfileData = {
+      ...profile,
+      experience: top,
+      experiencesList: newList,
+    };
+    onUpdate(() => updatedProfile);
+    onSave(updatedProfile);
   };
 
   return (
@@ -1255,11 +1224,11 @@ function ExperienceSection({
               <p className="text-sm text-ink-soft mt-1">
                 {exp.start || "—"} → {exp.end || "Present"}
               </p>
-              {exp.highlights && <p className="text-sm text-ink mt-3">{exp.highlights}</p>}
+              {exp.highlights && <p className="text-sm text-ink mt-3 whitespace-pre-line">{exp.highlights}</p>}
             </div>
             <button
               onClick={() => handleRemove(exp.id)}
-              className="text-ink-soft hover:text-rose-500 p-1 rounded transition"
+              className="text-ink-soft hover:text-rose-500 p-1 rounded transition cursor-pointer"
               title="Delete role"
             >
               <Trash2 className="w-4 h-4" />
@@ -1277,7 +1246,7 @@ function ExperienceSection({
                 className="input-base"
                 value={company}
                 onChange={(e) => setCompany(e.target.value)}
-                placeholder="Acme Corp"
+                placeholder="e.g. Acme Corp"
                 required
               />
             </Field>
@@ -1286,7 +1255,7 @@ function ExperienceSection({
                 className="input-base"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="Senior Product Designer"
+                placeholder="e.g. Senior Software Engineer"
                 required
               />
             </Field>
@@ -1313,7 +1282,7 @@ function ExperienceSection({
                   className="input-base"
                   value={highlights}
                   onChange={(e) => setHighlights(e.target.value)}
-                  placeholder="Shipped X, led Y, improved Z by 42%..."
+                  placeholder="Shipped features, led projects, improved performance..."
                 />
               </Field>
             </div>
@@ -1321,12 +1290,14 @@ function ExperienceSection({
           <div className="mt-5 flex justify-end">
             <button
               type="submit"
-              className="inline-flex items-center gap-2 bg-gradient-brand text-white font-semibold px-5 py-2.5 rounded-xl text-sm hover:shadow-glow transition cursor-pointer"
+              disabled={isSaving}
+              className="inline-flex items-center gap-2 bg-gradient-brand text-white font-semibold px-5 py-2.5 rounded-xl text-sm hover:shadow-glow transition cursor-pointer disabled:opacity-60"
             >
               <Plus className="w-4 h-4" /> Add role
             </button>
           </div>
         </form>
+        <SaveBar onSave={() => onSave(profile)} isSaving={isSaving} />
       </Card>
 
       {list.length === 0 && (
@@ -1347,6 +1318,7 @@ function ExperienceSection({
   );
 }
 
+
 /* --- SKILLS SECTION --- */
 function SkillsSection({
   profile,
@@ -1354,6 +1326,7 @@ function SkillsSection({
   verificationStatus,
   onUpdate,
   onSave,
+  isSaving,
   onRefreshVerifications,
   onViewDoc,
 }: {
@@ -1361,33 +1334,49 @@ function SkillsSection({
   verificationDocs: VerificationDocument[];
   verificationStatus: VerificationStatus;
   onUpdate: (updater: (prev: ProfileData) => ProfileData) => void;
-  onSave: () => void;
+  onSave: (dataToSave?: ProfileData) => void;
+  isSaving?: boolean;
   onRefreshVerifications: () => void;
   onViewDoc?: (doc: VerificationDocument) => void;
 }) {
   const [newSkill, setNewSkill] = useState("");
-  const suggested = ["React", "TypeScript", "Figma", "Product Strategy", "SQL", "Node.js", "System Design", "GraphQL"].filter(
-    (s) => !profile.skills.includes(s)
-  );
+  const suggested = [
+    "React",
+    "TypeScript",
+    "Node.js",
+    "Next.js",
+    "Python",
+    "SQL",
+    "Tailwind CSS",
+    "Figma",
+    "AWS",
+    "Docker",
+    "GraphQL",
+    "System Design",
+    "MongoDB",
+    "PostgreSQL",
+  ].filter((s) => !profile.skills.includes(s));
 
   const handleAddSkill = (skillToAdd: string) => {
     const trimmed = skillToAdd.trim();
     if (!trimmed || profile.skills.includes(trimmed)) return;
 
-    onUpdate((prev) => ({
-      ...prev,
-      skills: [...prev.skills, trimmed],
-    }));
+    const updatedProfile: ProfileData = {
+      ...profile,
+      skills: [...profile.skills, trimmed],
+    };
+    onUpdate(() => updatedProfile);
     setNewSkill("");
-    onSave();
+    onSave(updatedProfile);
   };
 
   const handleRemoveSkill = (skillToRemove: string) => {
-    onUpdate((prev) => ({
-      ...prev,
-      skills: prev.skills.filter((s) => s !== skillToRemove),
-    }));
-    onSave();
+    const updatedProfile: ProfileData = {
+      ...profile,
+      skills: profile.skills.filter((s) => s !== skillToRemove),
+    };
+    onUpdate(() => updatedProfile);
+    onSave(updatedProfile);
   };
 
   return (
@@ -1413,6 +1402,7 @@ function SkillsSection({
               >
                 <span>{s}</span>
                 <button
+                  type="button"
                   onClick={() => handleRemoveSkill(s)}
                   className="hover:text-rose-200 transition cursor-pointer"
                   title={`Remove ${s}`}
@@ -1422,6 +1412,7 @@ function SkillsSection({
               </span>
             ))}
           </div>
+          <SaveBar onSave={() => onSave(profile)} isSaving={isSaving} />
         </Card>
       )}
 
@@ -1437,11 +1428,12 @@ function SkillsSection({
             className="input-base flex-1"
             value={newSkill}
             onChange={(e) => setNewSkill(e.target.value)}
-            placeholder="e.g. UI Animation"
+            placeholder="e.g. React, Node.js, Python"
           />
           <button
             type="submit"
-            className="bg-gradient-brand text-white font-semibold px-5 rounded-xl text-sm hover:shadow-glow transition cursor-pointer shrink-0"
+            disabled={isSaving}
+            className="bg-gradient-brand text-white font-semibold px-5 rounded-xl text-sm hover:shadow-glow transition cursor-pointer shrink-0 disabled:opacity-60"
           >
             Add
           </button>
@@ -1454,6 +1446,7 @@ function SkillsSection({
               {suggested.map((s) => (
                 <button
                   key={s}
+                  type="button"
                   onClick={() => handleAddSkill(s)}
                   className="text-sm px-3 py-1.5 rounded-full border border-border bg-secondary/50 text-ink hover:bg-secondary transition cursor-pointer font-medium"
                 >
@@ -1491,8 +1484,16 @@ export default function ProfilePage() {
   const router = useRouter();
   const { user } = useAuthStore();
   const [activeSection, setActiveSection] = useState<SectionId>("overview");
-  const [saveNotice, setSaveNotice] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<"idle" | "unsaved" | "saving" | "saved" | "error">("idle");
+  const [saveNotice, setSaveNotice] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [previewDoc, setPreviewDoc] = useState<VerificationDocument | null>(null);
+
+  // References for debounced auto-save & concurrency safety
+  const initialLoadedRef = React.useRef(false);
+  const lastSavedJsonRef = React.useRef<string>("");
+  const autoSaveTimerRef = React.useRef<NodeJS.Timeout | null>(null);
 
   // Verification state from backend
   const [verificationData, setVerificationData] = useState<VerificationResponse | null>(null);
@@ -1525,7 +1526,7 @@ export default function ProfilePage() {
     return () => clearInterval(interval);
   }, [verificationData, fetchVerifications]);
 
-  // Profile data state persisted in local state & pre-populated from user store
+  // Profile data state persisted in local state & pre-populated from user store & loaded from DB
   const [profile, setProfile] = useState<ProfileData>(() => {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("user_profile_data");
@@ -1540,6 +1541,46 @@ export default function ProfilePage() {
     return DEFAULT_PROFILE;
   });
 
+  const profileRef = React.useRef(profile);
+  useEffect(() => {
+    profileRef.current = profile;
+  }, [profile]);
+
+  // Fetch profile from database on initial load
+  const fetchProfile = useCallback(async () => {
+    try {
+      const dbProfile = await ProfileService.getProfile();
+      if (dbProfile) {
+        setProfile((prev) => {
+          const merged: ProfileData = {
+            ...prev,
+            ...dbProfile,
+            personal: { ...prev.personal, ...(dbProfile.personal || {}) },
+            contact: { ...prev.contact, ...(dbProfile.contact || {}) },
+            education: { ...prev.education, ...(dbProfile.education || {}) },
+            educationsList: dbProfile.educationsList || prev.educationsList || [],
+            experience: { ...prev.experience, ...(dbProfile.experience || {}) },
+            experiencesList: dbProfile.experiencesList || prev.experiencesList || [],
+            skills: dbProfile.skills || prev.skills || [],
+          };
+          if (typeof window !== "undefined") {
+            localStorage.setItem("user_profile_data", JSON.stringify(merged));
+          }
+          lastSavedJsonRef.current = JSON.stringify(merged);
+          return merged;
+        });
+      }
+    } catch (err) {
+      console.warn("Failed to load profile from database:", err);
+    } finally {
+      initialLoadedRef.current = true;
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchProfile();
+  }, [fetchProfile]);
+
   // Sync logged in user name/email if present
   useEffect(() => {
     if (user) {
@@ -1547,21 +1588,95 @@ export default function ProfilePage() {
         ...prev,
         contact: {
           ...prev.contact,
-          fullName: user.fullName || user.username || prev.contact.fullName,
-          email: user.email || prev.contact.email,
+          fullName: prev.contact.fullName || user.fullName || user.username || "",
+          email: user.email || prev.contact.email || "",
+        },
+        personal: {
+          ...prev.personal,
+          firstName: prev.personal.firstName || (user.fullName ? user.fullName.split(" ")[0] : ""),
+          lastName: prev.personal.lastName || (user.fullName ? user.fullName.split(" ").slice(1).join(" ") : ""),
         },
       }));
     }
   }, [user]);
 
-  // Handle Save
-  const handleSave = () => {
-    if (typeof window !== "undefined") {
-      localStorage.setItem("user_profile_data", JSON.stringify(profile));
+  // Handle Save to DB with deduplication and state tracking
+  const handleSave = useCallback(async (dataToSave?: ProfileData) => {
+    // Clear any pending debounce timer when explicit or auto-save triggers
+    if (autoSaveTimerRef.current) {
+      clearTimeout(autoSaveTimerRef.current);
+      autoSaveTimerRef.current = null;
     }
-    setSaveNotice(true);
-    setTimeout(() => setSaveNotice(false), 3000);
-  };
+
+    const target = dataToSave || profileRef.current;
+    const targetJson = JSON.stringify(target);
+
+    // Skip redundant network request if already identical to what is in database
+    if (targetJson === lastSavedJsonRef.current && lastSavedJsonRef.current !== "") {
+      setSaveStatus("idle");
+      return;
+    }
+
+    setIsSaving(true);
+    setSaveStatus("saving");
+    setSaveError(null);
+
+    if (typeof window !== "undefined") {
+      localStorage.setItem("user_profile_data", targetJson);
+    }
+
+    try {
+      const updated = await ProfileService.updateProfile(target);
+      if (updated) {
+        setProfile((prev) => ({
+          ...prev,
+          ...updated,
+        }));
+        lastSavedJsonRef.current = JSON.stringify({ ...target, ...updated });
+      } else {
+        lastSavedJsonRef.current = targetJson;
+      }
+      setSaveStatus("saved");
+      setSaveNotice("Profile changes saved to database successfully!");
+      setTimeout(() => {
+        setSaveNotice(null);
+        setSaveStatus((curr) => (curr === "saved" ? "idle" : curr));
+      }, 3500);
+    } catch (err: any) {
+      console.error("Failed to save profile to database:", err);
+      setSaveStatus("error");
+      setSaveError(err?.message || "Failed to save profile to database.");
+      setTimeout(() => setSaveError(null), 5000);
+    } finally {
+      setIsSaving(false);
+    }
+  }, []);
+
+  // Frontend Debounced Auto-Save: Coalesces rapid keystrokes/updates into a single request
+  useEffect(() => {
+    if (!initialLoadedRef.current) return;
+
+    const currentStr = JSON.stringify(profile);
+    if (currentStr === lastSavedJsonRef.current) {
+      return;
+    }
+
+    setSaveStatus("unsaved");
+
+    if (autoSaveTimerRef.current) {
+      clearTimeout(autoSaveTimerRef.current);
+    }
+
+    autoSaveTimerRef.current = setTimeout(() => {
+      handleSave();
+    }, 1200);
+
+    return () => {
+      if (autoSaveTimerRef.current) {
+        clearTimeout(autoSaveTimerRef.current);
+      }
+    };
+  }, [profile, handleSave]);
 
   const handleNavigate = (sec: SectionId) => {
     if (sec === "generate") {
@@ -1591,38 +1706,74 @@ export default function ProfilePage() {
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-6xl mx-auto space-y-6">
-      {/* Save Notification Alert */}
+      {/* Save Notification Alerts */}
       {saveNotice && (
         <div className="fixed top-20 right-6 z-50 bg-emerald-600 text-white font-semibold text-xs px-4 py-2.5 rounded-xl shadow-elegant flex items-center gap-2 animate-fade-up">
           <Check className="w-4 h-4" />
-          <span>Profile changes saved successfully!</span>
+          <span>{saveNotice}</span>
+        </div>
+      )}
+      {saveError && (
+        <div className="fixed top-20 right-6 z-50 bg-rose-600 text-white font-semibold text-xs px-4 py-2.5 rounded-xl shadow-elegant flex items-center gap-2 animate-fade-up">
+          <AlertCircle className="w-4 h-4" />
+          <span>{saveError}</span>
         </div>
       )}
 
-      {/* Top Header Navigation Tabs */}
-      <div className="bg-surface border border-border rounded-2xl p-2 shadow-xs flex items-center gap-1.5 overflow-x-auto no-scrollbar select-none">
-        {PROFILE_SECTIONS.map((sec) => {
-          const Icon = sec.icon;
-          const isActive = activeSection === sec.id;
-          const secStatus = sec.id !== "overview" && sec.id !== "generate" ? getSectionStatus(sec.id as SectionType) : undefined;
-          return (
-            <button
-              key={sec.id}
-              onClick={() => handleNavigate(sec.id)}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
-                isActive
-                  ? "bg-gradient-brand text-white shadow-elegant"
-                  : "text-ink-soft hover:text-ink hover:bg-secondary/60"
-              }`}
-            >
-              <Icon className={`w-4 h-4 ${isActive ? "text-white" : "text-primary-glow"}`} />
-              <span>{sec.label}</span>
-              {secStatus && secStatus !== "unsubmitted" && (
-                <span className={`w-2 h-2 rounded-full ${secStatus === "verified" ? "bg-emerald-400" : secStatus === "pending" ? "bg-amber-400" : "bg-rose-400"}`} />
-              )}
-            </button>
-          );
-        })}
+      {/* Top Header Navigation Tabs with Live Auto-Save Status */}
+      <div className="bg-surface border border-border rounded-2xl p-2 shadow-xs flex items-center justify-between gap-3 overflow-x-auto no-scrollbar select-none">
+        <div className="flex items-center gap-1.5 min-w-max">
+          {PROFILE_SECTIONS.map((sec) => {
+            const Icon = sec.icon;
+            const isActive = activeSection === sec.id;
+            const secStatus = sec.id !== "overview" && sec.id !== "generate" ? getSectionStatus(sec.id as SectionType) : undefined;
+            return (
+              <button
+                key={sec.id}
+                onClick={() => handleNavigate(sec.id)}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
+                  isActive
+                    ? "bg-gradient-brand text-white shadow-elegant"
+                    : "text-ink-soft hover:text-ink hover:bg-secondary/60"
+                }`}
+              >
+                <Icon className={`w-4 h-4 ${isActive ? "text-white" : "text-primary-glow"}`} />
+                <span>{sec.label}</span>
+                {secStatus && secStatus !== "unsubmitted" && (
+                  <span className={`w-2 h-2 rounded-full ${secStatus === "verified" ? "bg-emerald-400" : secStatus === "pending" ? "bg-amber-400" : "bg-rose-400"}`} />
+                )}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Live Auto-Save Indicator */}
+        <div className="hidden sm:flex items-center pr-3 shrink-0">
+          {saveStatus === "saving" && (
+            <span className="inline-flex items-center gap-1.5 text-xs text-amber-500 font-medium">
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              <span>Saving...</span>
+            </span>
+          )}
+          {saveStatus === "saved" && (
+            <span className="inline-flex items-center gap-1.5 text-xs text-emerald-500 font-medium animate-fade-in">
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              <span>Saved to cloud</span>
+            </span>
+          )}
+          {saveStatus === "unsaved" && (
+            <span className="inline-flex items-center gap-1.5 text-xs text-ink-soft font-medium">
+              <Clock className="w-3.5 h-3.5" />
+              <span>Unsaved changes</span>
+            </span>
+          )}
+          {saveStatus === "error" && (
+            <span className="inline-flex items-center gap-1.5 text-xs text-rose-500 font-medium">
+              <AlertCircle className="w-3.5 h-3.5" />
+              <span>Save error</span>
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Main Section Render Area */}
@@ -1644,6 +1795,7 @@ export default function ProfilePage() {
             verificationStatus={getSectionStatus("personal")}
             onUpdate={setProfile}
             onSave={handleSave}
+            isSaving={isSaving}
             onRefreshVerifications={fetchVerifications}
           />
         )}
@@ -1655,6 +1807,7 @@ export default function ProfilePage() {
             verificationStatus={getSectionStatus("contacts")}
             onUpdate={setProfile}
             onSave={handleSave}
+            isSaving={isSaving}
             onRefreshVerifications={fetchVerifications}
           />
         )}
@@ -1666,6 +1819,7 @@ export default function ProfilePage() {
             verificationStatus={getSectionStatus("education")}
             onUpdate={setProfile}
             onSave={handleSave}
+            isSaving={isSaving}
             onRefreshVerifications={fetchVerifications}
           />
         )}
@@ -1677,6 +1831,7 @@ export default function ProfilePage() {
             verificationStatus={getSectionStatus("experience")}
             onUpdate={setProfile}
             onSave={handleSave}
+            isSaving={isSaving}
             onRefreshVerifications={fetchVerifications}
           />
         )}
@@ -1688,6 +1843,7 @@ export default function ProfilePage() {
             verificationStatus={getSectionStatus("skills")}
             onUpdate={setProfile}
             onSave={handleSave}
+            isSaving={isSaving}
             onRefreshVerifications={fetchVerifications}
           />
         )}

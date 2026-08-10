@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import Link from "next/link";
 import {
   FileText,
   Image as ImageIcon,
@@ -10,9 +11,12 @@ import {
   Eye,
   Copy,
   Check,
-  MoreVertical,
   Edit2,
   ExternalLink,
+  ShieldCheck,
+  Clock,
+  Sparkles,
+  Award,
 } from "lucide-react";
 import { DriveFile, DriveCategory } from "../services/driveService";
 import { downloadDriveFile } from "../utils/downloadHelper";
@@ -41,18 +45,29 @@ export const DriveFileCard: React.FC<DriveFileCardProps> = ({
   };
 
   const isImage = file.category === "image" || file.mimeType.startsWith("image/");
-  const fileUrl = file.cloudinary.secureUrl || file.cloudinary.url;
+  const isResume = file.source === "resume";
+  const isProfile = file.source === "profile";
+  const fileUrl = file.cloudinary?.secureUrl || file.cloudinary?.url || "";
 
   const handleCopyLink = (e: React.MouseEvent) => {
     e.stopPropagation();
-    navigator.clipboard.writeText(fileUrl);
+    if (isResume) {
+      const fullBuilderUrl = `${window.location.origin}/builder?resumeId=${file.resumeId || file._id}`;
+      navigator.clipboard.writeText(fullBuilderUrl);
+    } else {
+      navigator.clipboard.writeText(fileUrl);
+    }
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
   const handleDownload = (e: React.MouseEvent) => {
     e.stopPropagation();
-    downloadDriveFile(fileUrl, file.originalName);
+    if (isResume) {
+      window.open(`/builder?resumeId=${file.resumeId || file._id}`, "_blank");
+    } else {
+      downloadDriveFile(fileUrl, file.originalName);
+    }
   };
 
   const categoryBadgeColors: Record<DriveCategory, string> = {
@@ -65,8 +80,14 @@ export const DriveFileCard: React.FC<DriveFileCardProps> = ({
     other: "bg-slate-500/10 text-slate-500 border-slate-500/20",
   };
 
-  const getCategoryIcon = (cat: DriveCategory) => {
-    switch (cat) {
+  const getCategoryIcon = () => {
+    if (isResume) {
+      return <Sparkles className="w-6 h-6 text-purple-500" />;
+    }
+    if (isProfile) {
+      return <ShieldCheck className="w-6 h-6 text-indigo-500" />;
+    }
+    switch (file.category) {
       case "pdf":
         return <FileText className="w-6 h-6 text-rose-500" />;
       case "image":
@@ -97,8 +118,14 @@ export const DriveFileCard: React.FC<DriveFileCardProps> = ({
               />
             </div>
           ) : (
-            <div className="w-12 h-12 rounded-xl bg-secondary/70 border border-border flex items-center justify-center shrink-0 group-hover:scale-105 transition">
-              {getCategoryIcon(file.category)}
+            <div className={`w-12 h-12 rounded-xl border flex items-center justify-center shrink-0 group-hover:scale-105 transition ${
+              isResume
+                ? "bg-purple-500/10 border-purple-500/20 text-purple-500"
+                : isProfile
+                ? "bg-indigo-500/10 border-indigo-500/20 text-indigo-500"
+                : "bg-secondary/70 border-border"
+            }`}>
+              {getCategoryIcon()}
             </div>
           )}
 
@@ -106,13 +133,55 @@ export const DriveFileCard: React.FC<DriveFileCardProps> = ({
             <h4 className="font-bold text-ink text-xs truncate group-hover:text-primary-glow transition" title={file.originalName}>
               {file.originalName}
             </h4>
-            <span
-              className={`inline-block mt-1 px-2 py-0.5 rounded-md border text-[10px] font-extrabold uppercase tracking-wider ${
-                categoryBadgeColors[file.category]
-              }`}
-            >
-              {file.category}
-            </span>
+
+            {/* Source & Category Badges */}
+            <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+              {isProfile ? (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase tracking-wider bg-indigo-500/10 text-indigo-500 border border-indigo-500/20">
+                  <ShieldCheck className="w-2.5 h-2.5" />
+                  {file.section || "Profile"}
+                </span>
+              ) : isResume ? (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase tracking-wider bg-purple-500/10 text-purple-500 border border-purple-500/20">
+                  <Sparkles className="w-2.5 h-2.5" />
+                  Resume
+                </span>
+              ) : (
+                <span
+                  className={`inline-block px-2 py-0.5 rounded-md border text-[10px] font-extrabold uppercase tracking-wider ${
+                    categoryBadgeColors[file.category]
+                  }`}
+                >
+                  {file.category}
+                </span>
+              )}
+
+              {/* Verification status badge for profile documents */}
+              {isProfile && file.verificationStatus && (
+                <span className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-wider border ${
+                  file.verificationStatus === "verified"
+                    ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
+                    : file.verificationStatus === "rejected"
+                    ? "bg-rose-500/10 text-rose-500 border-rose-500/20"
+                    : "bg-amber-500/10 text-amber-500 border-amber-500/20"
+                }`}>
+                  {file.verificationStatus === "verified" ? (
+                    <Check className="w-2.5 h-2.5" />
+                  ) : (
+                    <Clock className="w-2.5 h-2.5" />
+                  )}
+                  {file.verificationStatus}
+                </span>
+              )}
+
+              {/* ATS score badge for resumes */}
+              {isResume && file.atsScore !== undefined && (
+                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
+                  <Award className="w-2.5 h-2.5" />
+                  ATS {file.atsScore}%
+                </span>
+              )}
+            </div>
           </div>
         </div>
 
@@ -161,20 +230,31 @@ export const DriveFileCard: React.FC<DriveFileCardProps> = ({
             <Eye className="w-3.5 h-3.5" />
           </button>
 
-          <button
-            type="button"
-            onClick={handleDownload}
-            className="p-1.5 hover:text-primary-glow hover:bg-surface-alt rounded-lg transition"
-            title="Download file"
-          >
-            <Download className="w-3.5 h-3.5" />
-          </button>
+          {isResume ? (
+            <Link
+              href={`/builder?resumeId=${file.resumeId || file._id}`}
+              onClick={(e) => e.stopPropagation()}
+              className="p-1.5 hover:text-purple-500 hover:bg-purple-500/10 rounded-lg transition text-purple-600 dark:text-purple-400 font-semibold flex items-center gap-1"
+              title="Open in Resume Builder"
+            >
+              <ExternalLink className="w-3.5 h-3.5" />
+            </Link>
+          ) : (
+            <button
+              type="button"
+              onClick={handleDownload}
+              className="p-1.5 hover:text-primary-glow hover:bg-surface-alt rounded-lg transition"
+              title="Download file"
+            >
+              <Download className="w-3.5 h-3.5" />
+            </button>
+          )}
 
           <button
             type="button"
             onClick={handleCopyLink}
             className="p-1.5 hover:text-primary-glow hover:bg-surface-alt rounded-lg transition"
-            title="Copy link"
+            title={isResume ? "Copy Resume Link" : "Copy download link"}
           >
             {copied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
           </button>

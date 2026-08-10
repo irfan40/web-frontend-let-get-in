@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
+import Link from "next/link";
 import {
   X,
   Download,
@@ -15,6 +16,13 @@ import {
   FileSearch,
   Eye,
   BookOpen,
+  Sparkles,
+  ShieldCheck,
+  ExternalLink,
+  Award,
+  CheckCircle2,
+  Clock,
+  AlertCircle,
 } from "lucide-react";
 import { DriveFile } from "../services/driveService";
 import { downloadDriveFile } from "../utils/downloadHelper";
@@ -69,6 +77,9 @@ export const DriveFilePreviewModal: React.FC<DriveFilePreviewModalProps> = ({
 
   if (!file || !mounted) return null;
 
+  const isResume = file.source === "resume";
+  const isProfile = file.source === "profile";
+
   const mimeType = file.mimeType || "";
   const rawUrl =
     file.cloudinary?.secureUrl ||
@@ -96,7 +107,7 @@ export const DriveFilePreviewModal: React.FC<DriveFilePreviewModalProps> = ({
 
   const isDocx = /\.(docx|doc|pptx|ppt|xlsx|xls)$/i.test(fileName);
 
-  // Cloudinary PDF Page 1 PNG Snapshot (works even for raw Cloudinary PDFs!)
+  // Cloudinary PDF Page 1 PNG Snapshot
   const pdfPngPreviewUrl =
     (isPdf || isDocx) && cleanUrl.includes("cloudinary.com")
       ? cleanUrl
@@ -127,6 +138,10 @@ export const DriveFilePreviewModal: React.FC<DriveFilePreviewModalProps> = ({
       : null;
 
   const handleDownload = async () => {
+    if (isResume) {
+      window.open(`/builder?resumeId=${file.resumeId || file._id}`, "_blank");
+      return;
+    }
     setIsDownloading(true);
     try {
       await downloadDriveFile(cleanUrl, fileName);
@@ -147,13 +162,41 @@ export const DriveFilePreviewModal: React.FC<DriveFilePreviewModalProps> = ({
         {/* Header Bar */}
         <div className="px-5 py-4 bg-surface/90 backdrop-blur border-b border-border flex items-center justify-between flex-wrap gap-3 shrink-0">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="w-10 h-10 rounded-2xl bg-primary/10 text-primary-glow flex items-center justify-center shrink-0">
-              <FileCheck className="w-5 h-5" />
+            <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 ${
+              isResume
+                ? "bg-purple-500/10 text-purple-500"
+                : isProfile
+                ? "bg-indigo-500/10 text-indigo-500"
+                : "bg-primary/10 text-primary-glow"
+            }`}>
+              {isResume ? (
+                <Sparkles className="w-5 h-5" />
+              ) : isProfile ? (
+                <ShieldCheck className="w-5 h-5" />
+              ) : (
+                <FileCheck className="w-5 h-5" />
+              )}
             </div>
+
             <div className="min-w-0">
-              <h3 className="font-bold text-ink text-base truncate max-w-md" title={fileName}>
-                {fileName}
-              </h3>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h3 className="font-bold text-ink text-base truncate max-w-md" title={fileName}>
+                  {fileName}
+                </h3>
+
+                {isProfile && (
+                  <span className="px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase bg-indigo-500/10 text-indigo-500 border border-indigo-500/20">
+                    Profile • {file.section || "Verification"}
+                  </span>
+                )}
+
+                {isResume && (
+                  <span className="px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase bg-purple-500/10 text-purple-500 border border-purple-500/20">
+                    Resume Builder
+                  </span>
+                )}
+              </div>
+
               <p className="text-xs text-ink-soft flex items-center gap-3 mt-0.5 flex-wrap">
                 <span className="capitalize font-semibold">{file.category}</span>
                 <span>•</span>
@@ -166,6 +209,34 @@ export const DriveFilePreviewModal: React.FC<DriveFilePreviewModalProps> = ({
                   <Calendar className="w-3 h-3 text-ink-soft/70" />
                   {new Date(file.createdAt).toLocaleDateString()}
                 </span>
+                {file.verificationStatus && (
+                  <>
+                    <span>•</span>
+                    <span className={`inline-flex items-center gap-1 font-bold ${
+                      file.verificationStatus === "verified"
+                        ? "text-emerald-500"
+                        : file.verificationStatus === "rejected"
+                        ? "text-rose-500"
+                        : "text-amber-500"
+                    }`}>
+                      {file.verificationStatus === "verified" ? (
+                        <CheckCircle2 className="w-3 h-3" />
+                      ) : (
+                        <Clock className="w-3 h-3" />
+                      )}
+                      Status: {file.verificationStatus}
+                    </span>
+                  </>
+                )}
+                {isResume && file.atsScore !== undefined && (
+                  <>
+                    <span>•</span>
+                    <span className="inline-flex items-center gap-1 text-emerald-500 font-bold">
+                      <Award className="w-3 h-3" />
+                      ATS Score: {file.atsScore}%
+                    </span>
+                  </>
+                )}
               </p>
             </div>
           </div>
@@ -173,7 +244,7 @@ export const DriveFilePreviewModal: React.FC<DriveFilePreviewModalProps> = ({
           {/* Action Toolbar */}
           <div className="flex items-center gap-2 shrink-0">
             {/* View Mode Toggle for PDFs & Office Docs */}
-            {(isPdf || isDocx) && (
+            {(isPdf || isDocx) && !isResume && (
               <div className="flex items-center bg-secondary/80 border border-border p-1 rounded-xl mr-1">
                 <button
                   type="button"
@@ -250,22 +321,32 @@ export const DriveFilePreviewModal: React.FC<DriveFilePreviewModalProps> = ({
               </button>
             )}
 
-            <button
-              type="button"
-              onClick={handleDownload}
-              disabled={isDownloading}
-              className="inline-flex items-center gap-1.5 bg-gradient-brand text-white text-xs font-semibold px-3.5 py-2 rounded-xl shadow-elegant hover:shadow-glow transition cursor-pointer disabled:opacity-50"
-              title="Download File"
-            >
-              {isDownloading ? (
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              ) : (
-                <Download className="w-3.5 h-3.5" />
-              )}
-              <span className="hidden sm:inline">
-                {isDownloading ? "Downloading..." : "Download"}
-              </span>
-            </button>
+            {isResume ? (
+              <Link
+                href={`/builder?resumeId=${file.resumeId || file._id}`}
+                className="inline-flex items-center gap-1.5 bg-gradient-brand text-white text-xs font-semibold px-3.5 py-2 rounded-xl shadow-elegant hover:shadow-glow transition cursor-pointer"
+              >
+                <ExternalLink className="w-3.5 h-3.5" />
+                <span>Open in Resume Builder</span>
+              </Link>
+            ) : (
+              <button
+                type="button"
+                onClick={handleDownload}
+                disabled={isDownloading}
+                className="inline-flex items-center gap-1.5 bg-gradient-brand text-white text-xs font-semibold px-3.5 py-2 rounded-xl shadow-elegant hover:shadow-glow transition cursor-pointer disabled:opacity-50"
+                title="Download File"
+              >
+                {isDownloading ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Download className="w-3.5 h-3.5" />
+                )}
+                <span className="hidden sm:inline">
+                  {isDownloading ? "Downloading..." : "Download"}
+                </span>
+              </button>
+            )}
 
             <button
               type="button"
@@ -280,7 +361,41 @@ export const DriveFilePreviewModal: React.FC<DriveFilePreviewModalProps> = ({
 
         {/* Modal Main Body (Document Display Canvas) */}
         <div className="flex-1 relative flex items-center justify-center p-4 overflow-auto min-h-0 bg-slate-900/10 dark:bg-slate-950/60">
-          {displayImageUrl && (isImage || viewMode === "snapshot") ? (
+          {isResume ? (
+            /* Resume Hub Card Preview */
+            <div className="p-8 text-center space-y-5 max-w-lg bg-surface border border-border rounded-3xl shadow-xl animate-in zoom-in-95">
+              <div className="w-20 h-20 rounded-3xl bg-purple-500/10 text-purple-500 mx-auto flex items-center justify-center shadow-inner">
+                <Sparkles className="w-10 h-10" />
+              </div>
+              <div className="space-y-2">
+                <h4 className="font-bold text-ink text-xl">{file.originalName}</h4>
+                <p className="text-xs text-ink-soft">
+                  {file.description || "AI-optimized resume stored in your Cloud Drive."}
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 py-2 text-left">
+                <div className="p-3 bg-secondary/50 rounded-xl border border-border">
+                  <span className="text-[10px] uppercase font-bold text-ink-soft">Template</span>
+                  <p className="font-bold text-ink text-xs capitalize mt-0.5">{file.templateId || "modern-sleek"}</p>
+                </div>
+                <div className="p-3 bg-secondary/50 rounded-xl border border-border">
+                  <span className="text-[10px] uppercase font-bold text-ink-soft">ATS Score</span>
+                  <p className="font-bold text-emerald-500 text-xs mt-0.5">{file.atsScore || 0}% Optimized</p>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-center gap-3 pt-2">
+                <Link
+                  href={`/builder?resumeId=${file.resumeId || file._id}`}
+                  className="inline-flex items-center gap-2 bg-gradient-brand text-white font-bold text-xs px-6 py-3 rounded-xl shadow-elegant hover:shadow-glow transition"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                  <span>Edit in Resume Builder</span>
+                </Link>
+              </div>
+            </div>
+          ) : displayImageUrl && (isImage || viewMode === "snapshot") ? (
             <div className="w-full h-full flex items-center justify-center overflow-auto p-2">
               <img
                 src={displayImageUrl}
@@ -308,7 +423,7 @@ export const DriveFilePreviewModal: React.FC<DriveFilePreviewModalProps> = ({
               <div className="space-y-1">
                 <h4 className="font-bold text-ink text-base">{fileName}</h4>
                 <p className="text-xs text-ink-soft">
-                  Document is ready. Click below to download original file.
+                  {file.description || "Document is ready for download."}
                 </p>
               </div>
               <div className="flex items-center justify-center gap-3">
