@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { GoogleAuthProvider } from "@/components/providers/GoogleAuthProvider";
+import { Toaster } from "sonner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -29,7 +30,17 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <GoogleAuthProvider>{children}</GoogleAuthProvider>
+        <GoogleAuthProvider>
+          {children}
+          <Toaster
+            position="top-right"
+            richColors
+            closeButton
+            toastOptions={{
+              className: "rounded-2xl border border-border shadow-xl font-sans text-xs",
+            }}
+          />
+        </GoogleAuthProvider>
       </body>
     </html>
   );

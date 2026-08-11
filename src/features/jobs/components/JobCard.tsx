@@ -20,6 +20,8 @@ interface JobCardProps {
   onSelect: (job: IJob) => void;
   isSaved?: boolean;
   onToggleSave?: (jobId: string) => void;
+  isSelected?: boolean;
+  isApplied?: boolean;
 }
 
 export const JobCard: React.FC<JobCardProps> = ({
@@ -27,6 +29,8 @@ export const JobCard: React.FC<JobCardProps> = ({
   onSelect,
   isSaved = false,
   onToggleSave,
+  isSelected = false,
+  isApplied = false,
 }) => {
   const match = job.matchScore || 70;
 

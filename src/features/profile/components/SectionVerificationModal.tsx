@@ -26,6 +26,7 @@ import {
 } from "../services/verificationService";
 import { VerificationBadge } from "./VerificationBadge";
 import { DocumentViewerModal } from "./DocumentViewerModal";
+import { toast } from "sonner";
 
 export interface SectionVerificationModalProps {
   isOpen: boolean;
@@ -204,15 +205,17 @@ export const SectionVerificationModal: React.FC<SectionVerificationModalProps> =
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
+      toast.success("Document uploaded successfully! Verification in progress.");
       setUploadSuccessNotice("Document uploaded successfully! Verification is in progress.");
       setTimeout(() => setUploadSuccessNotice(null), 5000);
       onRefresh();
     } catch (err: any) {
-      setErrorMessage(
+      const msg =
         err?.error?.message ||
-          err?.message ||
-          "Failed to upload document for verification."
-      );
+        err?.message ||
+        "Failed to upload document for verification.";
+      setErrorMessage(msg);
+      toast.error(msg);
     } finally {
       setIsUploading(false);
     }
@@ -223,9 +226,12 @@ export const SectionVerificationModal: React.FC<SectionVerificationModalProps> =
     setDeletingId(id);
     try {
       await VerificationService.deleteDocument(id);
+      toast.success("Document deleted successfully");
       onRefresh();
     } catch (err: any) {
-      setErrorMessage(err?.message || "Failed to delete document");
+      const msg = err?.message || "Failed to delete document";
+      setErrorMessage(msg);
+      toast.error(msg);
     } finally {
       setDeletingId(null);
     }

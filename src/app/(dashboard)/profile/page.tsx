@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useEffect, useCallback } from "react";
+import React, { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuthStore } from "@/features/auth/store/useAuthStore";
@@ -29,6 +29,13 @@ import {
   Eye,
   Loader2,
   HardDrive,
+  Pencil,
+  ChevronDown,
+  Search,
+  Laptop,
+  Palette,
+  Award,
+  X,
 } from "lucide-react";
 import {
   VerificationService,
@@ -48,6 +55,7 @@ import {
 import { VerificationBadge } from "@/features/profile/components/VerificationBadge";
 import { SectionVerificationModal } from "@/features/profile/components/SectionVerificationModal";
 import { DocumentViewerModal } from "@/features/profile/components/DocumentViewerModal";
+import { toast } from "sonner";
 
 export type { Track, Mode, EducationItem, ExperienceItem, ProfileData };
 
@@ -226,27 +234,32 @@ function SectionHeader({
   subtitle,
   status,
   onOpenVerify,
+  action,
 }: {
   title: string;
   subtitle: string;
   status?: VerificationStatus;
   onOpenVerify?: () => void;
+  action?: React.ReactNode;
 }) {
   return (
-    <div className="flex items-center justify-between flex-wrap gap-2 mb-2">
+    <div className="flex items-center justify-between flex-wrap gap-3 mb-2">
       <div>
         <h2 className="text-xl font-extrabold text-ink tracking-tight">{title}</h2>
         <p className="text-xs text-ink-soft mt-0.5">{subtitle}</p>
       </div>
-      {status && (
-        <div
-          onClick={onOpenVerify}
-          className={onOpenVerify ? "cursor-pointer hover:scale-105 transition" : ""}
-          title={onOpenVerify ? "Click to open verification modal" : undefined}
-        >
-          <VerificationBadge status={status} size="lg" />
-        </div>
-      )}
+      <div className="flex items-center gap-3">
+        {action}
+        {status && (
+          <div
+            onClick={onOpenVerify}
+            className={onOpenVerify ? "cursor-pointer hover:scale-105 transition" : ""}
+            title={onOpenVerify ? "Click to open verification modal" : undefined}
+          >
+            <VerificationBadge status={status} size="lg" />
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -374,21 +387,37 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
 }
 
 function SaveBar({
+  isEditing,
+  onToggleEdit,
   onSave,
+  onCancel,
   isSaving,
   onOpenVerify,
   verificationStatus = "unsubmitted",
   documentsCount = 0,
+  editText = "Edit Details",
+  saveText = "Save changes",
+  hideEdit = false,
 }: {
+  isEditing?: boolean;
+  onToggleEdit?: () => void;
   onSave?: () => void;
+  onCancel?: () => void;
   isSaving?: boolean;
   onOpenVerify?: () => void;
   verificationStatus?: VerificationStatus;
   documentsCount?: number;
+  editText?: string;
+  saveText?: string;
+  hideEdit?: boolean;
 }) {
   return (
     <div className="pt-4 border-t border-border flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-      <span className="text-xs text-ink-soft">Changes are saved to your profile in database</span>
+      <span className="text-xs text-ink-soft">
+        {isEditing
+          ? "Editing mode active — remember to save your updates"
+          : "Verified credentials enhance your profile score"}
+      </span>
       <div className="flex items-center gap-2.5 justify-end flex-wrap">
         {onOpenVerify && (
           <VerificationButton
@@ -397,24 +426,52 @@ function SaveBar({
             onClick={onOpenVerify}
           />
         )}
-        <button
-          type="button"
-          onClick={onSave}
-          disabled={isSaving}
-          className="bg-gradient-brand text-white font-semibold px-5 py-2 rounded-xl text-xs shadow-elegant hover:shadow-glow transition cursor-pointer disabled:opacity-60 flex items-center justify-center gap-2 shrink-0"
-        >
-          {isSaving ? (
-            <>
-              <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              <span>Saving...</span>
-            </>
-          ) : (
-            <>
-              <Check className="w-3.5 h-3.5" />
-              <span>Save changes</span>
-            </>
-          )}
-        </button>
+
+        {!hideEdit && (
+          <>
+            {!isEditing ? (
+              <button
+                type="button"
+                onClick={onToggleEdit}
+                className="inline-flex items-center gap-1.5 bg-secondary hover:bg-secondary/80 text-ink font-semibold px-4 py-2 rounded-xl text-xs border border-border hover:border-primary-glow/40 transition cursor-pointer shadow-xs"
+              >
+                <Pencil className="w-3.5 h-3.5 text-primary-glow" />
+                <span>{editText}</span>
+              </button>
+            ) : (
+              <>
+                {onCancel && (
+                  <button
+                    type="button"
+                    onClick={onCancel}
+                    disabled={isSaving}
+                    className="px-4 py-2 rounded-xl text-xs font-semibold text-ink-soft hover:text-ink border border-border hover:bg-secondary transition cursor-pointer disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={onSave}
+                  disabled={isSaving}
+                  className="bg-gradient-brand text-white font-semibold px-5 py-2 rounded-xl text-xs shadow-elegant hover:shadow-glow transition cursor-pointer disabled:opacity-60 flex items-center justify-center gap-2 shrink-0"
+                >
+                  {isSaving ? (
+                    <>
+                      <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <span>Saving...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Check className="w-3.5 h-3.5" />
+                      <span>{saveText}</span>
+                    </>
+                  )}
+                </button>
+              </>
+            )}
+          </>
+        )}
       </div>
     </div>
   );
@@ -742,6 +799,37 @@ function PersonalSection({
 }) {
   const { personal, experience } = profile;
   const [isVerifyOpen, setIsVerifyOpen] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [draft, setDraft] = useState(personal);
+
+  useEffect(() => {
+    setDraft(personal);
+  }, [personal]);
+
+  const handleStartEdit = () => {
+    setDraft(personal);
+    setIsEditing(true);
+  };
+
+  const handleCancel = () => {
+    setDraft(personal);
+    setIsEditing(false);
+  };
+
+  const handleSave = () => {
+    const updatedProfile: ProfileData = {
+      ...profile,
+      personal: draft,
+      contact: {
+        ...profile.contact,
+        fullName: `${draft.firstName} ${draft.lastName}`.trim(),
+      },
+    };
+    onUpdate(() => updatedProfile);
+    onSave(updatedProfile);
+    toast.success("Personal details saved successfully!");
+    setIsEditing(false);
+  };
 
   return (
     <div className="space-y-6 animate-fade-up">
@@ -757,86 +845,60 @@ function PersonalSection({
           <Field label="First name">
             <input
               type="text"
-              className="input-base"
-              value={personal.firstName}
-              onChange={(e) =>
-                onUpdate((prev) => ({
-                  ...prev,
-                  personal: { ...prev.personal, firstName: e.target.value },
-                  contact: {
-                    ...prev.contact,
-                    fullName: `${e.target.value} ${prev.personal.lastName}`.trim(),
-                  },
-                }))
-              }
+              className={`input-base ${!isEditing ? "bg-secondary/40 text-ink/90 cursor-default" : ""}`}
+              value={draft.firstName}
+              disabled={!isEditing}
+              onChange={(e) => setDraft((prev) => ({ ...prev, firstName: e.target.value }))}
               placeholder="First name"
             />
           </Field>
           <Field label="Last name">
             <input
               type="text"
-              className="input-base"
-              value={personal.lastName}
-              onChange={(e) =>
-                onUpdate((prev) => ({
-                  ...prev,
-                  personal: { ...prev.personal, lastName: e.target.value },
-                  contact: {
-                    ...prev.contact,
-                    fullName: `${prev.personal.firstName} ${e.target.value}`.trim(),
-                  },
-                }))
-              }
+              className={`input-base ${!isEditing ? "bg-secondary/40 text-ink/90 cursor-default" : ""}`}
+              value={draft.lastName}
+              disabled={!isEditing}
+              onChange={(e) => setDraft((prev) => ({ ...prev, lastName: e.target.value }))}
               placeholder="Last name"
             />
           </Field>
           <Field label="Headline" hint="One line describing your professional identity.">
             <input
               type="text"
-              className="input-base"
-              value={personal.headline || experience.title || ""}
-              onChange={(e) =>
-                onUpdate((prev) => ({
-                  ...prev,
-                  personal: { ...prev.personal, headline: e.target.value },
-                  experience: { ...prev.experience, title: e.target.value },
-                }))
-              }
+              className={`input-base ${!isEditing ? "bg-secondary/40 text-ink/90 cursor-default" : ""}`}
+              value={draft.headline || experience.title || ""}
+              disabled={!isEditing}
+              onChange={(e) => setDraft((prev) => ({ ...prev, headline: e.target.value }))}
               placeholder="e.g. Senior Full-Stack Engineer"
             />
           </Field>
           <Field label="Date of birth">
             <input
               type="date"
-              className="input-base"
-              value={personal.dob || ""}
-              onChange={(e) =>
-                onUpdate((prev) => ({
-                  ...prev,
-                  personal: { ...prev.personal, dob: e.target.value },
-                }))
-              }
+              className={`input-base ${!isEditing ? "bg-secondary/40 text-ink/90 cursor-default" : ""}`}
+              value={draft.dob || ""}
+              disabled={!isEditing}
+              onChange={(e) => setDraft((prev) => ({ ...prev, dob: e.target.value }))}
             />
           </Field>
           <div className="sm:col-span-2">
             <Field label="Bio">
               <textarea
                 rows={4}
-                className="input-base"
-                value={personal.bio || ""}
-                onChange={(e) =>
-                  onUpdate((prev) => ({
-                    ...prev,
-                    personal: { ...prev.personal, bio: e.target.value },
-                  }))
-                }
+                className={`input-base ${!isEditing ? "bg-secondary/40 text-ink/90 cursor-default" : ""}`}
+                value={draft.bio || ""}
+                disabled={!isEditing}
+                onChange={(e) => setDraft((prev) => ({ ...prev, bio: e.target.value }))}
                 placeholder="Tell recruiters what makes you, you."
               />
             </Field>
           </div>
         </div>
         <SaveBar
-          onSave={() => onSave(profile)}
+          isEditing={isEditing}
+          onToggleEdit={handleStartEdit}
+          onCancel={handleCancel}
+          onSave={handleSave}
           isSaving={isSaving}
           onOpenVerify={() => setIsVerifyOpen(true)}
           verificationStatus={verificationStatus}
@@ -883,6 +945,33 @@ function ContactsSection({
   const { contact } = profile;
   const [otpSent, setOtpSent] = useState(false);
   const [isVerifyOpen, setIsVerifyOpen] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [draft, setDraft] = useState(contact);
+
+  useEffect(() => {
+    setDraft(contact);
+  }, [contact]);
+
+  const handleStartEdit = () => {
+    setDraft(contact);
+    setIsEditing(true);
+  };
+
+  const handleCancel = () => {
+    setDraft(contact);
+    setIsEditing(false);
+  };
+
+  const handleSave = () => {
+    const updatedProfile: ProfileData = {
+      ...profile,
+      contact: draft,
+    };
+    onUpdate(() => updatedProfile);
+    onSave(updatedProfile);
+    toast.success("Contact details saved successfully!");
+    setIsEditing(false);
+  };
 
   return (
     <div className="space-y-6 animate-fade-up">
@@ -911,14 +1000,10 @@ function ContactsSection({
       >
         <Field label="Phone Number">
           <input
-            className="input-base"
-            value={contact.phone}
-            onChange={(e) =>
-              onUpdate((prev) => ({
-                ...prev,
-                contact: { ...prev.contact, phone: e.target.value },
-              }))
-            }
+            className={`input-base ${!isEditing ? "bg-secondary/40 text-ink/90 cursor-default" : ""}`}
+            value={draft.phone}
+            disabled={!isEditing}
+            onChange={(e) => setDraft((prev) => ({ ...prev, phone: e.target.value }))}
             placeholder="+91 98765 43210"
           />
         </Field>
@@ -933,8 +1018,13 @@ function ContactsSection({
           <button
             type="button"
             onClick={() => {
+              if (!draft.phone || draft.phone.trim().length < 8) {
+                toast.error("Please enter a valid phone number before requesting OTP.");
+                return;
+              }
               setOtpSent(true);
-              setTimeout(() => setOtpSent(false), 4000);
+              toast.success(`Verification OTP sent to ${draft.phone} via WhatsApp!`);
+              setTimeout(() => setOtpSent(false), 5000);
             }}
             className="bg-gradient-brand text-white font-semibold px-5 py-2.5 rounded-xl text-sm hover:shadow-glow transition cursor-pointer"
           >
@@ -952,87 +1042,66 @@ function ContactsSection({
         <div className="grid gap-4">
           <Field label="Street Address">
             <input
-              className="input-base"
-              value={contact.streetAddress || ""}
-              onChange={(e) =>
-                onUpdate((prev) => ({
-                  ...prev,
-                  contact: { ...prev.contact, streetAddress: e.target.value },
-                }))
-              }
+              className={`input-base ${!isEditing ? "bg-secondary/40 text-ink/90 cursor-default" : ""}`}
+              value={draft.streetAddress || ""}
+              disabled={!isEditing}
+              onChange={(e) => setDraft((prev) => ({ ...prev, streetAddress: e.target.value }))}
               placeholder="Street Address / Flat No."
             />
           </Field>
           <div className="grid sm:grid-cols-2 gap-4">
             <Field label="City">
               <input
-                className="input-base"
-                value={contact.city}
-                onChange={(e) =>
-                  onUpdate((prev) => ({
-                    ...prev,
-                    contact: { ...prev.contact, city: e.target.value },
-                  }))
-                }
+                className={`input-base ${!isEditing ? "bg-secondary/40 text-ink/90 cursor-default" : ""}`}
+                value={draft.city}
+                disabled={!isEditing}
+                onChange={(e) => setDraft((prev) => ({ ...prev, city: e.target.value }))}
                 placeholder="e.g. Bengaluru"
               />
             </Field>
             <Field label="State / Province">
               <input
-                className="input-base"
-                value={contact.state || ""}
-                onChange={(e) =>
-                  onUpdate((prev) => ({
-                    ...prev,
-                    contact: { ...prev.contact, state: e.target.value },
-                  }))
-                }
+                className={`input-base ${!isEditing ? "bg-secondary/40 text-ink/90 cursor-default" : ""}`}
+                value={draft.state || ""}
+                disabled={!isEditing}
+                onChange={(e) => setDraft((prev) => ({ ...prev, state: e.target.value }))}
                 placeholder="e.g. Karnataka"
               />
             </Field>
             <Field label="Country">
               <input
-                className="input-base"
-                value={contact.country}
-                onChange={(e) =>
-                  onUpdate((prev) => ({
-                    ...prev,
-                    contact: { ...prev.contact, country: e.target.value },
-                  }))
-                }
+                className={`input-base ${!isEditing ? "bg-secondary/40 text-ink/90 cursor-default" : ""}`}
+                value={draft.country}
+                disabled={!isEditing}
+                onChange={(e) => setDraft((prev) => ({ ...prev, country: e.target.value }))}
                 placeholder="India"
               />
             </Field>
             <Field label="Postal Code">
               <input
-                className="input-base"
-                value={contact.postalCode || ""}
-                onChange={(e) =>
-                  onUpdate((prev) => ({
-                    ...prev,
-                    contact: { ...prev.contact, postalCode: e.target.value },
-                  }))
-                }
+                className={`input-base ${!isEditing ? "bg-secondary/40 text-ink/90 cursor-default" : ""}`}
+                value={draft.postalCode || ""}
+                disabled={!isEditing}
+                onChange={(e) => setDraft((prev) => ({ ...prev, postalCode: e.target.value }))}
                 placeholder="560001"
               />
             </Field>
           </div>
           <Field label="LinkedIn / Portfolio">
             <input
-              className="input-base"
-              value={contact.linkedin}
-              onChange={(e) =>
-                onUpdate((prev) => ({
-                  ...prev,
-                  contact: { ...prev.contact, linkedin: e.target.value },
-                }))
-              }
+              className={`input-base ${!isEditing ? "bg-secondary/40 text-ink/90 cursor-default" : ""}`}
+              value={draft.linkedin}
+              disabled={!isEditing}
+              onChange={(e) => setDraft((prev) => ({ ...prev, linkedin: e.target.value }))}
               placeholder="https://linkedin.com/in/username"
             />
           </Field>
         </div>
         <SaveBar
-          onSave={() => onSave(profile)}
+          isEditing={isEditing}
+          onToggleEdit={handleStartEdit}
+          onCancel={handleCancel}
+          onSave={handleSave}
           isSaving={isSaving}
           onOpenVerify={() => setIsVerifyOpen(true)}
           verificationStatus={verificationStatus}
@@ -1052,6 +1121,255 @@ function ContactsSection({
         onRefresh={onRefreshVerifications}
         onViewDoc={onViewDoc}
       />
+    </div>
+  );
+}
+
+/* --- CATEGORIZED DEGREE DROPDOWN OPTIONS --- */
+const DEGREE_CATEGORIES = [
+  {
+    group: "Engineering & Technology",
+    options: [
+      "B.Tech in Computer Science & Engineering",
+      "B.Tech in Information Technology",
+      "B.Tech in Artificial Intelligence & Machine Learning",
+      "B.Tech in Data Science",
+      "B.Tech in Electronics & Communication",
+      "B.Tech in Mechanical Engineering",
+      "B.Tech in Civil Engineering",
+      "B.Tech in Electrical Engineering",
+      "B.E. in Computer Engineering",
+      "B.E. in Information Science",
+      "M.Tech in Computer Science",
+      "M.Tech in Software Engineering",
+    ],
+  },
+  {
+    group: "Computer Applications & IT",
+    options: [
+      "Bachelor of Computer Applications (BCA)",
+      "Master of Computer Applications (MCA)",
+      "B.S. in Computer Science",
+      "M.S. in Computer Science",
+      "B.Sc in Computer Science",
+      "B.Sc in Information Technology",
+      "B.Sc in Data Science",
+      "M.Sc in Information Technology",
+    ],
+  },
+  {
+    group: "Business, Commerce & Management",
+    options: [
+      "Bachelor of Business Administration (BBA)",
+      "Master of Business Administration (MBA)",
+      "Executive MBA",
+      "Post Graduate Diploma in Management (PGDM)",
+      "Bachelor of Commerce (B.Com)",
+      "Bachelor of Commerce (Honours)",
+      "Master of Commerce (M.Com)",
+      "Chartered Accountant (CA)",
+    ],
+  },
+  {
+    group: "Sciences, Design & Arts",
+    options: [
+      "Bachelor of Science (B.Sc)",
+      "Master of Science (M.Sc)",
+      "Bachelor of Arts (B.A.)",
+      "Master of Arts (M.A.)",
+      "B.A. in Economics",
+      "Bachelor of Design (B.Des)",
+      "Bachelor of Fine Arts (BFA)",
+    ],
+  },
+  {
+    group: "Schooling & Diplomas",
+    options: [
+      "Diploma in Computer Engineering",
+      "Polytechnic Diploma",
+      "High School Diploma (12th Grade)",
+      "Secondary School Certificate (10th Grade)",
+      "Ph.D. / Doctorate",
+    ],
+  },
+];
+
+const ALL_DEGREE_PRESETS = DEGREE_CATEGORIES.flatMap((c) => c.options);
+
+/* --- LUXURY CUSTOM DEGREE SELECT DROPDOWN --- */
+function DegreeDropdownSelect({
+  value,
+  onChange,
+  degreeType,
+  onDegreeTypeChange,
+}: {
+  value: string;
+  onChange: (val: string) => void;
+  degreeType: "preset" | "custom";
+  onDegreeTypeChange: (type: "preset" | "custom") => void;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const filteredCategories = useMemo(() => {
+    if (!searchQuery.trim()) return DEGREE_CATEGORIES;
+    const query = searchQuery.toLowerCase();
+    return DEGREE_CATEGORIES.map((category) => ({
+      ...category,
+      options: category.options.filter((opt) => opt.toLowerCase().includes(query)),
+    })).filter((category) => category.options.length > 0);
+  }, [searchQuery]);
+
+  const selectedDisplay =
+    degreeType === "custom"
+      ? value ? `Custom: ${value}` : "Custom Degree (Typing...)"
+      : value || "Select Degree / Course...";
+
+  return (
+    <div className="relative" ref={dropdownRef}>
+      {/* Trigger Button */}
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className={`input-base w-full flex items-center justify-between text-left cursor-pointer transition-all duration-200 ${
+          isOpen ? "ring-2 ring-primary/40 border-primary shadow-glow-sm bg-surface" : "hover:border-primary/50"
+        } ${!value ? "text-ink-soft" : "text-ink font-medium"}`}
+      >
+        <span className="truncate flex items-center gap-2.5">
+          <div className="w-5 h-5 rounded-lg bg-primary/10 flex items-center justify-center text-primary-glow shrink-0">
+            <GraduationCap className="w-3.5 h-3.5" />
+          </div>
+          <span className="truncate">{selectedDisplay}</span>
+        </span>
+        <ChevronDown
+          className={`w-4 h-4 text-ink-soft shrink-0 transition-transform duration-200 ${
+            isOpen ? "rotate-180 text-primary-glow" : ""
+          }`}
+        />
+      </button>
+
+      {/* Floating Menu Popover */}
+      {isOpen && (
+        <div className="absolute top-full left-0 right-0 mt-2 z-50 rounded-2xl bg-surface/98 backdrop-blur-xl border border-border shadow-2xl overflow-hidden animate-fade-in p-2.5 max-h-80 flex flex-col">
+          {/* Search bar inside dropdown */}
+          <div className="relative mb-2 shrink-0">
+            <Search className="w-3.5 h-3.5 text-ink-soft absolute left-3 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search degrees (e.g. CS, MBA, B.Tech)..."
+              className="w-full bg-secondary/50 border border-border rounded-xl pl-9 pr-7 py-2 text-xs text-ink placeholder:text-ink-soft focus:outline-none focus:border-primary/60 focus:bg-surface transition"
+              autoFocus
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery("")}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-ink-soft hover:text-ink text-xs p-0.5"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+
+          {/* Quick Custom Degree Action */}
+          <div className="shrink-0 pb-2 mb-1.5 border-b border-border/80">
+            <button
+              type="button"
+              onClick={() => {
+                onDegreeTypeChange("custom");
+                if (ALL_DEGREE_PRESETS.includes(value)) {
+                  onChange("");
+                }
+                setIsOpen(false);
+              }}
+              className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-left transition-all cursor-pointer ${
+                degreeType === "custom"
+                  ? "bg-gradient-brand text-white shadow-xs"
+                  : "bg-primary/5 text-primary-glow hover:bg-primary/10 border border-primary/20"
+              }`}
+            >
+              <Pencil className="w-3.5 h-3.5 shrink-0" />
+              <div className="flex-1 truncate">
+                <p className="font-semibold">Type Custom Degree / Course</p>
+                <p className={`text-[10px] ${degreeType === "custom" ? "text-white/80" : "text-ink-soft"}`}>
+                  Enter any non-listed degree manually
+                </p>
+              </div>
+              {degreeType === "custom" && <Check className="w-3.5 h-3.5 shrink-0" />}
+            </button>
+          </div>
+
+          {/* Categorized Options List */}
+          <div className="overflow-y-auto space-y-3 pr-1 scrollbar-thin flex-1">
+            {filteredCategories.length === 0 ? (
+              <div className="p-4 text-center text-xs text-ink-soft space-y-2">
+                <p>No matching degrees found for &quot;{searchQuery}&quot;</p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onDegreeTypeChange("custom");
+                    onChange(searchQuery);
+                    setIsOpen(false);
+                  }}
+                  className="text-xs text-primary-glow font-semibold hover:underline inline-flex items-center gap-1 cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5" /> Use &quot;{searchQuery}&quot; as Custom Degree
+                </button>
+              </div>
+            ) : (
+              filteredCategories.map((category) => (
+                <div key={category.group} className="space-y-1">
+                  <div className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-ink-soft bg-secondary/40 rounded-lg flex items-center gap-1.5">
+                    {category.group === "Engineering & Technology" && <GraduationCap className="w-3 h-3 text-violet-500" />}
+                    {category.group === "Computer Applications & IT" && <Laptop className="w-3 h-3 text-blue-500" />}
+                    {category.group === "Business, Commerce & Management" && <Briefcase className="w-3 h-3 text-amber-500" />}
+                    {category.group === "Sciences, Design & Arts" && <Palette className="w-3 h-3 text-pink-500" />}
+                    {category.group === "Schooling & Diplomas" && <Award className="w-3 h-3 text-emerald-500" />}
+                    <span>{category.group}</span>
+                  </div>
+                  <div className="space-y-0.5 pt-0.5">
+                    {category.options.map((opt) => {
+                      const isSelected = degreeType === "preset" && value === opt;
+                      return (
+                        <button
+                          key={opt}
+                          type="button"
+                          onClick={() => {
+                            onDegreeTypeChange("preset");
+                            onChange(opt);
+                            setIsOpen(false);
+                          }}
+                          className={`w-full text-left px-2.5 py-1.5 rounded-xl text-xs transition flex items-center justify-between cursor-pointer group ${
+                            isSelected
+                              ? "bg-primary text-white font-semibold shadow-xs"
+                              : "text-ink hover:bg-secondary/80 hover:text-primary-glow"
+                          }`}
+                        >
+                          <span className="truncate pr-2">{opt}</span>
+                          {isSelected && <Check className="w-3.5 h-3.5 shrink-0" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -1077,50 +1395,111 @@ function EducationSection({
   onViewDoc?: (doc: VerificationDocument) => void;
 }) {
   const list = profile.educationsList || [];
+  const [isAdding, setIsAdding] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+
   const [institution, setInstitution] = useState("");
   const [degree, setDegree] = useState("");
+  const [degreeType, setDegreeType] = useState<"preset" | "custom">("preset");
   const [startYear, setStartYear] = useState("");
   const [endYear, setEndYear] = useState("");
   const [certificateUrl, setCertificateUrl] = useState("");
   const [isVerifyOpen, setIsVerifyOpen] = useState(false);
 
-  const handleAddDegree = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!institution.trim() || !degree.trim()) return;
-
-    const newItem: EducationItem = {
-      id: `edu-${Date.now()}`,
-      institution: institution.trim(),
-      degree: degree.trim(),
-      startYear: startYear.trim() || "2020",
-      endYear: endYear.trim() || "2024",
-      certificateUrl: certificateUrl.trim(),
-    };
-
-    const updatedProfile: ProfileData = {
-      ...profile,
-      education: {
-        institution: newItem.institution,
-        degree: newItem.degree,
-        startYear: newItem.startYear,
-        endYear: newItem.endYear,
-        certificateUrl: newItem.certificateUrl,
-      },
-      educationsList: [newItem, ...(profile.educationsList || [])],
-    };
-
-    onUpdate(() => updatedProfile);
-    onSave(updatedProfile);
-
+  const resetForm = () => {
     setInstitution("");
     setDegree("");
+    setDegreeType("preset");
     setStartYear("");
     setEndYear("");
     setCertificateUrl("");
+    setIsAdding(false);
+    setEditingId(null);
+  };
+
+  const handleStartAdd = () => {
+    resetForm();
+    setIsAdding(true);
+  };
+
+  const handleStartEdit = (edu: EducationItem) => {
+    setEditingId(edu.id);
+    setInstitution(edu.institution);
+    setDegree(edu.degree);
+    const isKnown = ALL_DEGREE_PRESETS.includes(edu.degree);
+    setDegreeType(isKnown ? "preset" : (edu.degree ? "custom" : "preset"));
+    setStartYear(edu.startYear);
+    setEndYear(edu.endYear);
+    setCertificateUrl(edu.certificateUrl || "");
+    setIsAdding(false);
+  };
+
+  const handleSaveDegree = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!institution.trim() || !degree.trim()) {
+      toast.error("Please enter both an institution and degree name.");
+      return;
+    }
+
+    if (editingId) {
+      // Editing existing degree
+      const updatedList = list.map((item) =>
+        item.id === editingId
+          ? {
+              ...item,
+              institution: institution.trim(),
+              degree: degree.trim(),
+              startYear: startYear.trim() || "2020",
+              endYear: endYear.trim() || "2024",
+              certificateUrl: certificateUrl.trim(),
+            }
+          : item
+      );
+
+      const top = updatedList[0] || { institution: "", degree: "", startYear: "", endYear: "", certificateUrl: "" };
+      const updatedProfile: ProfileData = {
+        ...profile,
+        education: top,
+        educationsList: updatedList,
+      };
+
+      onUpdate(() => updatedProfile);
+      onSave(updatedProfile);
+      toast.success("Education credential updated successfully!");
+      resetForm();
+    } else {
+      // Adding new degree
+      const newItem: EducationItem = {
+        id: `edu-${Date.now()}`,
+        institution: institution.trim(),
+        degree: degree.trim(),
+        startYear: startYear.trim() || "2020",
+        endYear: endYear.trim() || "2024",
+        certificateUrl: certificateUrl.trim(),
+      };
+
+      const updatedList = [newItem, ...list];
+      const updatedProfile: ProfileData = {
+        ...profile,
+        education: {
+          institution: newItem.institution,
+          degree: newItem.degree,
+          startYear: newItem.startYear,
+          endYear: newItem.endYear,
+          certificateUrl: newItem.certificateUrl,
+        },
+        educationsList: updatedList,
+      };
+
+      onUpdate(() => updatedProfile);
+      onSave(updatedProfile);
+      toast.success("New education degree added successfully!");
+      resetForm();
+    }
   };
 
   const handleRemove = (id: string) => {
-    const newList = (profile.educationsList || []).filter((item) => item.id !== id);
+    const newList = list.filter((item) => item.id !== id);
     const top = newList[0] || { institution: "", degree: "", startYear: "", endYear: "", certificateUrl: "" };
     const updatedProfile: ProfileData = {
       ...profile,
@@ -1129,6 +1508,8 @@ function EducationSection({
     };
     onUpdate(() => updatedProfile);
     onSave(updatedProfile);
+    toast.success("Education degree removed");
+    if (editingId === id) resetForm();
   };
 
   return (
@@ -1138,7 +1519,140 @@ function EducationSection({
         subtitle="Add every degree and certification — verified ones earn extra points."
         status={verificationStatus}
         onOpenVerify={() => setIsVerifyOpen(true)}
+        action={
+          !isAdding && !editingId ? (
+            <button
+              type="button"
+              onClick={handleStartAdd}
+              className="inline-flex items-center gap-1.5 bg-gradient-brand text-white font-semibold px-4 py-2 rounded-xl text-xs shadow-xs hover:shadow-glow transition cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Add Education</span>
+            </button>
+          ) : null
+        }
       />
+
+      {/* Add / Edit Form Card */}
+      {(isAdding || editingId) && (
+        <Card
+          icon={GraduationCap}
+          iconColor="text-[oklch(0.55_0.22_285)]"
+          title={editingId ? "Edit Education" : "Add Education"}
+        >
+          <form onSubmit={handleSaveDegree} className="space-y-4">
+            <div className="grid sm:grid-cols-2 gap-4">
+              <Field label="Institution / University">
+                <input
+                  className="input-base"
+                  value={institution}
+                  onChange={(e) => setInstitution(e.target.value)}
+                  placeholder="e.g. Stanford University"
+                  required
+                />
+              </Field>
+
+              <Field
+                label="Degree / Qualification"
+                hint="Click to select from standard degrees or type custom."
+              >
+                <DegreeDropdownSelect
+                  value={degree}
+                  onChange={(val) => setDegree(val)}
+                  degreeType={degreeType}
+                  onDegreeTypeChange={(t) => setDegreeType(t)}
+                />
+              </Field>
+
+              {/* Custom Degree Input Field */}
+              {degreeType === "custom" && (
+                <div className="sm:col-span-2 animate-fade-in p-3.5 rounded-2xl bg-primary/5 border border-primary/20 space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-primary-glow flex items-center gap-1.5">
+                      <Pencil className="w-3.5 h-3.5" /> Custom Degree Title
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDegreeType("preset");
+                        setDegree("");
+                      }}
+                      className="text-[11px] text-ink-soft hover:text-ink underline cursor-pointer"
+                    >
+                      Choose from standard dropdown
+                    </button>
+                  </div>
+                  <input
+                    className="input-base bg-surface"
+                    value={degree}
+                    onChange={(e) => setDegree(e.target.value)}
+                    placeholder="e.g. B.S. in Computational Neuroscience & AI"
+                    required
+                    autoFocus
+                  />
+                </div>
+              )}
+
+              <Field label="Start year">
+                <input
+                  className="input-base"
+                  value={startYear}
+                  onChange={(e) => setStartYear(e.target.value)}
+                  placeholder="2020"
+                />
+              </Field>
+              <Field label="End year (or Expected)">
+                <input
+                  className="input-base"
+                  value={endYear}
+                  onChange={(e) => setEndYear(e.target.value)}
+                  placeholder="2024"
+                />
+              </Field>
+              <div className="sm:col-span-2">
+                <Field
+                  label="Certificate URL / Link"
+                  hint="Upload a link to your official certificate or marksheet."
+                >
+                  <input
+                    className="input-base"
+                    value={certificateUrl}
+                    onChange={(e) => setCertificateUrl(e.target.value)}
+                    placeholder="https://..."
+                  />
+                </Field>
+              </div>
+            </div>
+            <div className="mt-4 pt-3 border-t border-border flex items-center justify-end gap-2.5">
+              <button
+                type="button"
+                onClick={resetForm}
+                disabled={isSaving}
+                className="px-4 py-2 text-xs font-semibold text-ink-soft hover:text-ink rounded-xl border border-border hover:bg-secondary transition cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={isSaving}
+                className="inline-flex items-center gap-2 bg-gradient-brand text-white font-semibold px-5 py-2 rounded-xl text-xs shadow-elegant hover:shadow-glow transition cursor-pointer disabled:opacity-60"
+              >
+                {isSaving ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>Saving...</span>
+                  </>
+                ) : (
+                  <>
+                    <Check className="w-3.5 h-3.5" />
+                    <span>{editingId ? "Save Changes" : "Add Education"}</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </form>
+        </Card>
+      )}
 
       {/* Render list of added degrees */}
       {list.map((edu) => (
@@ -1149,10 +1663,10 @@ function EducationSection({
           title={edu.degree || "Your Degree"}
           verifiedStatus={verificationStatus}
         >
-          <div className="flex items-start justify-between">
+          <div className="flex items-start justify-between gap-3">
             <div>
-              <p className="font-semibold text-ink">{edu.institution}</p>
-              <p className="text-sm text-ink-soft mt-1">
+              <p className="font-semibold text-ink text-sm">{edu.institution}</p>
+              <p className="text-xs text-ink-soft mt-1">
                 {edu.startYear} — {edu.endYear || "Present"}
               </p>
               {edu.certificateUrl && (
@@ -1160,100 +1674,59 @@ function EducationSection({
                   href={edu.certificateUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-1 text-xs text-primary-glow font-semibold mt-2 hover:underline"
+                  className="inline-flex items-center gap-1 text-xs text-primary-glow font-semibold mt-2.5 hover:underline"
                 >
                   <ExternalLink className="w-3.5 h-3.5" /> View Certificate
                 </a>
               )}
             </div>
-            <button
-              onClick={() => handleRemove(edu.id)}
-              className="text-ink-soft hover:text-rose-500 p-1 rounded transition cursor-pointer"
-              title="Delete degree"
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
+            <div className="flex items-center gap-1.5 shrink-0">
+              <button
+                type="button"
+                onClick={() => handleStartEdit(edu)}
+                className="text-ink-soft hover:text-primary-glow p-2 rounded-xl hover:bg-secondary border border-border transition cursor-pointer"
+                title="Edit degree"
+              >
+                <Pencil className="w-3.5 h-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => handleRemove(edu.id)}
+                className="text-ink-soft hover:text-rose-500 p-2 rounded-xl hover:bg-rose-50 border border-border transition cursor-pointer"
+                title="Delete degree"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
         </Card>
       ))}
 
-      {/* Add Degree Card */}
-      <Card icon={GraduationCap} iconColor="text-[oklch(0.55_0.22_285)]" title="Add Degree">
-        <form onSubmit={handleAddDegree} className="space-y-4">
-          <div className="grid sm:grid-cols-2 gap-4">
-            <Field label="Institution">
-              <input
-                className="input-base"
-                value={institution}
-                onChange={(e) => setInstitution(e.target.value)}
-                placeholder="e.g. Stanford University"
-                required
-              />
-            </Field>
-            <Field label="Degree">
-              <input
-                className="input-base"
-                value={degree}
-                onChange={(e) => setDegree(e.target.value)}
-                placeholder="e.g. B.S. in Computer Science"
-                required
-              />
-            </Field>
-            <Field label="Start year">
-              <input
-                className="input-base"
-                value={startYear}
-                onChange={(e) => setStartYear(e.target.value)}
-                placeholder="2020"
-              />
-            </Field>
-            <Field label="End year">
-              <input
-                className="input-base"
-                value={endYear}
-                onChange={(e) => setEndYear(e.target.value)}
-                placeholder="2024"
-              />
-            </Field>
-            <div className="sm:col-span-2">
-              <Field
-                label="Certificate URL"
-                hint="Upload a link to your official certificate for verification."
-              >
-                <input
-                  className="input-base"
-                  value={certificateUrl}
-                  onChange={(e) => setCertificateUrl(e.target.value)}
-                  placeholder="https://..."
-                />
-              </Field>
-            </div>
+      {list.length === 0 && !isAdding && !editingId && (
+        <div className="p-8 rounded-2xl border border-dashed border-border text-center space-y-3 bg-surface/50">
+          <GraduationCap className="w-8 h-8 text-ink-soft mx-auto opacity-50" />
+          <div className="space-y-1">
+            <p className="font-bold text-ink text-sm">No education added yet</p>
+            <p className="text-xs text-ink-soft">Once added, degrees will show up here with verification status.</p>
           </div>
-          <div className="mt-5 flex justify-end">
-            <button
-              type="submit"
-              disabled={isSaving}
-              className="inline-flex items-center gap-2 bg-gradient-brand text-white font-semibold px-5 py-2.5 rounded-xl text-sm hover:shadow-glow transition cursor-pointer disabled:opacity-60"
-            >
-              <Plus className="w-4 h-4" /> Add education
-            </button>
-          </div>
-        </form>
-        <SaveBar
-          onSave={() => onSave(profile)}
-          isSaving={isSaving}
-          onOpenVerify={() => setIsVerifyOpen(true)}
-          verificationStatus={verificationStatus}
-          documentsCount={verificationDocs.length}
-        />
-      </Card>
-
-      {list.length === 0 && (
-        <EmptyList
-          title="No education added yet"
-          subtitle="Once added, degrees will show up here with verification status."
-        />
+          <button
+            type="button"
+            onClick={handleStartAdd}
+            className="inline-flex items-center gap-1.5 bg-secondary hover:bg-border text-ink font-semibold px-4 py-2 rounded-xl text-xs border border-border transition cursor-pointer shadow-xs"
+          >
+            <Plus className="w-3.5 h-3.5 text-primary-glow" />
+            <span>Add Your First Degree</span>
+          </button>
+        </div>
       )}
+
+      {/* Section Footer Bar */}
+      <SaveBar
+        hideEdit
+        onOpenVerify={() => setIsVerifyOpen(true)}
+        verificationStatus={verificationStatus}
+        documentsCount={verificationDocs.length}
+      />
 
       {/* Verification Document Pipeline Modal */}
       <SectionVerificationModal
@@ -1293,6 +1766,9 @@ function ExperienceSection({
   onViewDoc?: (doc: VerificationDocument) => void;
 }) {
   const list = profile.experiencesList || [];
+  const [isAdding, setIsAdding] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+
   const [company, setCompany] = useState("");
   const [title, setTitle] = useState("");
   const [start, setStart] = useState("");
@@ -1300,43 +1776,97 @@ function ExperienceSection({
   const [highlights, setHighlights] = useState("");
   const [isVerifyOpen, setIsVerifyOpen] = useState(false);
 
-  const handleAddRole = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!company.trim() || !title.trim()) return;
-
-    const newItem: ExperienceItem = {
-      id: `exp-${Date.now()}`,
-      company: company.trim(),
-      title: title.trim(),
-      start: start || "2022-01",
-      end: end || "Present",
-      highlights: highlights.trim(),
-    };
-
-    const updatedProfile: ProfileData = {
-      ...profile,
-      experience: {
-        company: newItem.company,
-        title: newItem.title,
-        start: newItem.start,
-        end: newItem.end,
-        highlights: newItem.highlights,
-      },
-      experiencesList: [newItem, ...(profile.experiencesList || [])],
-    };
-
-    onUpdate(() => updatedProfile);
-    onSave(updatedProfile);
-
+  const resetForm = () => {
     setCompany("");
     setTitle("");
     setStart("");
     setEnd("");
     setHighlights("");
+    setIsAdding(false);
+    setEditingId(null);
+  };
+
+  const handleStartAdd = () => {
+    resetForm();
+    setIsAdding(true);
+  };
+
+  const handleStartEdit = (exp: ExperienceItem) => {
+    setEditingId(exp.id);
+    setCompany(exp.company);
+    setTitle(exp.title);
+    setStart(exp.start);
+    setEnd(exp.end);
+    setHighlights(exp.highlights || "");
+    setIsAdding(false);
+  };
+
+  const handleSaveRole = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!company.trim() || !title.trim()) {
+      toast.error("Please enter both a company name and job title.");
+      return;
+    }
+
+    if (editingId) {
+      // Edit existing role
+      const updatedList = list.map((item) =>
+        item.id === editingId
+          ? {
+              ...item,
+              company: company.trim(),
+              title: title.trim(),
+              start: start || "2022-01",
+              end: end || "Present",
+              highlights: highlights.trim(),
+            }
+          : item
+      );
+
+      const top = updatedList[0] || { company: "", title: "", start: "", end: "", highlights: "" };
+      const updatedProfile: ProfileData = {
+        ...profile,
+        experience: top,
+        experiencesList: updatedList,
+      };
+
+      onUpdate(() => updatedProfile);
+      onSave(updatedProfile);
+      toast.success("Work experience updated successfully!");
+      resetForm();
+    } else {
+      // Add new role
+      const newItem: ExperienceItem = {
+        id: `exp-${Date.now()}`,
+        company: company.trim(),
+        title: title.trim(),
+        start: start || "2022-01",
+        end: end || "Present",
+        highlights: highlights.trim(),
+      };
+
+      const updatedList = [newItem, ...list];
+      const updatedProfile: ProfileData = {
+        ...profile,
+        experience: {
+          company: newItem.company,
+          title: newItem.title,
+          start: newItem.start,
+          end: newItem.end,
+          highlights: newItem.highlights,
+        },
+        experiencesList: updatedList,
+      };
+
+      onUpdate(() => updatedProfile);
+      onSave(updatedProfile);
+      toast.success("New work experience added successfully!");
+      resetForm();
+    }
   };
 
   const handleRemove = (id: string) => {
-    const newList = (profile.experiencesList || []).filter((item) => item.id !== id);
+    const newList = list.filter((item) => item.id !== id);
     const top = newList[0] || { company: "", title: "", start: "", end: "", highlights: "" };
     const updatedProfile: ProfileData = {
       ...profile,
@@ -1345,6 +1875,8 @@ function ExperienceSection({
     };
     onUpdate(() => updatedProfile);
     onSave(updatedProfile);
+    toast.success("Work experience removed");
+    if (editingId === id) resetForm();
   };
 
   return (
@@ -1354,7 +1886,105 @@ function ExperienceSection({
         subtitle="Every role you've held. Verified experiences unlock offers."
         status={verificationStatus}
         onOpenVerify={() => setIsVerifyOpen(true)}
+        action={
+          !isAdding && !editingId ? (
+            <button
+              type="button"
+              onClick={handleStartAdd}
+              className="inline-flex items-center gap-1.5 bg-gradient-brand text-white font-semibold px-4 py-2 rounded-xl text-xs shadow-xs hover:shadow-glow transition cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Add Role</span>
+            </button>
+          ) : null
+        }
       />
+
+      {/* Add / Edit Form Card */}
+      {(isAdding || editingId) && (
+        <Card
+          icon={Briefcase}
+          iconColor="text-[oklch(0.65_0.18_45)]"
+          title={editingId ? "Edit Work Experience" : "Add Work Experience"}
+        >
+          <form onSubmit={handleSaveRole} className="space-y-4">
+            <div className="grid sm:grid-cols-2 gap-4">
+              <Field label="Company">
+                <input
+                  className="input-base"
+                  value={company}
+                  onChange={(e) => setCompany(e.target.value)}
+                  placeholder="e.g. Acme Corp"
+                  required
+                />
+              </Field>
+              <Field label="Job title">
+                <input
+                  className="input-base"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="e.g. Senior Software Engineer"
+                  required
+                />
+              </Field>
+              <Field label="Start date">
+                <input
+                  type="month"
+                  className="input-base"
+                  value={start}
+                  onChange={(e) => setStart(e.target.value)}
+                />
+              </Field>
+              <Field label="End date">
+                <input
+                  type="month"
+                  className="input-base"
+                  value={end}
+                  onChange={(e) => setEnd(e.target.value)}
+                />
+              </Field>
+              <div className="sm:col-span-2">
+                <Field label="Highlights">
+                  <textarea
+                    rows={4}
+                    className="input-base"
+                    value={highlights}
+                    onChange={(e) => setHighlights(e.target.value)}
+                    placeholder="Shipped features, led projects, improved performance..."
+                  />
+                </Field>
+              </div>
+            </div>
+            <div className="mt-4 pt-3 border-t border-border flex items-center justify-end gap-2.5">
+              <button
+                type="button"
+                onClick={resetForm}
+                disabled={isSaving}
+                className="px-4 py-2 text-xs font-semibold text-ink-soft hover:text-ink rounded-xl border border-border hover:bg-secondary transition cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={isSaving}
+                className="inline-flex items-center gap-2 bg-gradient-brand text-white font-semibold px-5 py-2 rounded-xl text-xs shadow-elegant hover:shadow-glow transition cursor-pointer disabled:opacity-60"
+              >
+                {isSaving ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>Saving...</span>
+                  </>
+                ) : (
+                  <>
+                    <Check className="w-3.5 h-3.5" />
+                    <span>{editingId ? "Save Changes" : "Add Role"}</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </form>
+        </Card>
+      )}
 
       {/* Render list of added experiences */}
       {list.map((exp) => (
@@ -1365,97 +1995,61 @@ function ExperienceSection({
           title={exp.title || "Your Role"}
           verifiedStatus={verificationStatus}
         >
-          <div className="flex items-start justify-between">
+          <div className="flex items-start justify-between gap-3">
             <div>
-              <p className="font-semibold text-ink">{exp.company}</p>
-              <p className="text-sm text-ink-soft mt-1">
+              <p className="font-semibold text-ink text-sm">{exp.company}</p>
+              <p className="text-xs text-ink-soft mt-1">
                 {exp.start || "—"} → {exp.end || "Present"}
               </p>
-              {exp.highlights && <p className="text-sm text-ink mt-3 whitespace-pre-line">{exp.highlights}</p>}
+              {exp.highlights && <p className="text-xs text-ink mt-3 whitespace-pre-line leading-relaxed">{exp.highlights}</p>}
             </div>
-            <button
-              onClick={() => handleRemove(exp.id)}
-              className="text-ink-soft hover:text-rose-500 p-1 rounded transition cursor-pointer"
-              title="Delete role"
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
+            <div className="flex items-center gap-1.5 shrink-0">
+              <button
+                type="button"
+                onClick={() => handleStartEdit(exp)}
+                className="text-ink-soft hover:text-primary-glow p-2 rounded-xl hover:bg-secondary border border-border transition cursor-pointer"
+                title="Edit role"
+              >
+                <Pencil className="w-3.5 h-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => handleRemove(exp.id)}
+                className="text-ink-soft hover:text-rose-500 p-2 rounded-xl hover:bg-rose-50 border border-border transition cursor-pointer"
+                title="Delete role"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         </Card>
       ))}
 
-      {/* Add Role Card */}
-      <Card icon={Briefcase} iconColor="text-[oklch(0.65_0.18_45)]" title="Add Role">
-        <form onSubmit={handleAddRole} className="space-y-4">
-          <div className="grid sm:grid-cols-2 gap-4">
-            <Field label="Company">
-              <input
-                className="input-base"
-                value={company}
-                onChange={(e) => setCompany(e.target.value)}
-                placeholder="e.g. Acme Corp"
-                required
-              />
-            </Field>
-            <Field label="Job title">
-              <input
-                className="input-base"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="e.g. Senior Software Engineer"
-                required
-              />
-            </Field>
-            <Field label="Start date">
-              <input
-                type="month"
-                className="input-base"
-                value={start}
-                onChange={(e) => setStart(e.target.value)}
-              />
-            </Field>
-            <Field label="End date">
-              <input
-                type="month"
-                className="input-base"
-                value={end}
-                onChange={(e) => setEnd(e.target.value)}
-              />
-            </Field>
-            <div className="sm:col-span-2">
-              <Field label="Highlights">
-                <textarea
-                  rows={4}
-                  className="input-base"
-                  value={highlights}
-                  onChange={(e) => setHighlights(e.target.value)}
-                  placeholder="Shipped features, led projects, improved performance..."
-                />
-              </Field>
-            </div>
+      {list.length === 0 && !isAdding && !editingId && (
+        <div className="p-8 rounded-2xl border border-dashed border-border text-center space-y-3 bg-surface/50">
+          <Briefcase className="w-8 h-8 text-ink-soft mx-auto opacity-50" />
+          <div className="space-y-1">
+            <p className="font-bold text-ink text-sm">No work experience added yet</p>
+            <p className="text-xs text-ink-soft">Your roles will appear here once added.</p>
           </div>
-          <div className="mt-5 flex justify-end">
-            <button
-              type="submit"
-              disabled={isSaving}
-              className="inline-flex items-center gap-2 bg-gradient-brand text-white font-semibold px-5 py-2.5 rounded-xl text-sm hover:shadow-glow transition cursor-pointer disabled:opacity-60"
-            >
-              <Plus className="w-4 h-4" /> Add role
-            </button>
-          </div>
-        </form>
-        <SaveBar
-          onSave={() => onSave(profile)}
-          isSaving={isSaving}
-          onOpenVerify={() => setIsVerifyOpen(true)}
-          verificationStatus={verificationStatus}
-          documentsCount={verificationDocs.length}
-        />
-      </Card>
-
-      {list.length === 0 && (
-        <EmptyList title="No work experience added yet" subtitle="Your roles will appear here." />
+          <button
+            type="button"
+            onClick={handleStartAdd}
+            className="inline-flex items-center gap-1.5 bg-secondary hover:bg-border text-ink font-semibold px-4 py-2 rounded-xl text-xs border border-border transition cursor-pointer shadow-xs"
+          >
+            <Plus className="w-3.5 h-3.5 text-primary-glow" />
+            <span>Add Your First Role</span>
+          </button>
+        </div>
       )}
+
+      {/* Section Footer Bar */}
+      <SaveBar
+        hideEdit
+        onOpenVerify={() => setIsVerifyOpen(true)}
+        verificationStatus={verificationStatus}
+        documentsCount={verificationDocs.length}
+      />
 
       {/* Verification Document Pipeline Modal */}
       <SectionVerificationModal
@@ -1515,7 +2109,11 @@ function SkillsSection({
 
   const handleAddSkill = (skillToAdd: string) => {
     const trimmed = skillToAdd.trim();
-    if (!trimmed || profile.skills.includes(trimmed)) return;
+    if (!trimmed) return;
+    if (profile.skills.includes(trimmed)) {
+      toast.info(`"${trimmed}" is already added to your skills.`);
+      return;
+    }
 
     const updatedProfile: ProfileData = {
       ...profile,
@@ -1524,6 +2122,7 @@ function SkillsSection({
     onUpdate(() => updatedProfile);
     setNewSkill("");
     onSave(updatedProfile);
+    toast.success(`Skill "${trimmed}" added!`);
   };
 
   const handleRemoveSkill = (skillToRemove: string) => {
@@ -1533,6 +2132,7 @@ function SkillsSection({
     };
     onUpdate(() => updatedProfile);
     onSave(updatedProfile);
+    toast.success(`Skill "${skillToRemove}" removed`);
   };
 
   return (
@@ -1548,7 +2148,7 @@ function SkillsSection({
         <Card
           icon={Zap}
           iconColor="text-[oklch(0.5_0.2_265)]"
-          title="Your Skills"
+          title={`Your Skills (${profile.skills.length})`}
           verifiedStatus={verificationStatus}
         >
           <div className="flex flex-wrap gap-2">
@@ -1569,13 +2169,6 @@ function SkillsSection({
               </span>
             ))}
           </div>
-          <SaveBar
-            onSave={() => onSave(profile)}
-            isSaving={isSaving}
-            onOpenVerify={() => setIsVerifyOpen(true)}
-            verificationStatus={verificationStatus}
-            documentsCount={verificationDocs.length}
-          />
         </Card>
       )}
 
@@ -1595,10 +2188,10 @@ function SkillsSection({
           />
           <button
             type="submit"
-            disabled={isSaving}
+            disabled={isSaving || !newSkill.trim()}
             className="bg-gradient-brand text-white font-semibold px-5 rounded-xl text-sm hover:shadow-glow transition cursor-pointer shrink-0 disabled:opacity-60"
           >
-            Add
+            Add Skill
           </button>
         </form>
 
@@ -1619,16 +2212,6 @@ function SkillsSection({
             </div>
           </>
         )}
-
-        {profile.skills.length === 0 && (
-          <SaveBar
-            onSave={() => onSave(profile)}
-            isSaving={isSaving}
-            onOpenVerify={() => setIsVerifyOpen(true)}
-            verificationStatus={verificationStatus}
-            documentsCount={verificationDocs.length}
-          />
-        )}
       </Card>
 
       {profile.skills.length === 0 && (
@@ -1637,6 +2220,14 @@ function SkillsSection({
           subtitle="Skills you add will show verification status here."
         />
       )}
+
+      {/* Section Footer Bar */}
+      <SaveBar
+        hideEdit
+        onOpenVerify={() => setIsVerifyOpen(true)}
+        verificationStatus={verificationStatus}
+        documentsCount={verificationDocs.length}
+      />
 
       {/* Verification Document Pipeline Modal */}
       <SectionVerificationModal
@@ -1820,7 +2411,9 @@ export default function ProfilePage() {
     } catch (err: any) {
       console.error("Failed to save profile to database:", err);
       setSaveStatus("error");
-      setSaveError(err?.message || "Failed to save profile to database.");
+      const errorMsg = err?.message || "Failed to save profile to database.";
+      setSaveError(errorMsg);
+      toast.error(errorMsg);
       setTimeout(() => setSaveError(null), 5000);
     } finally {
       setIsSaving(false);
