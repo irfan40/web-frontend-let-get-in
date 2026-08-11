@@ -15,6 +15,7 @@ import {
   Calendar,
   HardDrive,
   FileCheck,
+  ShieldCheck,
 } from "lucide-react";
 import { VerificationDocument } from "../services/verificationService";
 import { VerificationBadge } from "./VerificationBadge";
@@ -273,19 +274,18 @@ export const DocumentViewerModal: React.FC<DocumentViewerModalProps> = ({
             )}
           </div>
 
-          {/* AI Verification Details Sidebar */}
+          {/* Verification Details Sidebar */}
           <div className="border-t lg:border-t-0 lg:border-l border-border bg-surface p-5 space-y-4 overflow-y-auto min-h-0 text-xs">
             <div className="flex items-center justify-between pb-3 border-b border-border">
               <span className="font-extrabold text-ink flex items-center gap-2 text-sm">
-                <Sparkles className="w-4 h-4 text-primary-glow" /> AI Audit
-                Breakdown
+                <ShieldCheck className="w-4 h-4 text-primary-glow" /> Verification Breakdown
               </span>
               <span className="font-bold text-ink text-xs bg-secondary px-2.5 py-1 rounded-full border border-border">
                 Confidence: {doc.verification.confidence}%
               </span>
             </div>
 
-            {/* AI Summary Card */}
+            {/* Summary Card */}
             <div
               className={`p-3.5 rounded-2xl border space-y-2 ${
                 doc.verification.status === "verified"
@@ -308,13 +308,13 @@ export const DocumentViewerModal: React.FC<DocumentViewerModalProps> = ({
                     ? "Identity Credentials Match"
                     : doc.verification.status === "rejected"
                       ? "Verification Rejected"
-                      : "AI Processing / In Review"}
+                      : "Verification in Progress"}
                 </span>
               </div>
               <p className="text-[11px] leading-relaxed opacity-90">
                 {doc.ai?.summary ||
                   doc.verification.reason ||
-                  "Document submitted for AI verification."}
+                  "Document submitted for credential verification."}
               </p>
             </div>
 
@@ -369,7 +369,7 @@ export const DocumentViewerModal: React.FC<DocumentViewerModalProps> = ({
               )}
 
             <div className="pt-2 text-[10px] text-ink-soft text-center border-t border-border">
-              Analyzed by Gemini 2.5 Flash Vision AI • Document ID:{" "}
+              Verified Credential Record • Document ID:{" "}
               {doc._id.slice(-8)}
             </div>
           </div>

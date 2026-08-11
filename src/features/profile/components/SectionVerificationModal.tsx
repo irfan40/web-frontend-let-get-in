@@ -204,7 +204,7 @@ export const SectionVerificationModal: React.FC<SectionVerificationModalProps> =
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
-      setUploadSuccessNotice("Document uploaded successfully! Gemini 2.5 Vision AI is verifying it in the background.");
+      setUploadSuccessNotice("Document uploaded successfully! Verification is in progress.");
       setTimeout(() => setUploadSuccessNotice(null), 5000);
       onRefresh();
     } catch (err: any) {
@@ -261,7 +261,7 @@ export const SectionVerificationModal: React.FC<SectionVerificationModalProps> =
                 <VerificationBadge status={status} size="sm" />
               </div>
               <p className="text-xs text-ink-soft mt-0.5">
-                Upload & verify supporting documents with Gemini 2.5 Vision AI
+                Upload and verify supporting documents for your profile credentials
               </p>
             </div>
           </div>
@@ -297,7 +297,7 @@ export const SectionVerificationModal: React.FC<SectionVerificationModalProps> =
               </div>
               <div className="text-xs space-y-0.5">
                 <p className="font-bold text-emerald-800 dark:text-emerald-300">
-                  Section Verified with AI
+                  Section Verified
                 </p>
                 <p className="opacity-90">
                   Your submitted documentation has been authenticated and matched with your profile information.
@@ -316,7 +316,7 @@ export const SectionVerificationModal: React.FC<SectionVerificationModalProps> =
                   Verification Issues Flagged
                 </p>
                 <p className="opacity-90">
-                  AI detected discrepancies or unreadable content. Review the issues below and upload an updated document.
+                  Discrepancies or unreadable content were detected. Review the details below and upload an updated document.
                 </p>
               </div>
             </div>
@@ -329,10 +329,10 @@ export const SectionVerificationModal: React.FC<SectionVerificationModalProps> =
               </div>
               <div className="text-xs space-y-0.5">
                 <p className="font-bold text-amber-800 dark:text-amber-300">
-                  Gemini AI Verification In Progress
+                  Verification In Progress
                 </p>
                 <p className="opacity-90">
-                  Analyzing document authenticity and extracting credentials. Status updates automatically.
+                  Authenticating document and extracting credentials. Status updates automatically.
                 </p>
               </div>
             </div>
@@ -493,12 +493,12 @@ export const SectionVerificationModal: React.FC<SectionVerificationModalProps> =
                 {isUploading ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>Uploading & Analyzing with AI...</span>
+                    <span>Uploading & Verifying...</span>
                   </>
                 ) : (
                   <>
                     <Sparkles className="w-4 h-4" />
-                    <span>Upload & Verify with AI</span>
+                    <span>Upload & Verify Document</span>
                   </>
                 )}
               </button>
@@ -521,7 +521,7 @@ export const SectionVerificationModal: React.FC<SectionVerificationModalProps> =
                 <FileText className="w-8 h-8 text-ink-soft mx-auto opacity-50" />
                 <p className="font-bold text-ink text-sm">No documents uploaded yet</p>
                 <p className="text-xs text-ink-soft">
-                  Upload your credentials using the box above to get verified by Gemini AI.
+                  Upload your supporting documents using the box above to get verified.
                 </p>
               </div>
             ) : (
@@ -628,14 +628,14 @@ export const SectionVerificationModal: React.FC<SectionVerificationModalProps> =
                           <div className="flex items-center justify-between">
                             <span className="font-bold text-amber-700 dark:text-amber-300 flex items-center gap-1.5">
                               <Sparkles className="w-3.5 h-3.5 text-amber-500 animate-spin" />
-                              Gemini 2.5 Flash Vision AI Processing...
+                              Document Verification in Progress...
                             </span>
                             <span className="text-[10px] font-semibold bg-amber-500/20 text-amber-700 dark:text-amber-200 px-2 py-0.5 rounded-full">
                               Live Polling Active
                             </span>
                           </div>
                           <p className="text-amber-800/80 dark:text-amber-200/80 leading-relaxed">
-                            Extracting text & analyzing document authenticity in the background. Status will update automatically.
+                            Extracting text and verifying authenticity. Status will update automatically.
                           </p>
                           <div className="h-1.5 w-full bg-amber-500/20 rounded-full overflow-hidden">
                             <div className="h-full bg-amber-500 rounded-full animate-pulse w-3/4" />
@@ -649,7 +649,7 @@ export const SectionVerificationModal: React.FC<SectionVerificationModalProps> =
                           <div className="flex items-center justify-between">
                             <span className="font-bold text-emerald-700 dark:text-emerald-300 flex items-center gap-1.5">
                               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-                              Gemini AI Verification Summary
+                              Verification Summary
                             </span>
                             <span className="font-extrabold text-emerald-700 dark:text-emerald-300">
                               Confidence: {doc.verification.confidence}%
@@ -667,7 +667,7 @@ export const SectionVerificationModal: React.FC<SectionVerificationModalProps> =
                           <div className="flex items-center justify-between">
                             <span className="font-bold text-rose-700 dark:text-rose-300 flex items-center gap-1.5">
                               <XCircle className="w-3.5 h-3.5 text-rose-500" />
-                              Gemini AI Verification Rejected
+                              Verification Rejected
                             </span>
                             <span className="font-extrabold text-rose-700 dark:text-rose-300">
                               Confidence: {doc.verification.confidence}%
@@ -702,7 +702,7 @@ export const SectionVerificationModal: React.FC<SectionVerificationModalProps> =
         {/* Footer */}
         <div className="px-6 py-4 bg-surface border-t border-border flex items-center justify-between gap-3 shrink-0">
           <p className="text-[11px] text-ink-soft hidden sm:block">
-            Powered by Gemini 2.5 Flash Vision AI Document Audit Pipeline
+            Official Document Verification & Credential Audit System
           </p>
           <button
             type="button"

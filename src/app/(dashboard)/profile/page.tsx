@@ -266,7 +266,7 @@ function VerificationButton({
         type="button"
         onClick={onClick}
         className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 hover:border-emerald-500/50"
-        title="Section is verified with Gemini AI. Click to view or manage verification documents."
+        title="Section is verified. Click to view or manage verification documents."
       >
         <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
         <span>Verified</span>
@@ -304,10 +304,10 @@ function VerificationButton({
         type="button"
         onClick={onClick}
         className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs bg-amber-500/15 hover:bg-amber-500/25 text-amber-600 dark:text-amber-300 border border-amber-500/30 ring-1 ring-amber-500/20"
-        title="Gemini AI is analyzing uploaded documents. Click to check live progress."
+        title="Document verification is in progress. Click to check live status."
       >
         <Loader2 className="w-4 h-4 text-amber-500 animate-spin shrink-0" />
-        <span>Verifying (AI)...</span>
+        <span>Verifying...</span>
         <span className="relative flex h-2 w-2">
           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
           <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
@@ -321,7 +321,7 @@ function VerificationButton({
       type="button"
       onClick={onClick}
       className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs bg-secondary hover:bg-primary/10 text-ink-soft hover:text-primary-glow border border-border hover:border-primary-glow/40"
-      title="Upload supporting documents to get verified with Gemini AI"
+      title="Upload supporting documents to get verified"
     >
       <ShieldCheck className="w-4 h-4 text-primary-glow shrink-0" />
       <span>Verify Details</span>
@@ -593,7 +593,7 @@ function Overview({
           <div>
             <h2 className="text-lg font-bold text-ink">Profile & Verification Checklist</h2>
             <p className="text-sm text-ink-soft">
-              Complete profile sections and upload documents for AI verification.
+              Complete profile sections and upload documents for credential verification.
             </p>
           </div>
           <span className="text-xs font-semibold text-ink-soft">
