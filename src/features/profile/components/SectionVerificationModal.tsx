@@ -90,7 +90,6 @@ export const SectionVerificationModal: React.FC<SectionVerificationModalProps> =
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [uploadSuccessNotice, setUploadSuccessNotice] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [previewDoc, setPreviewDoc] = useState<VerificationDocument | null>(null);
   const [mounted, setMounted] = useState(false);
@@ -206,8 +205,6 @@ export const SectionVerificationModal: React.FC<SectionVerificationModalProps> =
         fileInputRef.current.value = "";
       }
       toast.success("Document uploaded successfully! Verification in progress.");
-      setUploadSuccessNotice("Document uploaded successfully! Verification is in progress.");
-      setTimeout(() => setUploadSuccessNotice(null), 5000);
       onRefresh();
     } catch (err: any) {
       const msg =
@@ -341,23 +338,6 @@ export const SectionVerificationModal: React.FC<SectionVerificationModalProps> =
                   Authenticating document and extracting credentials. Status updates automatically.
                 </p>
               </div>
-            </div>
-          )}
-
-          {/* Success Notice */}
-          {uploadSuccessNotice && (
-            <div className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-800 dark:text-emerald-300 text-xs p-3.5 rounded-2xl flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <Check className="w-4 h-4 text-emerald-500 shrink-0" />
-                <span>{uploadSuccessNotice}</span>
-              </div>
-              <button
-                type="button"
-                onClick={() => setUploadSuccessNotice(null)}
-                className="text-emerald-600 hover:text-emerald-800 dark:text-emerald-400 text-xs font-bold cursor-pointer"
-              >
-                Dismiss
-              </button>
             </div>
           )}
 

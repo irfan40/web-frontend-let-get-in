@@ -19,7 +19,7 @@ import { Loader2, FileText, MessageSquare, Eye, Sparkles } from "lucide-react";
 function BuilderContent() {
   const searchParams = useSearchParams();
   const resumeId = searchParams.get("id");
-  const { loadResume } = useResumeStore();
+  const { loadResume, syncFromProfile } = useResumeStore();
   const { isAuthenticated } = useAuthStore();
   const [isChatOpen, setIsChatOpen] = useState(true);
   const [activeMobileTab, setActiveMobileTab] = useState<
@@ -32,8 +32,11 @@ function BuilderContent() {
   useEffect(() => {
     if (resumeId) {
       loadResume(resumeId);
+    } else if (isAuthenticated) {
+      // Automatically bind / populate from user Profile
+      syncFromProfile();
     }
-  }, [resumeId, loadResume]);
+  }, [resumeId, isAuthenticated, loadResume, syncFromProfile]);
 
   return (
     <div className="h-screen flex flex-col bg-background text-foreground overflow-hidden">

@@ -36,7 +36,11 @@ import {
   Palette,
   Award,
   X,
+  Lock,
+  Send,
+  KeyRound,
 } from "lucide-react";
+import { AuthService } from "@/features/auth/services/authService";
 import {
   VerificationService,
   VerificationResponse,
@@ -943,14 +947,67 @@ function ContactsSection({
   onViewDoc?: (doc: VerificationDocument) => void;
 }) {
   const { contact } = profile;
-  const [otpSent, setOtpSent] = useState(false);
+  const { user, fetchCurrentUser } = useAuthStore();
   const [isVerifyOpen, setIsVerifyOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState(contact);
 
+  // Email OTP Verification State
+  const [emailOtpSent, setEmailOtpSent] = useState(false);
+  const [emailOtpCode, setEmailOtpCode] = useState("");
+  const [isSendingEmailOtp, setIsSendingEmailOtp] = useState(false);
+  const [isVerifyingEmail, setIsVerifyingEmail] = useState(false);
+  const [emailCooldown, setEmailCooldown] = useState(0);
+
+  // Alternate Email OTP Verification State
+  const [altEmailOtpSent, setAltEmailOtpSent] = useState(false);
+  const [altEmailOtpCode, setAltEmailOtpCode] = useState("");
+  const [isSendingAltEmailOtp, setIsSendingAltEmailOtp] = useState(false);
+  const [isVerifyingAltEmail, setIsVerifyingAltEmail] = useState(false);
+  const [altEmailCooldown, setAltEmailCooldown] = useState(0);
+
+  // Phone OTP Verification State
+  const [phoneOtpSent, setPhoneOtpSent] = useState(false);
+  const [phoneOtpCode, setPhoneOtpCode] = useState("");
+  const [isSendingPhoneOtp, setIsSendingPhoneOtp] = useState(false);
+  const [isVerifyingPhone, setIsVerifyingPhone] = useState(false);
+  const [phoneCooldown, setPhoneCooldown] = useState(0);
+
+  // Cooldown timers
+  useEffect(() => {
+    if (emailCooldown > 0) {
+      const timer = setTimeout(() => setEmailCooldown((prev) => prev - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [emailCooldown]);
+
+  useEffect(() => {
+    if (altEmailCooldown > 0) {
+      const timer = setTimeout(() => setAltEmailCooldown((prev) => prev - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [altEmailCooldown]);
+
+  useEffect(() => {
+    if (phoneCooldown > 0) {
+      const timer = setTimeout(() => setPhoneCooldown((prev) => prev - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [phoneCooldown]);
+
   useEffect(() => {
     setDraft(contact);
   }, [contact]);
+
+  const registeredEmail = user?.email || contact.email || "";
+  const isEmailVerified = Boolean(
+    user?.emailVerified || user?.isEmailVerified || user?.provider === "google"
+  );
+  const currentAltEmail = draft.alternateEmail || draft.resumeEmail || "";
+  const isAltEmailVerified =
+    Boolean(contact.alternateEmailVerified || contact.resumeEmailVerified) &&
+    Boolean(currentAltEmail && currentAltEmail === (contact.alternateEmail || contact.resumeEmail));
+  const isPhoneVerified = Boolean(user?.phoneVerified);
 
   const handleStartEdit = () => {
     setDraft(contact);
@@ -965,7 +1022,10 @@ function ContactsSection({
   const handleSave = () => {
     const updatedProfile: ProfileData = {
       ...profile,
-      contact: draft,
+      contact: {
+        ...draft,
+        email: registeredEmail, // Enforce locked account email
+      },
     };
     onUpdate(() => updatedProfile);
     onSave(updatedProfile);
@@ -973,32 +1033,378 @@ function ContactsSection({
     setIsEditing(false);
   };
 
+  // Email OTP Actions
+  const handleSendEmailOtp = async () => {
+    if (!registeredEmail) {
+      toast.error("No registered email address found.");
+      return;
+    }
+    setIsSendingEmailOtp(true);
+    try {
+      const res = await AuthService.sendProfileEmailOtp();
+      setEmailOtpSent(true);
+      setEmailCooldown(res.cooldown || 60);
+      toast.success(`Verification code sent to ${registeredEmail}`);
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to send email verification OTP.");
+    } finally {
+      setIsSendingEmailOtp(false);
+    }
+  };
+
+  const handleVerifyEmailOtp = async () => {
+    if (!emailOtpCode || emailOtpCode.trim().length !== 6) {
+      toast.error("Please enter the 6-digit OTP received in your email.");
+      return;
+    }
+    setIsVerifyingEmail(true);
+    try {
+      await AuthService.verifyProfileEmailOtp(emailOtpCode.trim());
+      await fetchCurrentUser(true);
+      setEmailOtpSent(false);
+      setEmailOtpCode("");
+      toast.success("Email address successfully verified via OTP!");
+    } catch (err: any) {
+      toast.error(err?.message || "Invalid or expired OTP code.");
+    } finally {
+      setIsVerifyingEmail(false);
+    }
+  };
+
+  // Alternate Email OTP Actions
+  const handleSendAltEmailOtp = async () => {
+    const emailToVerify = draft.alternateEmail?.trim() || draft.resumeEmail?.trim();
+    if (!emailToVerify || !emailToVerify.includes("@")) {
+      toast.error("Please enter a valid alternate email address before requesting OTP.");
+      return;
+    }
+    setIsSendingAltEmailOtp(true);
+    try {
+      const res = await AuthService.sendProfileAlternateEmailOtp(emailToVerify);
+      setAltEmailOtpSent(true);
+      setAltEmailCooldown(res.cooldown || 60);
+      toast.success(`Verification code sent to ${emailToVerify}`);
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to send alternate email verification OTP.");
+    } finally {
+      setIsSendingAltEmailOtp(false);
+    }
+  };
+
+  const handleVerifyAltEmailOtp = async () => {
+    const emailToVerify = draft.alternateEmail?.trim() || draft.resumeEmail?.trim();
+    if (!emailToVerify || !emailToVerify.includes("@")) {
+      toast.error("Please provide a valid alternate email address.");
+      return;
+    }
+    if (!altEmailOtpCode || altEmailOtpCode.trim().length !== 6) {
+      toast.error("Please enter the 6-digit OTP code received in your alternate email.");
+      return;
+    }
+    setIsVerifyingAltEmail(true);
+    try {
+      await AuthService.verifyProfileAlternateEmailOtp(emailToVerify, altEmailOtpCode.trim());
+      setAltEmailOtpSent(false);
+      setAltEmailOtpCode("");
+      onUpdate((prev) => ({
+        ...prev,
+        contact: {
+          ...prev.contact,
+          alternateEmail: emailToVerify,
+          resumeEmail: emailToVerify,
+          alternateEmailVerified: true,
+          resumeEmailVerified: true,
+        },
+      }));
+      toast.success("Alternate / Resume email successfully verified via OTP!");
+    } catch (err: any) {
+      toast.error(err?.message || "Invalid or expired OTP code.");
+    } finally {
+      setIsVerifyingAltEmail(false);
+    }
+  };
+
+  // Phone OTP Actions
+  const handleSendPhoneOtp = async () => {
+    const phoneToVerify = draft.phone?.trim() || contact.phone?.trim();
+    if (!phoneToVerify || phoneToVerify.length < 8) {
+      toast.error("Please enter a valid phone number before requesting OTP.");
+      return;
+    }
+    setIsSendingPhoneOtp(true);
+    try {
+      const res = await AuthService.sendProfilePhoneOtp(phoneToVerify);
+      setPhoneOtpSent(true);
+      setPhoneCooldown(res.cooldown || 60);
+      toast.success(`Verification code sent to ${phoneToVerify} via WhatsApp!`);
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to send WhatsApp verification OTP.");
+    } finally {
+      setIsSendingPhoneOtp(false);
+    }
+  };
+
+  const handleVerifyPhoneOtp = async () => {
+    const phoneToVerify = draft.phone?.trim() || contact.phone?.trim();
+    if (!phoneOtpCode || phoneOtpCode.trim().length !== 6) {
+      toast.error("Please enter the 6-digit OTP code received on WhatsApp.");
+      return;
+    }
+    setIsVerifyingPhone(true);
+    try {
+      await AuthService.verifyProfilePhoneOtp(phoneToVerify, phoneOtpCode.trim());
+      await fetchCurrentUser(true);
+      setPhoneOtpSent(false);
+      setPhoneOtpCode("");
+      onUpdate((prev) => ({
+        ...prev,
+        contact: { ...prev.contact, phone: phoneToVerify },
+      }));
+      toast.success("Phone number successfully verified via WhatsApp OTP!");
+    } catch (err: any) {
+      toast.error(err?.message || "Invalid or expired WhatsApp OTP code.");
+    } finally {
+      setIsVerifyingPhone(false);
+    }
+  };
+
   return (
     <div className="space-y-6 animate-fade-up">
       <SectionHeader
         title="Contact Details"
-        subtitle="How recruiters and companies can reach you."
+        subtitle="How recruiters and companies can reach you. Login email is locked, while resume email and phone are verified via OTP."
         status={verificationStatus}
         onOpenVerify={() => setIsVerifyOpen(true)}
       />
 
-      <Card icon={Mail} iconColor="text-primary-glow" title="Email Address" verifiedStatus="verified">
-        <Field label="Email" hint="Email is tied to your account. Change it from account settings.">
+      {/* 1. PRIMARY REGISTERED ACCOUNT EMAIL (LOCKED) */}
+      <div className="p-6 rounded-2xl bg-surface border border-border shadow-xs space-y-4">
+        <div className="flex items-center justify-between pb-3 border-b border-border">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-secondary flex items-center justify-center text-primary-glow">
+              <Mail className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="font-bold text-ink text-sm">Primary Login Email</h3>
+                <span className="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-md bg-secondary text-ink-soft flex items-center gap-1">
+                  <Lock className="w-2.5 h-2.5" /> Account Email
+                </span>
+              </div>
+            </div>
+          </div>
+          {isEmailVerified ? (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+              <span>{user?.provider === "google" ? "Verified (Google)" : "Verified via OTP"}</span>
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-500/15 text-amber-600 dark:text-amber-300 border border-amber-500/30">
+              <AlertCircle className="w-3.5 h-3.5 text-amber-500" />
+              <span>Unverified</span>
+            </span>
+          )}
+        </div>
+
+        <Field
+          label="Registered Email Address"
+          hint="Your registered account email address. It is immutable and cannot be modified by resume imports."
+        >
+          <div className="relative">
+            <input
+              className="input-base bg-secondary/60 cursor-not-allowed text-ink font-semibold pr-10"
+              value={registeredEmail}
+              disabled
+            />
+            <div className="absolute right-3.5 top-1/2 -translate-y-1/2 text-ink-soft">
+              <Lock className="w-4 h-4" />
+            </div>
+          </div>
+        </Field>
+
+        {/* OTP Verification Prompt for Unverified Email */}
+        {!isEmailVerified && (
+          <div className="pt-2 border-t border-border/50 space-y-3">
+            {!emailOtpSent ? (
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-xs text-ink-soft">
+                  Verify your account email with a one-time passcode.
+                </span>
+                <button
+                  type="button"
+                  onClick={handleSendEmailOtp}
+                  disabled={isSendingEmailOtp || emailCooldown > 0}
+                  className="inline-flex items-center gap-1.5 bg-gradient-brand text-white font-semibold px-4 py-2 rounded-xl text-xs hover:shadow-glow transition cursor-pointer disabled:opacity-50"
+                >
+                  {isSendingEmailOtp ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Send className="w-3.5 h-3.5" />
+                  )}
+                  <span>{emailCooldown > 0 ? `Resend in ${emailCooldown}s` : "Verify via Email OTP"}</span>
+                </button>
+              </div>
+            ) : (
+              <div className="bg-secondary/30 p-4 rounded-xl border border-border space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-ink">
+                    Enter the 6-digit OTP code sent to {registeredEmail}:
+                  </span>
+                  {emailCooldown > 0 && (
+                    <span className="text-[11px] text-ink-soft">Resend in {emailCooldown}s</span>
+                  )}
+                </div>
+                <div className="flex items-center gap-2 max-w-sm">
+                  <input
+                    type="text"
+                    maxLength={6}
+                    value={emailOtpCode}
+                    onChange={(e) => setEmailOtpCode(e.target.value.replace(/\D/g, ""))}
+                    placeholder="Enter 6-digit OTP"
+                    className="input-base tracking-widest text-center text-base font-bold py-2"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleVerifyEmailOtp}
+                    disabled={isVerifyingEmail || emailOtpCode.length !== 6}
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl transition cursor-pointer disabled:opacity-50 shrink-0"
+                  >
+                    {isVerifyingEmail ? <Loader2 className="w-4 h-4 animate-spin" /> : "Confirm OTP"}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* 2. ALTERNATE / RESUME EMAIL FIELD WITH STRICT OTP VERIFICATION */}
+      <div className="p-6 rounded-2xl bg-surface border border-border shadow-xs space-y-4">
+        <div className="flex items-center justify-between pb-3 border-b border-border">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-secondary flex items-center justify-center text-primary-glow">
+              <Mail className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="font-bold text-ink text-sm">Alternate / Resume Email</h3>
+                <span className="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-md bg-secondary text-ink-soft">
+                  Resume Contact
+                </span>
+              </div>
+            </div>
+          </div>
+          {isAltEmailVerified ? (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+              <span>Verified via OTP</span>
+            </span>
+          ) : currentAltEmail ? (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-500/15 text-amber-600 dark:text-amber-300 border border-amber-500/30">
+              <AlertCircle className="w-3.5 h-3.5 text-amber-500" />
+              <span>Unverified</span>
+            </span>
+          ) : null}
+        </div>
+
+        <Field
+          label="Resume Contact Email"
+          hint="Optional secondary email specifically displayed on generated resumes and used for recruiter applications."
+        >
           <input
-            className="input-base bg-secondary/60 cursor-not-allowed text-ink-soft"
-            value={contact.email || ""}
-            disabled
+            className={`input-base ${!isEditing ? "bg-secondary/40 text-ink/90 cursor-default" : ""}`}
+            value={draft.alternateEmail || draft.resumeEmail || ""}
+            disabled={!isEditing}
+            onChange={(e) =>
+              setDraft((prev) => ({
+                ...prev,
+                alternateEmail: e.target.value,
+                resumeEmail: e.target.value,
+              }))
+            }
+            placeholder="e.g. professional.contact@gmail.com"
           />
         </Field>
-      </Card>
 
-      <Card
-        icon={Phone}
-        iconColor="text-[oklch(0.6_0.18_160)]"
-        title="Phone Number"
-        verifiedStatus={contact.phone ? "verified" : "unsubmitted"}
-      >
-        <Field label="Phone Number">
+        {/* OTP Verification Prompt for Unverified Alternate Email */}
+        {Boolean(currentAltEmail && !isAltEmailVerified) && (
+          <div className="pt-2 border-t border-border/50 space-y-3">
+            {!altEmailOtpSent ? (
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-xs text-ink-soft">
+                  Verify your alternate resume email with a one-time passcode.
+                </span>
+                <button
+                  type="button"
+                  onClick={handleSendAltEmailOtp}
+                  disabled={isSendingAltEmailOtp || altEmailCooldown > 0}
+                  className="inline-flex items-center gap-1.5 bg-gradient-brand text-white font-semibold px-4 py-2 rounded-xl text-xs hover:shadow-glow transition cursor-pointer disabled:opacity-50"
+                >
+                  {isSendingAltEmailOtp ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Send className="w-3.5 h-3.5" />
+                  )}
+                  <span>{altEmailCooldown > 0 ? `Resend in ${altEmailCooldown}s` : "Verify via Email OTP"}</span>
+                </button>
+              </div>
+            ) : (
+              <div className="bg-secondary/30 p-4 rounded-xl border border-border space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-ink">
+                    Enter the 6-digit OTP code sent to {currentAltEmail}:
+                  </span>
+                  {altEmailCooldown > 0 && (
+                    <span className="text-[11px] text-ink-soft">Resend in {altEmailCooldown}s</span>
+                  )}
+                </div>
+                <div className="flex items-center gap-2 max-w-sm">
+                  <input
+                    type="text"
+                    maxLength={6}
+                    value={altEmailOtpCode}
+                    onChange={(e) => setAltEmailOtpCode(e.target.value.replace(/\D/g, ""))}
+                    placeholder="Enter 6-digit OTP"
+                    className="input-base tracking-widest text-center text-base font-bold py-2"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleVerifyAltEmailOtp}
+                    disabled={isVerifyingAltEmail || altEmailOtpCode.length !== 6}
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl transition cursor-pointer disabled:opacity-50 shrink-0"
+                  >
+                    {isVerifyingAltEmail ? <Loader2 className="w-4 h-4 animate-spin" /> : "Confirm OTP"}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* 3. MOBILE PHONE NUMBER WITH STRICT OTP VERIFICATION */}
+      <div className="p-6 rounded-2xl bg-surface border border-border shadow-xs space-y-4">
+        <div className="flex items-center justify-between pb-3 border-b border-border">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-secondary flex items-center justify-center text-[oklch(0.6_0.18_160)]">
+              <Phone className="w-5 h-5" />
+            </div>
+            <h3 className="font-bold text-ink text-sm">Mobile Phone Number</h3>
+          </div>
+          {isPhoneVerified ? (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+              <span>Verified via OTP</span>
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-500/15 text-amber-600 dark:text-amber-300 border border-amber-500/30">
+              <AlertCircle className="w-3.5 h-3.5 text-amber-500" />
+              <span>Unverified</span>
+            </span>
+          )}
+        </div>
+
+        <Field label="Phone Number" hint="Mobile number used for SMS alerts, recruiter calls, and WhatsApp updates.">
           <input
             className={`input-base ${!isEditing ? "bg-secondary/40 text-ink/90 cursor-default" : ""}`}
             value={draft.phone}
@@ -1007,32 +1413,64 @@ function ContactsSection({
             placeholder="+91 98765 43210"
           />
         </Field>
-        <div className="mt-4 flex items-center justify-between">
-          {otpSent ? (
-            <span className="text-xs font-semibold text-emerald-500 flex items-center gap-1.5">
-              <Check className="w-4 h-4" /> OTP sent to WhatsApp
-            </span>
-          ) : (
-            <span className="text-xs text-ink-soft">Instant phone verification</span>
-          )}
-          <button
-            type="button"
-            onClick={() => {
-              if (!draft.phone || draft.phone.trim().length < 8) {
-                toast.error("Please enter a valid phone number before requesting OTP.");
-                return;
-              }
-              setOtpSent(true);
-              toast.success(`Verification OTP sent to ${draft.phone} via WhatsApp!`);
-              setTimeout(() => setOtpSent(false), 5000);
-            }}
-            className="bg-gradient-brand text-white font-semibold px-5 py-2.5 rounded-xl text-sm hover:shadow-glow transition cursor-pointer"
-          >
-            Verify via WhatsApp OTP
-          </button>
-        </div>
-      </Card>
 
+        {/* WhatsApp OTP Verification Prompt */}
+        {!isPhoneVerified && (
+          <div className="pt-2 border-t border-border/50 space-y-3">
+            {!phoneOtpSent ? (
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-xs text-ink-soft">
+                  Verify your mobile number with a WhatsApp OTP code.
+                </span>
+                <button
+                  type="button"
+                  onClick={handleSendPhoneOtp}
+                  disabled={isSendingPhoneOtp || phoneCooldown > 0}
+                  className="inline-flex items-center gap-1.5 bg-gradient-brand text-white font-semibold px-4 py-2 rounded-xl text-xs hover:shadow-glow transition cursor-pointer disabled:opacity-50"
+                >
+                  {isSendingPhoneOtp ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Phone className="w-3.5 h-3.5" />
+                  )}
+                  <span>{phoneCooldown > 0 ? `Resend in ${phoneCooldown}s` : "Verify via WhatsApp OTP"}</span>
+                </button>
+              </div>
+            ) : (
+              <div className="bg-secondary/30 p-4 rounded-xl border border-border space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-ink">
+                    Enter the 6-digit WhatsApp OTP sent to {draft.phone}:
+                  </span>
+                  {phoneCooldown > 0 && (
+                    <span className="text-[11px] text-ink-soft">Resend in {phoneCooldown}s</span>
+                  )}
+                </div>
+                <div className="flex items-center gap-2 max-w-sm">
+                  <input
+                    type="text"
+                    maxLength={6}
+                    value={phoneOtpCode}
+                    onChange={(e) => setPhoneOtpCode(e.target.value.replace(/\D/g, ""))}
+                    placeholder="Enter 6-digit OTP"
+                    className="input-base tracking-widest text-center text-base font-bold py-2"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleVerifyPhoneOtp}
+                    disabled={isVerifyingPhone || phoneOtpCode.length !== 6}
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl transition cursor-pointer disabled:opacity-50 shrink-0"
+                  >
+                    {isVerifyingPhone ? <Loader2 className="w-4 h-4 animate-spin" /> : "Confirm OTP"}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* 4. ADDRESS & PORTFOLIO LINKS */}
       <Card
         icon={MapPin}
         iconColor="text-[oklch(0.6_0.22_25)]"
@@ -2252,8 +2690,6 @@ export default function ProfilePage() {
   const [activeSection, setActiveSection] = useState<SectionId>("overview");
   const [isSaving, setIsSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState<"idle" | "unsaved" | "saving" | "saved" | "error">("idle");
-  const [saveNotice, setSaveNotice] = useState<string | null>(null);
-  const [saveError, setSaveError] = useState<string | null>(null);
   const [previewDoc, setPreviewDoc] = useState<VerificationDocument | null>(null);
 
   // References for debounced auto-save & concurrency safety
@@ -2385,7 +2821,6 @@ export default function ProfilePage() {
 
     setIsSaving(true);
     setSaveStatus("saving");
-    setSaveError(null);
 
     if (typeof window !== "undefined") {
       localStorage.setItem("user_profile_data", targetJson);
@@ -2403,18 +2838,14 @@ export default function ProfilePage() {
         lastSavedJsonRef.current = targetJson;
       }
       setSaveStatus("saved");
-      setSaveNotice("Profile changes saved to database successfully!");
       setTimeout(() => {
-        setSaveNotice(null);
         setSaveStatus((curr) => (curr === "saved" ? "idle" : curr));
-      }, 3500);
+      }, 3000);
     } catch (err: any) {
       console.error("Failed to save profile to database:", err);
       setSaveStatus("error");
       const errorMsg = err?.message || "Failed to save profile to database.";
-      setSaveError(errorMsg);
       toast.error(errorMsg);
-      setTimeout(() => setSaveError(null), 5000);
     } finally {
       setIsSaving(false);
     }
@@ -2474,20 +2905,6 @@ export default function ProfilePage() {
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-6xl mx-auto space-y-6">
-      {/* Save Notification Alerts */}
-      {saveNotice && (
-        <div className="fixed top-20 right-6 z-50 bg-emerald-600 text-white font-semibold text-xs px-4 py-2.5 rounded-xl shadow-elegant flex items-center gap-2 animate-fade-up">
-          <Check className="w-4 h-4" />
-          <span>{saveNotice}</span>
-        </div>
-      )}
-      {saveError && (
-        <div className="fixed top-20 right-6 z-50 bg-rose-600 text-white font-semibold text-xs px-4 py-2.5 rounded-xl shadow-elegant flex items-center gap-2 animate-fade-up">
-          <AlertCircle className="w-4 h-4" />
-          <span>{saveError}</span>
-        </div>
-      )}
-
       {/* Top Header Navigation Tabs with Live Auto-Save Status */}
       <div className="bg-surface border border-border rounded-2xl p-2 shadow-xs flex items-center justify-between gap-3 overflow-x-auto no-scrollbar select-none">
         <div className="flex items-center gap-1.5 min-w-max">

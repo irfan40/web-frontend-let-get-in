@@ -12,8 +12,10 @@ import {
   Sparkles,
   LayoutTemplate,
   User,
+  UserCheck,
 } from "lucide-react";
 import Link from "next/link";
+import { toast } from "sonner";
 import { TemplateModal } from "@/features/templates/components/TemplateModal";
 
 interface EditorHeaderProps {
@@ -27,12 +29,25 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
   isAiOpen,
   onDownloadPdf,
 }) => {
-  const { resume, updateTitle, saveStatus, lastSavedAt, isDirty } =
+  const { resume, updateTitle, saveStatus, lastSavedAt, isDirty, syncFromProfile } =
     useResumeStore();
   const { isAuthenticated } = useAuthStore();
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [titleInput, setTitleInput] = useState(resume.title);
   const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
+  const [isSyncingProfile, setIsSyncingProfile] = useState(false);
+
+  const handleSyncProfile = async () => {
+    setIsSyncingProfile(true);
+    try {
+      await syncFromProfile();
+      toast.success("Resume synchronized with your profile details!");
+    } catch {
+      toast.error("Failed to sync from profile.");
+    } finally {
+      setIsSyncingProfile(false);
+    }
+  };
 
   const handleTitleSubmit = () => {
     if (titleInput.trim()) {
@@ -111,7 +126,18 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
         </div>
 
         {/* Right: Controls & Actions */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5">
+          {/* Sync from Profile Button */}
+          <button
+            onClick={handleSyncProfile}
+            disabled={isSyncingProfile}
+            className="flex items-center gap-1.5 text-xs font-semibold bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 px-3 py-2 rounded-xl transition-all shadow-xs disabled:opacity-50"
+            title="Import and sync personal, education, experience, and skill details from your Profile"
+          >
+            <UserCheck className={`w-3.5 h-3.5 ${isSyncingProfile ? "animate-spin" : ""}`} />
+            <span className="hidden md:inline">Sync Profile</span>
+          </button>
+
           {/* Template Selector Modal Trigger */}
           <button
             onClick={() => setIsTemplateModalOpen(true)}

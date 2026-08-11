@@ -124,4 +124,49 @@ export class AuthService {
   static async getMe(): Promise<UserProfile> {
     return this.fetchCurrentUser();
   }
+
+  static async sendProfileEmailOtp(): Promise<{ cooldown: number }> {
+    const response = await apiClient.post<never, SendOtpApiResponse>('/auth/profile/send-email-otp');
+    return response.data;
+  }
+
+  static async verifyProfileEmailOtp(otp: string): Promise<UserProfile> {
+    const response = await apiClient.post<never, AuthApiResponse>('/auth/profile/verify-email-otp', { otp });
+    return response.data.user;
+  }
+
+  static async sendProfilePhoneOtp(phone: string, countryCode: string = '+91'): Promise<{ cooldown: number }> {
+    const response = await apiClient.post<never, SendOtpApiResponse>('/auth/profile/send-phone-otp', {
+      phone,
+      countryCode,
+    });
+    return response.data;
+  }
+
+  static async verifyProfilePhoneOtp(phone: string, otp: string, countryCode: string = '+91'): Promise<UserProfile> {
+    const response = await apiClient.post<never, AuthApiResponse>('/auth/profile/verify-phone-otp', {
+      phone,
+      otp,
+      countryCode,
+    });
+    return response.data.user;
+  }
+
+  static async sendProfileAlternateEmailOtp(email: string): Promise<{ cooldown: number }> {
+    const response = await apiClient.post<never, SendOtpApiResponse>('/auth/profile/send-alternate-email-otp', {
+      email,
+    });
+    return response.data;
+  }
+
+  static async verifyProfileAlternateEmailOtp(email: string, otp: string): Promise<{ success: boolean }> {
+    const response = await apiClient.post<never, { success: boolean; data: { profile: any } }>(
+      '/auth/profile/verify-alternate-email-otp',
+      {
+        email,
+        otp,
+      }
+    );
+    return { success: response.success };
+  }
 }

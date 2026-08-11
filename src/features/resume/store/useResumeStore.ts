@@ -13,6 +13,8 @@ import {
 } from '../types';
 import { INITIAL_RESUME_STATE, BLANK_RESUME_STATE } from '../constants/initialState';
 import { ResumeNormalizationService } from '../services/ResumeNormalizationService';
+import { mapProfileToResumeContent, mapResumeToProfileData } from '../utils/profileSync';
+import { ProfileService, ProfileData } from '@/features/profile/services/profileService';
 
 import { StorageProviderFactory } from '../storage/factory';
 
@@ -78,7 +80,11 @@ interface ResumeStoreState {
 
   // Full Replacement (e.g. AI Accept or Restore)
   setResume: (resume: IResume) => void;
-  
+
+  // Profile Bidirectional Synchronization
+  syncFromProfile: (profileData?: ProfileData) => Promise<void>;
+  syncToProfile: () => Promise<void>;
+
   // Storage Synchronization & Persistence
   saveResume: (isAuthenticated?: boolean) => Promise<void>;
   loadResume: (id: string, isAuthenticated?: boolean) => Promise<void>;
@@ -489,12 +495,57 @@ export const useResumeStore = create<ResumeStoreState>((set, get) => ({
     });
   },
 
+  syncFromProfile: async (profileData?: ProfileData) => {
+    try {
+      let profile = profileData;
+      if (!profile) {
+        profile = await ProfileService.getProfile();
+      }
+      if (profile) {
+        const { resume } = get();
+        const updatedContent = mapProfileToResumeContent(profile, resume.content);
+        const normalized = ResumeNormalizationService.normalize(updatedContent);
+        set({
+          resume: { ...resume, content: normalized },
+          isDirty: true,
+          saveStatus: 'unsaved',
+        });
+      }
+    } catch (err) {
+      console.warn('Failed to sync from profile:', err);
+    }
+  },
+
+  syncToProfile: async () => {
+    try {
+      const { resume } = get();
+      const profileData = mapResumeToProfileData(resume);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('user_profile_data', JSON.stringify(profileData));
+      }
+      await ProfileService.updateProfile(profileData);
+    } catch (err) {
+      console.warn('Failed to sync to profile:', err);
+    }
+  },
+
   saveResume: async () => {
     const { resume } = get();
     set({ saveStatus: 'saving' });
     try {
       const provider = StorageProviderFactory.getProvider();
       const savedResume = await provider.save(resume);
+
+      // Mirror fresh resume content into local profile cache for immediate reactivity
+      try {
+        const mappedProfile = mapResumeToProfileData(savedResume);
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('user_profile_data', JSON.stringify(mappedProfile));
+        }
+      } catch {
+        // non-fatal
+      }
+
       set({
         resume: savedResume,
         isDirty: false,
@@ -515,6 +566,16 @@ export const useResumeStore = create<ResumeStoreState>((set, get) => ({
 
       if (loaded) {
         const normalizedContent = ResumeNormalizationService.normalize(loaded.content);
+        // Mirror loaded resume content into local profile cache
+        try {
+          const mappedProfile = mapResumeToProfileData({ ...loaded, content: normalizedContent });
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('user_profile_data', JSON.stringify(mappedProfile));
+          }
+        } catch {
+          // non-fatal
+        }
+
         set({
           resume: { ...loaded, content: normalizedContent },
           isDirty: false,

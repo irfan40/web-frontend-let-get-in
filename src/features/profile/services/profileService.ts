@@ -32,6 +32,10 @@ export interface ProfileData {
     country: string;
     linkedin: string;
     email?: string;
+    alternateEmail?: string;
+    resumeEmail?: string;
+    alternateEmailVerified?: boolean;
+    resumeEmailVerified?: boolean;
     streetAddress?: string;
     state?: string;
     postalCode?: string;
