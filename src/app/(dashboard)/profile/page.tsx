@@ -15,6 +15,7 @@ import {
   Sparkles,
   FileText,
   CheckCircle2,
+  XCircle,
   ShieldCheck,
   Compass,
   Plus,
@@ -45,7 +46,7 @@ import {
   ExperienceItem,
 } from "@/features/profile/services/profileService";
 import { VerificationBadge } from "@/features/profile/components/VerificationBadge";
-import { SectionVerificationBox } from "@/features/profile/components/SectionVerificationBox";
+import { SectionVerificationModal } from "@/features/profile/components/SectionVerificationModal";
 import { DocumentViewerModal } from "@/features/profile/components/DocumentViewerModal";
 
 export type { Track, Mode, EducationItem, ExperienceItem, ProfileData };
@@ -224,10 +225,12 @@ function SectionHeader({
   title,
   subtitle,
   status,
+  onOpenVerify,
 }: {
   title: string;
   subtitle: string;
   status?: VerificationStatus;
+  onOpenVerify?: () => void;
 }) {
   return (
     <div className="flex items-center justify-between flex-wrap gap-2 mb-2">
@@ -235,8 +238,99 @@ function SectionHeader({
         <h2 className="text-xl font-extrabold text-ink tracking-tight">{title}</h2>
         <p className="text-xs text-ink-soft mt-0.5">{subtitle}</p>
       </div>
-      {status && <VerificationBadge status={status} size="lg" />}
+      {status && (
+        <div
+          onClick={onOpenVerify}
+          className={onOpenVerify ? "cursor-pointer hover:scale-105 transition" : ""}
+          title={onOpenVerify ? "Click to open verification modal" : undefined}
+        >
+          <VerificationBadge status={status} size="lg" />
+        </div>
+      )}
     </div>
+  );
+}
+
+function VerificationButton({
+  status,
+  documentsCount = 0,
+  onClick,
+}: {
+  status: VerificationStatus;
+  documentsCount?: number;
+  onClick: () => void;
+}) {
+  if (status === "verified") {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 hover:border-emerald-500/50"
+        title="Section is verified with Gemini AI. Click to view or manage verification documents."
+      >
+        <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+        <span>Verified</span>
+        {documentsCount > 0 && (
+          <span className="bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 text-[10px] px-1.5 py-0.5 rounded-full font-extrabold">
+            {documentsCount}
+          </span>
+        )}
+      </button>
+    );
+  }
+
+  if (status === "rejected") {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/30 hover:border-rose-500/50 animate-pulse"
+        title="Verification was rejected. Click to view issues and re-upload supporting documents."
+      >
+        <XCircle className="w-4 h-4 text-rose-500 shrink-0" />
+        <span>Rejected</span>
+        {documentsCount > 0 && (
+          <span className="bg-rose-500/20 text-rose-700 dark:text-rose-300 text-[10px] px-1.5 py-0.5 rounded-full font-extrabold">
+            {documentsCount}
+          </span>
+        )}
+      </button>
+    );
+  }
+
+  if (status === "pending") {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs bg-amber-500/15 hover:bg-amber-500/25 text-amber-600 dark:text-amber-300 border border-amber-500/30 ring-1 ring-amber-500/20"
+        title="Gemini AI is analyzing uploaded documents. Click to check live progress."
+      >
+        <Loader2 className="w-4 h-4 text-amber-500 animate-spin shrink-0" />
+        <span>Verifying (AI)...</span>
+        <span className="relative flex h-2 w-2">
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+          <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+        </span>
+      </button>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs bg-secondary hover:bg-primary/10 text-ink-soft hover:text-primary-glow border border-border hover:border-primary-glow/40"
+      title="Upload supporting documents to get verified with Gemini AI"
+    >
+      <ShieldCheck className="w-4 h-4 text-primary-glow shrink-0" />
+      <span>Verify Details</span>
+      {documentsCount > 0 && (
+        <span className="bg-secondary text-ink-soft text-[10px] px-1.5 py-0.5 rounded-full">
+          {documentsCount}
+        </span>
+      )}
+    </button>
   );
 }
 
@@ -279,28 +373,49 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
   );
 }
 
-function SaveBar({ onSave, isSaving }: { onSave?: () => void; isSaving?: boolean }) {
+function SaveBar({
+  onSave,
+  isSaving,
+  onOpenVerify,
+  verificationStatus = "unsubmitted",
+  documentsCount = 0,
+}: {
+  onSave?: () => void;
+  isSaving?: boolean;
+  onOpenVerify?: () => void;
+  verificationStatus?: VerificationStatus;
+  documentsCount?: number;
+}) {
   return (
-    <div className="pt-4 border-t border-border flex items-center justify-between">
+    <div className="pt-4 border-t border-border flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
       <span className="text-xs text-ink-soft">Changes are saved to your profile in database</span>
-      <button
-        type="button"
-        onClick={onSave}
-        disabled={isSaving}
-        className="bg-gradient-brand text-white font-semibold px-5 py-2 rounded-xl text-xs shadow-elegant hover:shadow-glow transition cursor-pointer disabled:opacity-60 flex items-center gap-2"
-      >
-        {isSaving ? (
-          <>
-            <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-            <span>Saving...</span>
-          </>
-        ) : (
-          <>
-            <Check className="w-3.5 h-3.5" />
-            <span>Save changes</span>
-          </>
+      <div className="flex items-center gap-2.5 justify-end flex-wrap">
+        {onOpenVerify && (
+          <VerificationButton
+            status={verificationStatus}
+            documentsCount={documentsCount}
+            onClick={onOpenVerify}
+          />
         )}
-      </button>
+        <button
+          type="button"
+          onClick={onSave}
+          disabled={isSaving}
+          className="bg-gradient-brand text-white font-semibold px-5 py-2 rounded-xl text-xs shadow-elegant hover:shadow-glow transition cursor-pointer disabled:opacity-60 flex items-center justify-center gap-2 shrink-0"
+        >
+          {isSaving ? (
+            <>
+              <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              <span>Saving...</span>
+            </>
+          ) : (
+            <>
+              <Check className="w-3.5 h-3.5" />
+              <span>Save changes</span>
+            </>
+          )}
+        </button>
+      </div>
     </div>
   );
 }
@@ -626,6 +741,7 @@ function PersonalSection({
   onViewDoc?: (doc: VerificationDocument) => void;
 }) {
   const { personal, experience } = profile;
+  const [isVerifyOpen, setIsVerifyOpen] = useState(false);
 
   return (
     <div className="space-y-6 animate-fade-up">
@@ -633,6 +749,7 @@ function PersonalSection({
         title="Personal Details"
         subtitle="Your public profile and personal identity information."
         status={verificationStatus}
+        onOpenVerify={() => setIsVerifyOpen(true)}
       />
 
       <Card icon={User} iconColor="text-primary-glow" title="Basic Info" verifiedStatus={verificationStatus}>
@@ -718,11 +835,19 @@ function PersonalSection({
             </Field>
           </div>
         </div>
-        <SaveBar onSave={() => onSave(profile)} isSaving={isSaving} />
+        <SaveBar
+          onSave={() => onSave(profile)}
+          isSaving={isSaving}
+          onOpenVerify={() => setIsVerifyOpen(true)}
+          verificationStatus={verificationStatus}
+          documentsCount={verificationDocs.length}
+        />
       </Card>
 
-      {/* Verification Document Pipeline Upload Component */}
-      <SectionVerificationBox
+      {/* Verification Document Pipeline Modal */}
+      <SectionVerificationModal
+        isOpen={isVerifyOpen}
+        onClose={() => setIsVerifyOpen(false)}
         section="personal"
         title="Personal Identity (Passport, Driving License, PAN)"
         documents={verificationDocs}
@@ -757,6 +882,7 @@ function ContactsSection({
 }) {
   const { contact } = profile;
   const [otpSent, setOtpSent] = useState(false);
+  const [isVerifyOpen, setIsVerifyOpen] = useState(false);
 
   return (
     <div className="space-y-6 animate-fade-up">
@@ -764,6 +890,7 @@ function ContactsSection({
         title="Contact Details"
         subtitle="How recruiters and companies can reach you."
         status={verificationStatus}
+        onOpenVerify={() => setIsVerifyOpen(true)}
       />
 
       <Card icon={Mail} iconColor="text-primary-glow" title="Email Address" verifiedStatus="verified">
@@ -904,11 +1031,19 @@ function ContactsSection({
             />
           </Field>
         </div>
-        <SaveBar onSave={() => onSave(profile)} isSaving={isSaving} />
+        <SaveBar
+          onSave={() => onSave(profile)}
+          isSaving={isSaving}
+          onOpenVerify={() => setIsVerifyOpen(true)}
+          verificationStatus={verificationStatus}
+          documentsCount={verificationDocs.length}
+        />
       </Card>
 
-      {/* Verification Document Pipeline Upload Component */}
-      <SectionVerificationBox
+      {/* Verification Document Pipeline Modal */}
+      <SectionVerificationModal
+        isOpen={isVerifyOpen}
+        onClose={() => setIsVerifyOpen(false)}
         section="contacts"
         title="Contact Proof (Government ID, Address Proof)"
         documents={verificationDocs}
@@ -947,6 +1082,7 @@ function EducationSection({
   const [startYear, setStartYear] = useState("");
   const [endYear, setEndYear] = useState("");
   const [certificateUrl, setCertificateUrl] = useState("");
+  const [isVerifyOpen, setIsVerifyOpen] = useState(false);
 
   const handleAddDegree = (e: React.FormEvent) => {
     e.preventDefault();
@@ -1001,6 +1137,7 @@ function EducationSection({
         title="Education"
         subtitle="Add every degree and certification — verified ones earn extra points."
         status={verificationStatus}
+        onOpenVerify={() => setIsVerifyOpen(true)}
       />
 
       {/* Render list of added degrees */}
@@ -1102,7 +1239,13 @@ function EducationSection({
             </button>
           </div>
         </form>
-        <SaveBar onSave={() => onSave(profile)} isSaving={isSaving} />
+        <SaveBar
+          onSave={() => onSave(profile)}
+          isSaving={isSaving}
+          onOpenVerify={() => setIsVerifyOpen(true)}
+          verificationStatus={verificationStatus}
+          documentsCount={verificationDocs.length}
+        />
       </Card>
 
       {list.length === 0 && (
@@ -1112,10 +1255,12 @@ function EducationSection({
         />
       )}
 
-      {/* Verification Document Pipeline Upload Component */}
-      <SectionVerificationBox
+      {/* Verification Document Pipeline Modal */}
+      <SectionVerificationModal
+        isOpen={isVerifyOpen}
+        onClose={() => setIsVerifyOpen(false)}
         section="education"
-        title="Education Verification (Degree Certificate, Marksheet, Transcript)"
+        title="Education Credentials Verification (Degree Certificate, Marksheet, Transcript)"
         documents={verificationDocs}
         status={verificationStatus}
         profileData={profile.education}
@@ -1153,6 +1298,7 @@ function ExperienceSection({
   const [start, setStart] = useState("");
   const [end, setEnd] = useState("");
   const [highlights, setHighlights] = useState("");
+  const [isVerifyOpen, setIsVerifyOpen] = useState(false);
 
   const handleAddRole = (e: React.FormEvent) => {
     e.preventDefault();
@@ -1207,6 +1353,7 @@ function ExperienceSection({
         title="Work Experience"
         subtitle="Every role you've held. Verified experiences unlock offers."
         status={verificationStatus}
+        onOpenVerify={() => setIsVerifyOpen(true)}
       />
 
       {/* Render list of added experiences */}
@@ -1297,15 +1444,23 @@ function ExperienceSection({
             </button>
           </div>
         </form>
-        <SaveBar onSave={() => onSave(profile)} isSaving={isSaving} />
+        <SaveBar
+          onSave={() => onSave(profile)}
+          isSaving={isSaving}
+          onOpenVerify={() => setIsVerifyOpen(true)}
+          verificationStatus={verificationStatus}
+          documentsCount={verificationDocs.length}
+        />
       </Card>
 
       {list.length === 0 && (
         <EmptyList title="No work experience added yet" subtitle="Your roles will appear here." />
       )}
 
-      {/* Verification Document Pipeline Upload Component */}
-      <SectionVerificationBox
+      {/* Verification Document Pipeline Modal */}
+      <SectionVerificationModal
+        isOpen={isVerifyOpen}
+        onClose={() => setIsVerifyOpen(false)}
         section="experience"
         title="Experience Proof (Experience Letter, Offer Letter, Relieving Letter, Salary Slip)"
         documents={verificationDocs}
@@ -1340,6 +1495,7 @@ function SkillsSection({
   onViewDoc?: (doc: VerificationDocument) => void;
 }) {
   const [newSkill, setNewSkill] = useState("");
+  const [isVerifyOpen, setIsVerifyOpen] = useState(false);
   const suggested = [
     "React",
     "TypeScript",
@@ -1385,6 +1541,7 @@ function SkillsSection({
         title="Skills"
         subtitle="Add skills and upload certificates to earn verification badges."
         status={verificationStatus}
+        onOpenVerify={() => setIsVerifyOpen(true)}
       />
 
       {profile.skills.length > 0 && (
@@ -1412,7 +1569,13 @@ function SkillsSection({
               </span>
             ))}
           </div>
-          <SaveBar onSave={() => onSave(profile)} isSaving={isSaving} />
+          <SaveBar
+            onSave={() => onSave(profile)}
+            isSaving={isSaving}
+            onOpenVerify={() => setIsVerifyOpen(true)}
+            verificationStatus={verificationStatus}
+            documentsCount={verificationDocs.length}
+          />
         </Card>
       )}
 
@@ -1456,6 +1619,16 @@ function SkillsSection({
             </div>
           </>
         )}
+
+        {profile.skills.length === 0 && (
+          <SaveBar
+            onSave={() => onSave(profile)}
+            isSaving={isSaving}
+            onOpenVerify={() => setIsVerifyOpen(true)}
+            verificationStatus={verificationStatus}
+            documentsCount={verificationDocs.length}
+          />
+        )}
       </Card>
 
       {profile.skills.length === 0 && (
@@ -1465,8 +1638,10 @@ function SkillsSection({
         />
       )}
 
-      {/* Verification Document Pipeline Upload Component */}
-      <SectionVerificationBox
+      {/* Verification Document Pipeline Modal */}
+      <SectionVerificationModal
+        isOpen={isVerifyOpen}
+        onClose={() => setIsVerifyOpen(false)}
         section="skills"
         title="Skill Verification (Certification PDFs, Course Certificates)"
         documents={verificationDocs}
