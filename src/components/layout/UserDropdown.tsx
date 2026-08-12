@@ -111,7 +111,7 @@ export function UserDropdown() {
           {/* Navigation Links */}
           <div className="px-1.5 py-1.5 space-y-0.5">
             <Link
-              href="/dashboard"
+              href="/resume"
               onClick={() => setIsOpen(false)}
               className="flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-ink hover:text-primary-glow hover:bg-surface-alt rounded-xl transition"
             >

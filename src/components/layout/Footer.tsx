@@ -16,7 +16,9 @@ export function Footer() {
               <Logo />
             </div>
             <p className="text-ink-soft leading-relaxed max-w-sm text-xs">
-              LetGetIn AI is an enterprise-grade AI resume builder and career identity suite. Build ATS-friendly, verified resumes that get you hired by top tech companies.
+              LetGetIn AI is an enterprise-grade AI resume builder and career
+              identity suite. Build ATS-friendly, verified resumes that get you
+              hired by top tech companies.
             </p>
             <div className="flex flex-wrap items-center gap-4 pt-2">
               <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-success/10 text-success rounded-full font-semibold text-[11px] border border-success/20">
@@ -30,25 +32,39 @@ export function Footer() {
 
           {/* Product Links */}
           <div className="space-y-3">
-            <h4 className="text-ink font-bold text-xs uppercase tracking-wider">Product</h4>
+            <h4 className="text-ink font-bold text-xs uppercase tracking-wider">
+              Product
+            </h4>
             <ul className="space-y-2">
               <li>
-                <Link href="/dashboard" className="hover:text-primary-glow transition">
+                <Link
+                  href="/resume"
+                  className="hover:text-primary-glow transition"
+                >
                   Dashboard
                 </Link>
               </li>
               <li>
-                <Link href="/builder" className="hover:text-primary-glow transition">
+                <Link
+                  href="/builder"
+                  className="hover:text-primary-glow transition"
+                >
                   Resume Builder
                 </Link>
               </li>
               <li>
-                <Link href="/demo" className="hover:text-primary-glow transition">
+                <Link
+                  href="/demo"
+                  className="hover:text-primary-glow transition"
+                >
                   AI Career Onboarding
                 </Link>
               </li>
               <li>
-                <Link href="/ats" className="hover:text-primary-glow transition">
+                <Link
+                  href="/ats"
+                  className="hover:text-primary-glow transition"
+                >
                   ATS Score Optimization
                 </Link>
               </li>
@@ -57,7 +73,9 @@ export function Footer() {
 
           {/* Legal & Security */}
           <div className="space-y-3">
-            <h4 className="text-ink font-bold text-xs uppercase tracking-wider">Security & Legal</h4>
+            <h4 className="text-ink font-bold text-xs uppercase tracking-wider">
+              Security & Legal
+            </h4>
             <ul className="space-y-2">
               <li>
                 <a href="#" className="hover:text-primary-glow transition">
@@ -87,7 +105,8 @@ export function Footer() {
         {/* Bottom Bar */}
         <div className="mt-12 pt-8 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-[11px] text-ink-soft">
-            © {new Date().getFullYear()} LetGetIn AI SaaS Inc. All rights reserved.
+            © {new Date().getFullYear()} LetGetIn AI SaaS Inc. All rights
+            reserved.
           </p>
           <div className="flex items-center gap-1 text-[11px] text-ink-soft">
             <span>Built for modern tech professionals with</span>

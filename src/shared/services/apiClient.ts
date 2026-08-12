@@ -93,7 +93,7 @@ apiClient.interceptors.response.use(
 
         // Only redirect to /auth if currently on a protected route and not already on /auth
         const PROTECTED_PREFIXES = [
-          '/dashboard',
+          '/resume',
           '/builder',
           '/demo',
           '/explore',

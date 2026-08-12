@@ -4,7 +4,7 @@ import type { NextRequest } from 'next/server';
 const PROTECTED_PATHS = [
   '/demo',
   '/builder',
-  '/dashboard',
+  '/resume',
   '/settings',
   '/account',
   '/profile',
@@ -29,8 +29,8 @@ export function middleware(request: NextRequest) {
   // If authenticated user tries to access /auth, redirect to /dashboard
   if (pathname.startsWith('/auth')) {
     if (hasToken) {
-      const dashboardUrl = new URL('/dashboard', request.url);
-      return NextResponse.redirect(dashboardUrl);
+      const resumeUrl = new URL('/resume', request.url);
+      return NextResponse.redirect(resumeUrl);
     }
     return NextResponse.next();
   }
@@ -53,8 +53,8 @@ export const config = {
     '/demo/:path*',
     '/builder',
     '/builder/:path*',
-    '/dashboard',
-    '/dashboard/:path*',
+    '/resume',
+    '/resume/:path*',
     '/settings',
     '/settings/:path*',
     '/account',

@@ -1,12 +1,21 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { Sparkles, FileText, Upload, ArrowRight, Wand2, ShieldCheck, Zap, Loader2 } from 'lucide-react';
-import { useRouter } from 'next/navigation';
-import { useResumeStore } from '@/features/resume/store/useResumeStore';
-import { StorageProviderFactory } from '@/features/resume/storage/factory';
-import { ResumeUploadModal } from '@/features/resume/components/onboarding/ResumeUploadModal';
+import React, { useState, useEffect } from "react";
+import { motion } from "framer-motion";
+import {
+  Sparkles,
+  FileText,
+  Upload,
+  ArrowRight,
+  Wand2,
+  ShieldCheck,
+  Zap,
+  Loader2,
+} from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useResumeStore } from "@/features/resume/store/useResumeStore";
+import { StorageProviderFactory } from "@/features/resume/storage/factory";
+import { ResumeUploadModal } from "@/features/resume/components/onboarding/ResumeUploadModal";
 
 export default function DemoOnboardingPage() {
   const router = useRouter();
@@ -23,11 +32,11 @@ export default function DemoOnboardingPage() {
         const list = await provider.list();
         if (isMounted && Array.isArray(list) && list.length > 0) {
           // Old user already has resumes, redirect away from /demo to /dashboard
-          router.replace('/dashboard');
+          router.replace("/resume");
           return;
         }
       } catch (err) {
-        console.warn('Error checking resumes on demo page:', err);
+        console.warn("Error checking resumes on demo page:", err);
       } finally {
         if (isMounted) {
           setIsChecking(false);
@@ -44,7 +53,7 @@ export default function DemoOnboardingPage() {
 
   const handleStartFromScratch = () => {
     resetToBlank();
-    router.push('/builder');
+    router.push("/builder");
   };
 
   if (isChecking) {
@@ -81,7 +90,8 @@ export default function DemoOnboardingPage() {
           transition={{ duration: 0.5, delay: 0.1 }}
           className="text-3xl sm:text-5xl font-extrabold tracking-tight text-ink max-w-3xl leading-tight"
         >
-          How would you like to start building with <span className="text-gradient-brand">LetGetIn AI</span>?
+          How would you like to start building with{" "}
+          <span className="text-gradient-brand">LetGetIn AI</span>?
         </motion.h1>
 
         <motion.p
@@ -90,7 +100,8 @@ export default function DemoOnboardingPage() {
           transition={{ duration: 0.5, delay: 0.2 }}
           className="mt-4 text-base text-ink-soft max-w-xl font-normal leading-relaxed"
         >
-          Select your workflow below. Our AI carrier engine will format, score, and optimize your resume in real time.
+          Select your workflow below. Our AI carrier engine will format, score,
+          and optimize your resume in real time.
         </motion.p>
 
         {/* Two Interactive Workflows Grid */}
@@ -122,7 +133,9 @@ export default function DemoOnboardingPage() {
               </h3>
 
               <p className="mt-3 text-xs sm:text-sm text-ink-soft leading-relaxed">
-                Start with a clean resume and let AI help you build every section step by step. Ideal for fresh graduates or creating a tailored new resume from ground up.
+                Start with a clean resume and let AI help you build every
+                section step by step. Ideal for fresh graduates or creating a
+                tailored new resume from ground up.
               </p>
             </div>
 
@@ -164,7 +177,9 @@ export default function DemoOnboardingPage() {
               </h3>
 
               <p className="mt-3 text-xs sm:text-sm text-ink-soft leading-relaxed">
-                Already have a resume? Upload a PDF or DOCX and we’ll automatically extract your information using AI, populating all sections instantly.
+                Already have a resume? Upload a PDF or DOCX and we’ll
+                automatically extract your information using AI, populating all
+                sections instantly.
               </p>
             </div>
 

@@ -6,7 +6,14 @@ import { usePathname } from "next/navigation";
 import { Logo } from "@/components/landing/Logo";
 import { useAuthStore } from "@/features/auth/store/useAuthStore";
 import { UserDropdown } from "./UserDropdown";
-import { Sparkles, Menu, X, ArrowRight, LayoutDashboard, FileText } from "lucide-react";
+import {
+  Sparkles,
+  Menu,
+  X,
+  ArrowRight,
+  LayoutDashboard,
+  FileText,
+} from "lucide-react";
 
 export function Navbar() {
   const pathname = usePathname();
@@ -14,7 +21,7 @@ export function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navLinks = [
-    { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+    { name: "Dashboard", href: "/resume", icon: LayoutDashboard },
     { name: "Resume Builder", href: "/builder", icon: FileText },
     { name: "AI Onboarding", href: "/demo", icon: Sparkles },
   ];
@@ -45,7 +52,9 @@ export function Navbar() {
                     : "text-ink-soft hover:text-ink hover:bg-white/50"
                 }`}
               >
-                <Icon className={`w-3.5 h-3.5 ${isActive ? "text-primary-glow" : "text-ink-soft"}`} />
+                <Icon
+                  className={`w-3.5 h-3.5 ${isActive ? "text-primary-glow" : "text-ink-soft"}`}
+                />
                 <span>{link.name}</span>
               </Link>
             );
@@ -80,7 +89,11 @@ export function Navbar() {
             onClick={() => setMobileMenuOpen((prev) => !prev)}
             className="md:hidden p-2 rounded-xl border border-border text-ink-soft hover:text-ink hover:bg-surface-alt transition"
           >
-            {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            {mobileMenuOpen ? (
+              <X className="w-5 h-5" />
+            ) : (
+              <Menu className="w-5 h-5" />
+            )}
           </button>
         </div>
       </div>

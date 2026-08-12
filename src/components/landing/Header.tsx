@@ -74,7 +74,11 @@ export function Header() {
             className="md:hidden p-2 rounded-lg hover:bg-white/60 transition"
             aria-label="Toggle menu"
           >
-            {open ? <X className="w-6 h-6 text-ink" /> : <Menu className="w-6 h-6 text-ink" />}
+            {open ? (
+              <X className="w-6 h-6 text-ink" />
+            ) : (
+              <Menu className="w-6 h-6 text-ink" />
+            )}
           </button>
         </div>
 
@@ -95,7 +99,7 @@ export function Header() {
               {isAuthenticated ? (
                 <>
                   <Link
-                    to="/dashboard"
+                    to="/resume"
                     onClick={() => setOpen(false)}
                     className="mt-1 bg-gradient-brand text-primary-foreground text-sm font-semibold px-5 py-3 rounded-xl text-center shadow-elegant flex items-center justify-center gap-2"
                   >

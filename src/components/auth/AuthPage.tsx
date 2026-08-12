@@ -58,12 +58,12 @@ export default function AuthPage() {
       const provider = StorageProviderFactory.getProvider();
       const list = await provider.list();
       if (Array.isArray(list) && list.length > 0) {
-        router.replace("/dashboard");
+        router.replace("/resume");
       } else {
         router.replace("/demo");
       }
     } catch {
-      router.replace("/dashboard");
+      router.replace("/resume");
     }
   };
 
@@ -145,7 +145,9 @@ export default function AuthPage() {
       }
     } else {
       if (!phone.trim() || phone.trim().length < 6) {
-        setLocalError("A valid phone number is required for WhatsApp verification.");
+        setLocalError(
+          "A valid phone number is required for WhatsApp verification.",
+        );
         return;
       }
     }
@@ -159,7 +161,9 @@ export default function AuthPage() {
       }
       setStep("verify");
     } catch (err: unknown) {
-      const msg = (err as { message?: string })?.message || "Failed to dispatch verification code.";
+      const msg =
+        (err as { message?: string })?.message ||
+        "Failed to dispatch verification code.";
       setLocalError(msg);
     } finally {
       setIsSubmitting(false);
@@ -216,7 +220,8 @@ export default function AuthPage() {
       }
       setStep("done");
     } catch (err: unknown) {
-      const msg = (err as { message?: string })?.message || "Verification failed.";
+      const msg =
+        (err as { message?: string })?.message || "Verification failed.";
       setLocalError(msg);
     } finally {
       setIsSubmitting(false);
