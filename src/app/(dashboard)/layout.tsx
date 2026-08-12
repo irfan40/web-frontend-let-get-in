@@ -16,16 +16,20 @@ export default function DashboardLayout({
   const pathname = usePathname();
 
   const pageTitles: Record<string, string> = {
-    "/dashboard": "Dashboard Overview",
+    "/resume": "Resume Workspace",
     "/builder": "Resume Builder",
-    "/demo": "AI Carrier Onboarding",
+    "/demo": "AI Career Onboarding",
     "/explore": "Explore Opportunities",
     "/profile": "User Profile & Identity",
     "/drive": "LetGetIn Cloud Drive",
     "/myhub": "My Hub Command Center",
+    "/skills": "Skill Enhancement Hub",
+    "/edupie": "Edupie Learning Suite",
     "/geniustest": "Genius Test AI",
     "/exams": "Certification Exams",
-    "/edupye": "Edupye Learning Suite",
+    "/network": "My Network",
+    "/team": "My Team",
+    "/market": "App Market",
     "/mydive": "My Dive Analytics",
   };
 

@@ -1,20 +1,61 @@
 import { useResumeStore } from '../store/useResumeStore';
+import { useAuthStore } from '../../auth/store/useAuthStore';
+
+/**
+ * Generates a clean, professional resume file name starting with the user's name:
+ * e.g. "John_Doe_Resume" (saved by browsers as "John_Doe_Resume.pdf")
+ */
+export const getResumeFileName = (): string => {
+  const resumeState = useResumeStore.getState();
+  const authState = useAuthStore.getState();
+
+  // 1. Highest priority: Full Name from Resume Personal Details
+  let rawName: string | undefined = resumeState.resume?.content?.personalInfo?.fullName?.trim();
+
+  // 2. Fallback: Full Name or Username from Logged-in User Account
+  if (!rawName) {
+    rawName = authState.user?.fullName?.trim() || authState.user?.username?.trim() || undefined;
+  }
+
+  // 3. Fallback: Custom Resume Title if distinct from default
+  if (!rawName && resumeState.resume?.title && resumeState.resume.title !== 'Untitled Resume') {
+    rawName = resumeState.resume.title.trim();
+  }
+
+  // Clean and sanitize string (remove unsafe filename symbols, normalize spaces to underscores)
+  const sanitized = (rawName || 'User')
+    .replace(/[\\/:*?"<>|#%&{}\\$!'@+`=.,;()[\]]/g, '')
+    .trim()
+    .replace(/[\s\-_]+/g, '_')
+    .replace(/^_+|_+$/g, '');
+
+  const baseName = sanitized || 'User';
+
+  if (baseName.toLowerCase().endsWith('_resume')) {
+    return baseName;
+  }
+  if (baseName.toLowerCase() === 'resume') {
+    return 'My_Resume';
+  }
+
+  return `${baseName}_Resume`;
+};
 
 export const triggerPdfDownload = () => {
   if (typeof window === 'undefined') return;
 
-  const state = useResumeStore.getState();
-  const name = state.resume?.content?.personalInfo?.fullName || 'Resume';
-  const cleanName = name.trim().replace(/\s+/g, '_') || 'Resume';
+  const pdfFileName = getResumeFileName();
+  const originalDocumentTitle = document.title;
+
+  // Set document title so browsers using parent window title for print dialog use the clean name
+  document.title = pdfFileName;
 
   const resumeElement = document.querySelector('.resume-paper') as HTMLElement;
 
   if (!resumeElement) {
-    const originalTitle = document.title;
-    document.title = `${cleanName}_Resume`;
     window.print();
     setTimeout(() => {
-      document.title = originalTitle;
+      document.title = originalDocumentTitle;
     }, 1000);
     return;
   }
@@ -37,6 +78,9 @@ export const triggerPdfDownload = () => {
   const doc = printFrame.contentWindow?.document;
   if (!doc) {
     window.print();
+    setTimeout(() => {
+      document.title = originalDocumentTitle;
+    }, 1000);
     return;
   }
 
@@ -60,7 +104,7 @@ export const triggerPdfDownload = () => {
     <!DOCTYPE html>
     <html lang="en">
       <head>
-        <title>${cleanName}_Resume</title>
+        <title>${pdfFileName}</title>
         <meta charset="utf-8">
         ${styles}
         <style>
@@ -97,5 +141,10 @@ export const triggerPdfDownload = () => {
   setTimeout(() => {
     printFrame.contentWindow?.focus();
     printFrame.contentWindow?.print();
+
+    // Restore original tab title after print dialog triggers
+    setTimeout(() => {
+      document.title = originalDocumentTitle;
+    }, 1500);
   }, 300);
 };
