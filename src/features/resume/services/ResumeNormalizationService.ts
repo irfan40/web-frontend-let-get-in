@@ -12,7 +12,7 @@ export class ResumeNormalizationService {
         websiteUrl: this.normalizeUrl(resume.personalInfo.websiteUrl),
       },
       summary: this.cleanWhitespace(resume.summary),
-      experiences: resume.experiences.map((exp, i) => ({
+      experiences: (resume.experiences || []).map((exp, i) => ({
         ...exp,
         id: exp.id || `exp-${i + 1}`,
         company: this.capitalizeTitle(this.cleanWhitespace(exp.company)),
@@ -20,9 +20,9 @@ export class ResumeNormalizationService {
         location: this.capitalizeTitle(this.cleanWhitespace(exp.location)),
         startDate: this.normalizeDate(exp.startDate),
         endDate: this.normalizeDate(exp.endDate),
-        highlights: exp.highlights.map((h) => this.cleanWhitespace(h)).filter(Boolean),
+        highlights: (exp.highlights || []).map((h) => this.cleanWhitespace(h)).filter(Boolean),
       })),
-      educations: resume.educations.map((edu, i) => ({
+      educations: (resume.educations || []).map((edu, i) => ({
         ...edu,
         id: edu.id || `edu-${i + 1}`,
         institution: this.capitalizeTitle(this.cleanWhitespace(edu.institution)),
@@ -31,7 +31,7 @@ export class ResumeNormalizationService {
         startDate: this.normalizeDate(edu.startDate),
         endDate: this.normalizeDate(edu.endDate),
       })),
-      projects: resume.projects.map((proj, i) => ({
+      projects: (resume.projects || []).map((proj, i) => ({
         ...proj,
         id: proj.id || `proj-${i + 1}`,
         title: this.capitalizeTitle(this.cleanWhitespace(proj.title)),
@@ -43,15 +43,15 @@ export class ResumeNormalizationService {
         highlights: (proj.highlights || []).map((h) => this.cleanWhitespace(h)).filter(Boolean),
         technologies: (proj.technologies || []).map((t) => this.cleanWhitespace(t)).filter(Boolean),
       })),
-      skills: this.normalizeSkills(resume.skills),
-      certificates: resume.certificates.map((cert, i) => ({
+      skills: this.normalizeSkills(resume.skills || []),
+      certificates: (resume.certificates || []).map((cert, i) => ({
         ...cert,
         id: cert.id || `cert-${i + 1}`,
         name: this.capitalizeTitle(this.cleanWhitespace(cert.name)),
         issuer: this.capitalizeTitle(this.cleanWhitespace(cert.issuer)),
         issueDate: this.normalizeDate(cert.issueDate),
       })),
-      languages: resume.languages.map((lang, i) => ({
+      languages: (resume.languages || []).map((lang, i) => ({
         ...lang,
         id: lang.id || `lang-${i + 1}`,
         language: this.capitalizeTitle(this.cleanWhitespace(lang.language)),
@@ -59,6 +59,17 @@ export class ResumeNormalizationService {
       })),
       references: [],
       socialLinks: [],
+      customSections: (resume.customSections || []).map((sec, sIdx) => ({
+        id: sec.id || `custom-${sIdx + 1}`,
+        title: this.capitalizeTitle(this.cleanWhitespace(sec.title)) || 'Custom Section',
+        items: (sec.items || []).map((item, iIdx) => ({
+          id: item.id || `item-${iIdx + 1}`,
+          title: this.cleanWhitespace(item.title),
+          subtitle: this.cleanWhitespace(item.subtitle),
+          date: this.cleanWhitespace(item.date),
+          description: this.cleanWhitespace(item.description),
+        })),
+      })),
     };
   }
 
@@ -115,40 +126,55 @@ export class ResumeNormalizationService {
       .join(' ');
   }
 
-  static normalizeSkills(skills: Array<{ id?: string; name: string; category?: string; level: number }>) {
+  static normalizeSkills(skills: any[]): Array<{ id: string; name: string; category: string; level: number }> {
     const knownTechMap: Record<string, string> = {
       typescript: 'TypeScript',
       javascript: 'JavaScript',
-      react: 'React.js',
-      reactjs: 'React.js',
+      react: 'React',
+      reactjs: 'React',
       nextjs: 'Next.js',
+      'next.js': 'Next.js',
       nodejs: 'Node.js',
+      'node.js': 'Node.js',
+      express: 'Express.js',
       expressjs: 'Express.js',
       python: 'Python',
       mongodb: 'MongoDB',
       postgresql: 'PostgreSQL',
+      postgres: 'PostgreSQL',
       docker: 'Docker',
       kubernetes: 'Kubernetes',
       aws: 'AWS',
       graphql: 'GraphQL',
-      tailwindcss: 'Tailwind CSS',
+      tailwindcss: 'TailwindCSS',
+      'tailwind css': 'TailwindCSS',
+      redis: 'Redis',
+      git: 'Git',
+      github: 'GitHub',
+      gitlab: 'GitLab',
+      'ci/cd': 'CI/CD Pipelines',
+      'ci/cd pipelines': 'CI/CD Pipelines',
+      'system architecture': 'System Architecture',
+      'rest apis': 'REST APIs',
     };
 
     const uniqueMap = new Map<string, { id: string; name: string; category: string; level: number }>();
 
-    skills.forEach((sk, i) => {
-      const rawName = this.cleanWhitespace(sk.name);
+    (skills || []).forEach((sk, i) => {
+      if (!sk) return;
+      const rawName = this.cleanWhitespace(typeof sk === 'string' ? sk : sk.name);
       if (!rawName) return;
 
       const lowerKey = rawName.toLowerCase();
       const normalizedName = knownTechMap[lowerKey] || this.capitalizeTitle(rawName);
+      const lookupKey = normalizedName.toLowerCase();
 
-      if (!uniqueMap.has(normalizedName)) {
-        uniqueMap.set(normalizedName, {
-          id: sk.id || `skill-${i + 1}`,
+      if (!uniqueMap.has(lookupKey)) {
+        uniqueMap.set(lookupKey, {
+          id: (typeof sk === 'object' && sk?.id) ? sk.id : `skill-${Date.now()}-${i}`,
           name: normalizedName,
-          category: this.capitalizeTitle(this.cleanWhitespace(sk.category || 'Technical')),
-          level: Math.min(5, Math.max(1, sk.level || 4)),
+          category: this.capitalizeTitle(this.cleanWhitespace((typeof sk === 'object' && sk?.category) ? sk.category : 'Technical Skills')),
+          level: (typeof sk === 'object' && sk?.level) ? Math.min(5, Math.max(1, sk.level)) : 5,
         });
       }
     });

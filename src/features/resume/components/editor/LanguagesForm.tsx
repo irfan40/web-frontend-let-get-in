@@ -2,13 +2,14 @@ import React from 'react';
 import { useResumeStore } from '../../store/useResumeStore';
 import { Languages, Plus, Trash2, ChevronUp, ChevronDown } from 'lucide-react';
 import { ILanguage } from '../../types';
+import { CustomSelect, SelectOption } from '../common/CustomSelect';
 
-const PROFICIENCY_LEVELS: Array<ILanguage['proficiency']> = [
-  'Native',
-  'Fluent',
-  'Proficient',
-  'Intermediate',
-  'Basic',
+const PROFICIENCY_OPTIONS: SelectOption[] = [
+  { value: 'Native', label: 'Native / Mother Tongue', sublabel: 'First language / complete native fluency' },
+  { value: 'Fluent', label: 'Fluent / Full Professional', sublabel: 'Able to work, negotiate, and speak with ease' },
+  { value: 'Proficient', label: 'Proficient / Professional Working', sublabel: 'Strong technical & conversational ability' },
+  { value: 'Intermediate', label: 'Intermediate / Limited Working', sublabel: 'Routine communication capability' },
+  { value: 'Basic', label: 'Basic / Elementary', sublabel: 'Simple sentences & vocabulary' },
 ];
 
 export const LanguagesForm: React.FC = () => {
@@ -43,7 +44,7 @@ export const LanguagesForm: React.FC = () => {
         <button
           type="button"
           onClick={handleAdd}
-          className="flex items-center gap-1.5 text-xs font-semibold bg-gradient-brand text-primary-foreground px-3 py-1.5 rounded-xl shadow-elegant transition-all hover:shadow-glow"
+          className="flex items-center gap-1.5 text-xs font-semibold bg-gradient-brand text-primary-foreground px-3 py-1.5 rounded-xl shadow-elegant transition-all hover:shadow-glow cursor-pointer"
         >
           <Plus className="w-3.5 h-3.5" />
           <span>Add Language</span>
@@ -69,7 +70,7 @@ export const LanguagesForm: React.FC = () => {
                   type="button"
                   disabled={idx === 0}
                   onClick={() => moveLang(idx, 'up')}
-                  className="p-1 text-ink-soft hover:text-ink disabled:opacity-30"
+                  className="p-1 text-ink-soft hover:text-ink disabled:opacity-30 cursor-pointer"
                   title="Move Up"
                 >
                   <ChevronUp className="w-4 h-4" />
@@ -78,7 +79,7 @@ export const LanguagesForm: React.FC = () => {
                   type="button"
                   disabled={idx === languages.length - 1}
                   onClick={() => moveLang(idx, 'down')}
-                  className="p-1 text-ink-soft hover:text-ink disabled:opacity-30"
+                  className="p-1 text-ink-soft hover:text-ink disabled:opacity-30 cursor-pointer"
                   title="Move Down"
                 >
                   <ChevronDown className="w-4 h-4" />
@@ -86,7 +87,7 @@ export const LanguagesForm: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => removeLanguage(lang.id)}
-                  className="p-1 text-destructive hover:opacity-80 ml-2"
+                  className="p-1 text-destructive hover:opacity-80 ml-2 cursor-pointer"
                   title="Delete Language"
                 >
                   <Trash2 className="w-4 h-4" />
@@ -108,17 +109,11 @@ export const LanguagesForm: React.FC = () => {
 
               <div>
                 <label className="block text-ink-soft font-semibold mb-1">Proficiency Level</label>
-                <select
+                <CustomSelect
                   value={lang.proficiency}
-                  onChange={(e) => updateLanguage(lang.id, { proficiency: e.target.value as ILanguage['proficiency'] })}
-                  className="input-base text-xs"
-                >
-                  {PROFICIENCY_LEVELS.map((level) => (
-                    <option key={level} value={level}>
-                      {level}
-                    </option>
-                  ))}
-                </select>
+                  onChange={(val) => updateLanguage(lang.id, { proficiency: val as ILanguage['proficiency'] })}
+                  options={PROFICIENCY_OPTIONS}
+                />
               </div>
             </div>
           </div>

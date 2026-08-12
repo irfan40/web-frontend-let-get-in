@@ -95,6 +95,7 @@ export const INITIAL_RESUME_STATE: IResume = {
       { id: 'soc-1', platform: 'GitHub', url: 'https://github.com/alexrivera' },
       { id: 'soc-2', platform: 'LinkedIn', url: 'https://linkedin.com/in/alexrivera' },
     ],
+    customSections: [],
   },
   settings: {
     primaryColor: '#0f172a',
@@ -127,6 +128,7 @@ export const BLANK_RESUME_STATE: IResume = {
     languages: [],
     references: [],
     socialLinks: [],
+    customSections: [],
   },
   settings: {
     primaryColor: '#3b82f6',

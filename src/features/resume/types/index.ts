@@ -76,6 +76,22 @@ export interface ISocialLink {
   id: string;
   platform: string;
   url: string;
+  label?: string;
+  useLabelAsLink?: boolean;
+}
+
+export interface ICustomSectionItem {
+  id: string;
+  title: string;
+  subtitle?: string;
+  date?: string;
+  description?: string;
+}
+
+export interface ICustomSection {
+  id: string;
+  title: string;
+  items: ICustomSectionItem[];
 }
 
 export interface ITemplateSettings {
@@ -97,6 +113,7 @@ export interface IResumeContent {
   languages: ILanguage[];
   references: IReference[];
   socialLinks: ISocialLink[];
+  customSections?: ICustomSection[];
 }
 
 export interface IResume {

@@ -4,7 +4,7 @@ import { useResumeStore } from '../../resume/store/useResumeStore';
 import { EditableText } from './EditableText';
 
 export const ExecutiveProTemplate: React.FC<TemplateProps> = ({ resume }) => {
-  const { personalInfo, summary, experiences, educations, skills, projects, certificates, languages } = resume.content;
+  const { personalInfo, summary, experiences, educations, skills, projects, certificates, languages, customSections, socialLinks } = resume.content;
   const { primaryColor, fontFamily } = resume.settings;
   const { updatePersonalInfo, updateSummary, updateExperience, updateEducation, updateProject, updateSkill, updateCertificate, updateLanguage } = useResumeStore();
 
@@ -41,6 +41,37 @@ export const ExecutiveProTemplate: React.FC<TemplateProps> = ({ resume }) => {
             <div>📧 <EditableText value={personalInfo.email || 'Email'} onChange={(val) => updatePersonalInfo({ email: val })} /></div>
             <div>📱 <EditableText value={personalInfo.phone || 'Phone'} onChange={(val) => updatePersonalInfo({ phone: val })} /></div>
             <div>📍 <EditableText value={personalInfo.location || 'Location'} onChange={(val) => updatePersonalInfo({ location: val })} /></div>
+            {personalInfo.websiteUrl && (
+              <div>
+                🌐{' '}
+                <a
+                  href={personalInfo.websiteUrl.startsWith('http') ? personalInfo.websiteUrl : `https://${personalInfo.websiteUrl}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-white hover:underline"
+                >
+                  {personalInfo.websiteUrl.replace(/^https?:\/\//, '')}
+                </a>
+              </div>
+            )}
+            {socialLinks && socialLinks.map((link) => {
+              if (!link.url || link.url === 'https://') return null;
+              const href = link.url.startsWith('http') ? link.url : `https://${link.url}`;
+              const label = link.useLabelAsLink !== false && link.label ? link.label : (link.platform || link.url.replace(/^https?:\/\//, ''));
+              return (
+                <div key={link.id}>
+                  🔗{' '}
+                  <a
+                    href={href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-white hover:underline"
+                  >
+                    {label}
+                  </a>
+                </div>
+              );
+            })}
           </div>
 
           {/* Skills */}
@@ -236,6 +267,38 @@ export const ExecutiveProTemplate: React.FC<TemplateProps> = ({ resume }) => {
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
+        {/* Custom Sections */}
+        {customSections && customSections.length > 0 && (
+          <div className="space-y-6 mt-6">
+            {customSections.map((sec) => {
+              if (!sec.title && (!sec.items || sec.items.length === 0)) return null;
+              return (
+                <div key={sec.id} className="mb-6">
+                  <h2 className="text-xs font-bold uppercase tracking-wider text-slate-900 mb-3 pb-1 border-b border-slate-200">
+                    {sec.title}
+                  </h2>
+                  <div className="space-y-3">
+                    {sec.items.map((item) => (
+                      <div key={item.id}>
+                        <div className="flex justify-between items-baseline">
+                          <span className="font-bold text-slate-900 text-xs">{item.title}</span>
+                          {item.date && <span className="text-[10px] text-slate-500 font-mono">{item.date}</span>}
+                        </div>
+                        {item.subtitle && <div className="text-[11px] text-slate-600 font-medium">{item.subtitle}</div>}
+                        {item.description && (
+                          <p className="text-[11px] text-slate-600 mt-1 whitespace-pre-line leading-relaxed">
+                            {item.description}
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>

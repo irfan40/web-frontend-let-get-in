@@ -10,6 +10,8 @@ import {
   ILanguage,
   ISocialLink,
   ITemplateSettings,
+  ICustomSection,
+  ICustomSectionItem,
 } from '../types';
 import { INITIAL_RESUME_STATE, BLANK_RESUME_STATE } from '../constants/initialState';
 import { ResumeNormalizationService } from '../services/ResumeNormalizationService';
@@ -30,10 +32,14 @@ interface ResumeStoreState {
   // Section Navigation
   setActiveSection: (section: string) => void;
 
-  // Form Field Actions
+  // Header & Title Actions
   updateTitle: (title: string) => void;
   updateTemplateId: (templateId: string) => void;
-  updatePersonalInfo: (info: Partial<IPersonalInfo>) => void;
+
+  // Personal Info Actions
+  updatePersonalInfo: (personalInfo: Partial<IPersonalInfo>) => void;
+
+  // Summary Actions
   updateSummary: (summary: string) => void;
   
   // Experience Actions
@@ -46,6 +52,7 @@ interface ResumeStoreState {
   addEducation: (education: IEducation) => void;
   updateEducation: (id: string, education: Partial<IEducation>) => void;
   removeEducation: (id: string) => void;
+  reorderEducations: (educations: IEducation[]) => void;
 
   // Project Actions
   addProject: (project: IProject) => void;
@@ -54,7 +61,7 @@ interface ResumeStoreState {
   reorderProjects: (projects: IProject[]) => void;
 
   // Skill Actions
-  addSkill: (skill: ISkill) => void;
+  addSkill: (skill: ISkill | string) => void;
   updateSkill: (id: string, skill: Partial<ISkill>) => void;
   removeSkill: (id: string) => void;
 
@@ -69,6 +76,14 @@ interface ResumeStoreState {
   updateLanguage: (id: string, language: Partial<ILanguage>) => void;
   removeLanguage: (id: string) => void;
   reorderLanguages: (languages: ILanguage[]) => void;
+
+  // Custom Section Actions
+  addCustomSection: (section: ICustomSection) => void;
+  updateCustomSection: (id: string, section: Partial<ICustomSection>) => void;
+  removeCustomSection: (id: string) => void;
+  addCustomSectionItem: (sectionId: string, item?: Partial<ICustomSectionItem>) => void;
+  updateCustomSectionItem: (sectionId: string, itemId: string, item: Partial<ICustomSectionItem>) => void;
+  removeCustomSectionItem: (sectionId: string, itemId: string) => void;
 
   // Social Link Actions
   addSocialLink: (socialLink: ISocialLink) => void;
@@ -236,6 +251,19 @@ export const useResumeStore = create<ResumeStoreState>((set, get) => ({
       saveStatus: 'unsaved',
     })),
 
+  reorderEducations: (educations) =>
+    set((state) => ({
+      resume: {
+        ...state.resume,
+        content: {
+          ...state.resume.content,
+          educations,
+        },
+      },
+      isDirty: true,
+      saveStatus: 'unsaved',
+    })),
+
   addProject: (project) =>
     set((state) => ({
       resume: {
@@ -291,17 +319,32 @@ export const useResumeStore = create<ResumeStoreState>((set, get) => ({
     })),
 
   addSkill: (skill) =>
-    set((state) => ({
-      resume: {
-        ...state.resume,
-        content: {
-          ...state.resume.content,
-          skills: [...state.resume.content.skills, skill],
+    set((state) => {
+      const existing = state.resume.content.skills || [];
+      const skillName = (typeof skill === 'string' ? skill : skill.name || '').trim();
+      if (!skillName) return state;
+
+      const isDuplicate = existing.some(
+        (s) => (typeof s === 'string' ? s : s.name || '').trim().toLowerCase() === skillName.toLowerCase()
+      );
+      if (isDuplicate) return state;
+
+      const newSkill: ISkill = typeof skill === 'string'
+        ? { id: `skill-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`, name: skillName, category: 'Technical Skills', level: 5 }
+        : { ...skill, name: skillName };
+
+      return {
+        resume: {
+          ...state.resume,
+          content: {
+            ...state.resume.content,
+            skills: [...existing, newSkill],
+          },
         },
-      },
-      isDirty: true,
-      saveStatus: 'unsaved',
-    })),
+        isDirty: true,
+        saveStatus: 'unsaved',
+      };
+    }),
 
   updateSkill: (id, skill) =>
     set((state) => ({
@@ -431,6 +474,110 @@ export const useResumeStore = create<ResumeStoreState>((set, get) => ({
         content: {
           ...state.resume.content,
           languages,
+        },
+      },
+      isDirty: true,
+      saveStatus: 'unsaved',
+    })),
+
+  // Custom Section Actions
+  addCustomSection: (section) =>
+    set((state) => ({
+      resume: {
+        ...state.resume,
+        content: {
+          ...state.resume.content,
+          customSections: [...(state.resume.content.customSections || []), section],
+        },
+      },
+      isDirty: true,
+      saveStatus: 'unsaved',
+    })),
+
+  updateCustomSection: (id, section) =>
+    set((state) => ({
+      resume: {
+        ...state.resume,
+        content: {
+          ...state.resume.content,
+          customSections: (state.resume.content.customSections || []).map((s) =>
+            s.id === id ? { ...s, ...section } : s
+          ),
+        },
+      },
+      isDirty: true,
+      saveStatus: 'unsaved',
+    })),
+
+  removeCustomSection: (id) =>
+    set((state) => ({
+      resume: {
+        ...state.resume,
+        content: {
+          ...state.resume.content,
+          customSections: (state.resume.content.customSections || []).filter((s) => s.id !== id),
+        },
+      },
+      isDirty: true,
+      saveStatus: 'unsaved',
+    })),
+
+  addCustomSectionItem: (sectionId, item) =>
+    set((state) => ({
+      resume: {
+        ...state.resume,
+        content: {
+          ...state.resume.content,
+          customSections: (state.resume.content.customSections || []).map((s) => {
+            if (s.id !== sectionId) return s;
+            const newItem: ICustomSectionItem = {
+              id: `item-${Date.now()}`,
+              title: '',
+              subtitle: '',
+              date: '',
+              description: '',
+              ...item,
+            };
+            return { ...s, items: [...(s.items || []), newItem] };
+          }),
+        },
+      },
+      isDirty: true,
+      saveStatus: 'unsaved',
+    })),
+
+  updateCustomSectionItem: (sectionId, itemId, item) =>
+    set((state) => ({
+      resume: {
+        ...state.resume,
+        content: {
+          ...state.resume.content,
+          customSections: (state.resume.content.customSections || []).map((s) => {
+            if (s.id !== sectionId) return s;
+            return {
+              ...s,
+              items: (s.items || []).map((it) => (it.id === itemId ? { ...it, ...item } : it)),
+            };
+          }),
+        },
+      },
+      isDirty: true,
+      saveStatus: 'unsaved',
+    })),
+
+  removeCustomSectionItem: (sectionId, itemId) =>
+    set((state) => ({
+      resume: {
+        ...state.resume,
+        content: {
+          ...state.resume.content,
+          customSections: (state.resume.content.customSections || []).map((s) => {
+            if (s.id !== sectionId) return s;
+            return {
+              ...s,
+              items: (s.items || []).filter((it) => it.id !== itemId),
+            };
+          }),
         },
       },
       isDirty: true,

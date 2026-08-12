@@ -10,6 +10,8 @@ import { ProjectsForm } from './ProjectsForm';
 import { SkillsForm } from './SkillsForm';
 import { CertificatesForm } from './CertificatesForm';
 import { LanguagesForm } from './LanguagesForm';
+import { LinksForm } from './LinksForm';
+import { CustomSectionsForm } from './CustomSectionsForm';
 import { TemplateSettingsForm } from './TemplateSettingsForm';
 import { AtsAnalysisPanel } from '../ats/AtsAnalysisPanel';
 import {
@@ -21,6 +23,8 @@ import {
   Wrench,
   Award,
   Languages,
+  Link2,
+  LayoutGrid,
   Settings,
   ChevronDown,
   ChevronUp,
@@ -49,11 +53,16 @@ const AccordionSection: React.FC<AccordionSectionProps> = ({
   const [showTips, setShowTips] = useState(false);
 
   return (
-    <div id={`section-${id}`} className="bg-surface border border-border rounded-2xl overflow-hidden shadow-xs mb-3 transition-all">
+    <div
+      id={`section-${id}`}
+      className={`bg-surface border border-border rounded-2xl shadow-xs mb-3 transition-all ${
+        isOpen ? 'overflow-visible' : 'overflow-hidden'
+      }`}
+    >
       {/* Accordion Header */}
       <div
         onClick={onToggle}
-        className="flex items-center justify-between p-4 cursor-pointer hover:bg-slate-50/80 transition-colors select-none"
+        className="flex items-center justify-between p-4 cursor-pointer hover:bg-slate-50/80 transition-colors select-none rounded-t-2xl"
       >
         <div className="flex items-center gap-2.5">
           <Icon className="w-4 h-4 text-sky-600" />
@@ -116,6 +125,8 @@ export const ResumeFormContainer: React.FC = () => {
     skills: false,
     certificates: false,
     languages: false,
+    links: false,
+    customSections: false,
     settings: false,
   });
 
@@ -229,7 +240,31 @@ export const ResumeFormContainer: React.FC = () => {
         <LanguagesForm />
       </AccordionSection>
 
-      {/* 9. Template Settings */}
+      {/* 9. Websites & Links */}
+      <AccordionSection
+        id="links"
+        title="Links"
+        icon={Link2}
+        tips="Add links to your portfolio, GitHub, LinkedIn, or personal website. These will open in a new tab when clicked in the resume."
+        isOpen={openSections.links}
+        onToggle={() => toggleSection('links')}
+      >
+        <LinksForm />
+      </AccordionSection>
+
+      {/* 10. Custom Sections */}
+      <AccordionSection
+        id="customSections"
+        title="Custom Sections"
+        icon={LayoutGrid}
+        tips="Create your own sections (e.g. Publications, Hobbies, Conferences, Awards, Volunteering). They appear in your resume preview."
+        isOpen={openSections.customSections}
+        onToggle={() => toggleSection('customSections')}
+      >
+        <CustomSectionsForm />
+      </AccordionSection>
+
+      {/* 11. Template Settings */}
       <AccordionSection
         id="settings"
         title="Template & Styling"

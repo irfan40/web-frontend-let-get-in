@@ -13,6 +13,7 @@ import {
   LayoutTemplate,
   User,
   UserCheck,
+  Pencil,
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -76,11 +77,15 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
             />
           ) : (
             <button
-              onClick={() => setIsEditingTitle(true)}
-              className="text-ink hover:text-primary-glow text-sm font-semibold hover:bg-surface-alt px-3 py-1.5 rounded-xl transition-colors flex items-center gap-1.5"
+              onClick={() => {
+                setTitleInput(resume.title);
+                setIsEditingTitle(true);
+              }}
+              className="text-ink hover:text-primary-glow text-sm font-semibold hover:bg-surface-alt px-3 py-1.5 rounded-xl transition-colors flex items-center gap-1.5 group cursor-pointer"
               title="Click to rename"
             >
-              {resume.title}
+              <span>{resume.title}</span>
+              <Pencil className="w-3.5 h-3.5 text-ink-soft group-hover:text-primary-glow transition-colors" />
             </button>
           )}
 

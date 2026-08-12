@@ -4,7 +4,7 @@ import { useResumeStore } from '../../resume/store/useResumeStore';
 import { EditableText } from './EditableText';
 
 export const MinimalCleanTemplate: React.FC<TemplateProps> = ({ resume }) => {
-  const { personalInfo, summary, experiences, educations, skills, projects, certificates, languages } = resume.content;
+  const { personalInfo, summary, experiences, educations, skills, projects, certificates, languages, customSections, socialLinks } = resume.content;
   const { primaryColor, fontFamily } = resume.settings;
   const { updatePersonalInfo, updateSummary, updateExperience, updateEducation, updateProject, updateSkill, updateCertificate, updateLanguage } = useResumeStore();
 
@@ -31,22 +31,48 @@ export const MinimalCleanTemplate: React.FC<TemplateProps> = ({ resume }) => {
             />
           </div>
 
-          <div className="flex flex-wrap gap-4 text-[10px] text-slate-400 mt-3 font-mono">
+          <div className="flex flex-wrap items-center gap-4 text-[10px] text-slate-400 mt-3 font-mono">
             <EditableText value={personalInfo.email || 'Email'} onChange={(val) => updatePersonalInfo({ email: val })} />
             <EditableText value={personalInfo.phone || 'Phone'} onChange={(val) => updatePersonalInfo({ phone: val })} />
             <EditableText value={personalInfo.location || 'Location'} onChange={(val) => updatePersonalInfo({ location: val })} />
+            {personalInfo.websiteUrl && (
+              <a
+                href={personalInfo.websiteUrl.startsWith('http') ? personalInfo.websiteUrl : `https://${personalInfo.websiteUrl}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 hover:underline"
+              >
+                {personalInfo.websiteUrl.replace(/^https?:\/\//, '')}
+              </a>
+            )}
+            {socialLinks && socialLinks.map((link) => {
+              if (!link.url || link.url === 'https://') return null;
+              const href = link.url.startsWith('http') ? link.url : `https://${link.url}`;
+              const label = link.useLabelAsLink !== false && link.label ? link.label : (link.platform || link.url.replace(/^https?:\/\//, ''));
+              return (
+                <a
+                  key={link.id}
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 hover:underline"
+                >
+                  {label}
+                </a>
+              );
+            })}
           </div>
         </div>
 
         {/* Summary */}
-        {summary !== undefined && (
+        {summary && (
           <div className="mb-6">
-            <h2 className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">01 / ABOUT</h2>
+            <h2 className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">01 / PROFILE</h2>
             <EditableText
               tagName="p"
-              value={typeof summary === 'string' ? summary : String(summary || '') || 'Click to edit summary...'}
-              onChange={(val) => updateSummary(val)}
-              className="text-slate-700 leading-relaxed"
+              value={summary}
+              onChange={updateSummary}
+              className="text-slate-600 leading-relaxed"
             />
           </div>
         )}
@@ -63,29 +89,35 @@ export const MinimalCleanTemplate: React.FC<TemplateProps> = ({ resume }) => {
                       tagName="span"
                       value={exp.position}
                       onChange={(val) => updateExperience(exp.id, { position: val })}
-                      className="font-bold text-slate-900 text-xs"
+                      className="font-bold text-slate-900"
                     />
-                    <span className="text-[10px] font-mono text-slate-400">
-                      {exp.startDate} — {exp.endDate}
+                    <span className="text-[10px] text-slate-400 font-mono">
+                      <EditableText value={exp.startDate} onChange={(val) => updateExperience(exp.id, { startDate: val })} /> -{' '}
+                      <EditableText value={exp.endDate} onChange={(val) => updateExperience(exp.id, { endDate: val })} />
                     </span>
                   </div>
-                  <div className="text-[11px] font-medium text-slate-600 mb-1" style={{ color: primaryColor }}>
-                    <EditableText value={exp.company} onChange={(val) => updateExperience(exp.id, { company: val })} />
-                  </div>
-                  <ul className="list-disc list-inside text-[11px] text-slate-600 space-y-0.5">
-                    {exp.highlights.map((h, i) => (
-                      <li key={i}>
-                        <EditableText
-                          value={h}
-                          onChange={(val) => {
-                            const updated = [...exp.highlights];
-                            updated[i] = val;
-                            updateExperience(exp.id, { highlights: updated });
-                          }}
-                        />
-                      </li>
-                    ))}
-                  </ul>
+                  <EditableText
+                    tagName="div"
+                    value={exp.company}
+                    onChange={(val) => updateExperience(exp.id, { company: val })}
+                    className="text-[11px] text-slate-600 mb-1"
+                  />
+                  {exp.highlights && exp.highlights.length > 0 && (
+                    <ul className="list-disc list-inside text-[11px] text-slate-600 space-y-0.5 mt-1">
+                      {exp.highlights.map((h, i) => (
+                        <li key={i}>
+                          <EditableText
+                            value={h}
+                            onChange={(val) => {
+                              const updated = [...exp.highlights];
+                              updated[i] = val;
+                              updateExperience(exp.id, { highlights: updated });
+                            }}
+                          />
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </div>
               ))}
             </div>
@@ -96,46 +128,32 @@ export const MinimalCleanTemplate: React.FC<TemplateProps> = ({ resume }) => {
         {projects && projects.length > 0 && (
           <div className="mb-6">
             <h2 className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-3">03 / PROJECTS</h2>
-            <div className="space-y-4">
+            <div className="space-y-3">
               {projects.map((proj) => (
                 <div key={proj.id}>
                   <div className="flex justify-between items-baseline">
-                    <div className="flex items-center gap-2">
+                    <EditableText
+                      tagName="span"
+                      value={proj.title}
+                      onChange={(val) => updateProject(proj.id, { title: val })}
+                      className="font-bold text-slate-900"
+                    />
+                    {proj.link && (
                       <EditableText
                         tagName="span"
-                        value={proj.title}
-                        onChange={(val) => updateProject(proj.id, { title: val })}
-                        className="font-bold text-slate-900 text-xs"
+                        value={proj.link}
+                        onChange={(val) => updateProject(proj.id, { link: val })}
+                        className="text-[10px] text-blue-600 font-mono"
                       />
-                      {proj.subtitle && (
-                        <span className="text-[11px] text-slate-500 font-normal">
-                          (<EditableText value={proj.subtitle} onChange={(val) => updateProject(proj.id, { subtitle: val })} />)
-                        </span>
-                      )}
-                    </div>
-                    {(proj.startDate || proj.endDate) && (
-                      <span className="text-[10px] font-mono text-slate-400">
-                        {proj.startDate} {proj.endDate ? `— ${proj.endDate}` : ''}
-                      </span>
                     )}
                   </div>
-                  {proj.link && (
-                    <div className="text-[10px] font-mono text-slate-500 underline">
-                      <EditableText value={proj.link} onChange={(val) => updateProject(proj.id, { link: val })} />
-                    </div>
-                  )}
                   {proj.description && (
                     <EditableText
                       tagName="p"
                       value={proj.description}
                       onChange={(val) => updateProject(proj.id, { description: val })}
-                      className="text-[11px] text-slate-700 mt-1"
+                      className="text-[11px] text-slate-600"
                     />
-                  )}
-                  {proj.technologies && proj.technologies.length > 0 && (
-                    <div className="text-[10px] font-mono text-slate-500 mt-1">
-                      Stack: {proj.technologies.join(' · ')}
-                    </div>
                   )}
                   {proj.highlights && proj.highlights.length > 0 && (
                     <ul className="list-disc list-inside text-[11px] text-slate-600 space-y-0.5 mt-1">
@@ -237,6 +255,38 @@ export const MinimalCleanTemplate: React.FC<TemplateProps> = ({ resume }) => {
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {/* Custom Sections */}
+        {customSections && customSections.length > 0 && (
+          <div className="space-y-6 mt-6">
+            {customSections.map((sec, secIdx) => {
+              if (!sec.title && (!sec.items || sec.items.length === 0)) return null;
+              return (
+                <div key={sec.id}>
+                  <h2 className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-3">
+                    0{8 + secIdx} / {sec.title.toUpperCase()}
+                  </h2>
+                  <div className="space-y-3">
+                    {sec.items.map((item) => (
+                      <div key={item.id} className="border-l-2 border-slate-200 pl-3">
+                        <div className="flex justify-between items-baseline">
+                          <div className="font-bold text-slate-900 text-xs">{item.title}</div>
+                          {item.date && <div className="text-[10px] text-slate-400 font-mono">{item.date}</div>}
+                        </div>
+                        {item.subtitle && <div className="text-[11px] text-slate-600 font-medium">{item.subtitle}</div>}
+                        {item.description && (
+                          <p className="text-[11px] text-slate-600 leading-relaxed mt-0.5 whitespace-pre-line">
+                            {item.description}
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>

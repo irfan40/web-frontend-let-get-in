@@ -4,7 +4,7 @@ import { useResumeStore } from '../../resume/store/useResumeStore';
 import { EditableText } from './EditableText';
 
 export const ClassicAtsTemplate: React.FC<TemplateProps> = ({ resume }) => {
-  const { personalInfo, summary, experiences, educations, skills, projects, certificates, languages } = resume.content;
+  const { personalInfo, summary, experiences, educations, skills, projects, certificates, languages, customSections, socialLinks } = resume.content;
   const { fontFamily } = resume.settings;
   const { updatePersonalInfo, updateSummary, updateExperience, updateEducation, updateProject, updateSkill, updateCertificate, updateLanguage } = useResumeStore();
 
@@ -29,12 +29,43 @@ export const ClassicAtsTemplate: React.FC<TemplateProps> = ({ resume }) => {
             className="text-xs font-semibold text-slate-700"
           />
         </div>
-        <div className="text-[11px] text-slate-600 mt-1 flex justify-center flex-wrap gap-2">
+        <div className="text-[11px] text-slate-600 mt-1 flex justify-center items-center flex-wrap gap-2">
           <EditableText value={personalInfo.location || 'Location'} onChange={(val) => updatePersonalInfo({ location: val })} />
           <span>|</span>
           <EditableText value={personalInfo.phone || 'Phone'} onChange={(val) => updatePersonalInfo({ phone: val })} />
           <span>|</span>
           <EditableText value={personalInfo.email || 'Email'} onChange={(val) => updatePersonalInfo({ email: val })} />
+          {personalInfo.websiteUrl && (
+            <>
+              <span>|</span>
+              <a
+                href={personalInfo.websiteUrl.startsWith('http') ? personalInfo.websiteUrl : `https://${personalInfo.websiteUrl}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-slate-800 hover:underline"
+              >
+                {personalInfo.websiteUrl.replace(/^https?:\/\//, '')}
+              </a>
+            </>
+          )}
+          {socialLinks && socialLinks.map((link) => {
+            if (!link.url || link.url === 'https://') return null;
+            const href = link.url.startsWith('http') ? link.url : `https://${link.url}`;
+            const label = link.useLabelAsLink !== false && link.label ? link.label : (link.platform || link.url.replace(/^https?:\/\//, ''));
+            return (
+              <React.Fragment key={link.id}>
+                <span>|</span>
+                <a
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-slate-800 hover:underline"
+                >
+                  {label}
+                </a>
+              </React.Fragment>
+            );
+          })}
         </div>
       </div>
 
@@ -217,7 +248,7 @@ export const ClassicAtsTemplate: React.FC<TemplateProps> = ({ resume }) => {
 
       {/* Languages */}
       {languages && languages.length > 0 && (
-        <div>
+        <div className="mb-4">
           <h2 className="text-xs font-bold uppercase tracking-wider border-b border-slate-300 pb-0.5 mb-1.5 text-slate-900">
             LANGUAGES
           </h2>
@@ -236,6 +267,40 @@ export const ClassicAtsTemplate: React.FC<TemplateProps> = ({ resume }) => {
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* Custom Sections */}
+      {customSections && customSections.length > 0 && (
+        <div className="space-y-4">
+          {customSections.map((sec) => {
+            if (!sec.title && (!sec.items || sec.items.length === 0)) return null;
+            return (
+              <div key={sec.id} className="mb-4">
+                <h2 className="text-xs font-bold uppercase tracking-wider border-b border-slate-300 pb-0.5 mb-1.5 text-slate-900">
+                  {sec.title.toUpperCase()}
+                </h2>
+                <div className="space-y-2">
+                  {sec.items.map((item) => (
+                    <div key={item.id}>
+                      <div className="flex justify-between items-baseline text-[11px]">
+                        <div>
+                          <span className="font-bold text-slate-900">{item.title}</span>
+                          {item.subtitle && <span className="text-slate-700 italic"> — {item.subtitle}</span>}
+                        </div>
+                        {item.date && <span className="text-[10px] text-slate-600">{item.date}</span>}
+                      </div>
+                      {item.description && (
+                        <p className="text-[11px] text-slate-700 mt-0.5 whitespace-pre-line leading-relaxed">
+                          {item.description}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
     </div>

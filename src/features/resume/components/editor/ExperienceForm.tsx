@@ -1,8 +1,9 @@
-import React from "react";
+import React, { useState } from "react";
 import { useResumeStore } from "../../store/useResumeStore";
 import { useAiCoachStore } from "../../store/useAiCoachStore";
-import { Briefcase, Plus, Trash2, ChevronUp, ChevronDown, Sparkles } from "lucide-react";
+import { Briefcase, Plus, Trash2, ChevronUp, ChevronDown, Sparkles, SlidersHorizontal } from "lucide-react";
 import { IExperience } from "../../types";
+import { AiBulletRerankModal } from "../ai/AiBulletRerankModal";
 
 export const ExperienceForm: React.FC = () => {
   const {
@@ -12,8 +13,19 @@ export const ExperienceForm: React.FC = () => {
     removeExperience,
     reorderExperiences,
   } = useResumeStore();
-  const { triggerExperienceAi } = useAiCoachStore();
+  const { triggerExperienceAi, triggerImproveBulletAi } = useAiCoachStore();
   const experiences = resume.content.experiences;
+
+  // Track bullet count selection per experience (default: 3)
+  const [bulletCounts, setBulletCounts] = useState<Record<string, number>>({});
+  // Track modal open state for reranking bullet count
+  const [modalExpId, setModalExpId] = useState<string | null>(null);
+
+  const getBulletCount = (expId: string) => bulletCounts[expId] || 3;
+
+  const setBulletCount = (expId: string, count: number) => {
+    setBulletCounts((prev) => ({ ...prev, [expId]: count }));
+  };
 
   const handleAdd = () => {
     const newExp: IExperience = {
@@ -24,7 +36,7 @@ export const ExperienceForm: React.FC = () => {
       startDate: "2023-01",
       endDate: "Present",
       isCurrent: true,
-      highlights: ["Achieved measurable result X by building system Y."],
+      highlights: [""],
     };
     addExperience(newExp);
   };
@@ -45,7 +57,7 @@ export const ExperienceForm: React.FC = () => {
     const exp = experiences.find((e) => e.id === expId);
     if (!exp) return;
     updateExperience(expId, {
-      highlights: [...exp.highlights, "New key accomplishment..."],
+      highlights: [...exp.highlights, ""],
     });
   };
 
@@ -65,6 +77,8 @@ export const ExperienceForm: React.FC = () => {
     items.splice(targetIndex, 0, moved);
     reorderExperiences(items);
   };
+
+  const activeModalExp = experiences.find((e) => e.id === modalExpId);
 
   return (
     <div className="space-y-4">
@@ -90,155 +104,224 @@ export const ExperienceForm: React.FC = () => {
           begin.
         </div>
       ) : (
-        experiences.map((exp, idx) => (
-          <div
-            key={exp.id}
-            className="bg-surface p-5 rounded-2xl border border-border space-y-4 shadow-sm"
-          >
-            <div className="flex items-center justify-between pb-3 border-b border-border">
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-primary-glow bg-primary/10 px-2 py-0.5 rounded-md border border-primary/20">
-                  #{idx + 1}
-                </span>
-                <span className="text-xs font-semibold text-ink">
-                  {exp.company || "Company"}
-                </span>
-              </div>
-              <div className="flex items-center gap-1">
-                <button
-                  disabled={idx === 0}
-                  onClick={() => moveExperience(idx, "up")}
-                  className="p-1 text-ink-soft hover:text-ink disabled:opacity-30 cursor-pointer"
-                >
-                  <ChevronUp className="w-4 h-4" />
-                </button>
-                <button
-                  disabled={idx === experiences.length - 1}
-                  onClick={() => moveExperience(idx, "down")}
-                  className="p-1 text-ink-soft hover:text-ink disabled:opacity-30 cursor-pointer"
-                >
-                  <ChevronDown className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => removeExperience(exp.id)}
-                  className="p-1 text-destructive hover:opacity-80 ml-2 cursor-pointer"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
+        experiences.map((exp, idx) => {
+          const count = getBulletCount(exp.id);
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-              <div>
-                <label className="block text-ink-soft font-semibold mb-1">
-                  Position / Job Title
-                </label>
-                <input
-                  type="text"
-                  value={exp.position}
-                  onChange={(e) =>
-                    updateExperience(exp.id, { position: e.target.value })
-                  }
-                  className="input-base text-xs"
-                />
-              </div>
-
-              <div>
-                <label className="block text-ink-soft font-semibold mb-1">
-                  Company / Organization
-                </label>
-                <input
-                  type="text"
-                  value={exp.company}
-                  onChange={(e) =>
-                    updateExperience(exp.id, { company: e.target.value })
-                  }
-                  className="input-base text-xs"
-                />
-              </div>
-
-              <div>
-                <label className="block text-ink-soft font-semibold mb-1">
-                  Start Date
-                </label>
-                <input
-                  type="text"
-                  value={exp.startDate}
-                  onChange={(e) =>
-                    updateExperience(exp.id, { startDate: e.target.value })
-                  }
-                  placeholder="YYYY-MM"
-                  className="input-base text-xs"
-                />
-              </div>
-
-              <div>
-                <label className="block text-ink-soft font-semibold mb-1">
-                  End Date
-                </label>
-                <input
-                  type="text"
-                  value={exp.endDate}
-                  onChange={(e) =>
-                    updateExperience(exp.id, { endDate: e.target.value })
-                  }
-                  placeholder="YYYY-MM or Present"
-                  disabled={exp.isCurrent}
-                  className="input-base text-xs disabled:opacity-50"
-                />
-              </div>
-            </div>
-
-            {/* Highlights Bullet Points */}
-            <div className="space-y-2 pt-2 border-t border-border">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <span className="text-xs font-semibold text-ink">
-                  Key Achievements & Bullet Points
-                </span>
+          return (
+            <div
+              key={exp.id}
+              className="bg-surface p-5 rounded-2xl border border-border space-y-4 shadow-sm"
+            >
+              <div className="flex items-center justify-between pb-3 border-b border-border">
                 <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-primary-glow bg-primary/10 px-2 py-0.5 rounded-md border border-primary/20">
+                    #{idx + 1}
+                  </span>
+                  <span className="text-xs font-semibold text-ink">
+                    {exp.company || "Company"}
+                  </span>
+                </div>
+                <div className="flex items-center gap-1">
                   <button
-                    type="button"
-                    onClick={() => triggerExperienceAi(exp.id, exp.position, exp.company)}
-                    className="text-xs text-primary-glow hover:text-primary font-semibold flex items-center gap-1.5 bg-primary/10 hover:bg-primary/20 px-2.5 py-1 rounded-lg border border-primary/25 transition-all cursor-pointer shadow-xs"
-                    title="Write and generate achievement bullet points with LetGetIn AI Coach"
+                    disabled={idx === 0}
+                    onClick={() => moveExperience(idx, "up")}
+                    className="p-1 text-ink-soft hover:text-ink disabled:opacity-30 cursor-pointer"
                   >
-                    <Sparkles className="w-3.5 h-3.5 text-primary-glow" />
-                    <span>Write with AI</span>
+                    <ChevronUp className="w-4 h-4" />
                   </button>
                   <button
-                    type="button"
-                    onClick={() => addHighlight(exp.id)}
-                    className="text-xs text-primary-glow hover:underline font-semibold flex items-center gap-1 cursor-pointer"
+                    disabled={idx === experiences.length - 1}
+                    onClick={() => moveExperience(idx, "down")}
+                    className="p-1 text-ink-soft hover:text-ink disabled:opacity-30 cursor-pointer"
                   >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>Add Bullet</span>
+                    <ChevronDown className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => removeExperience(exp.id)}
+                    className="p-1 text-destructive hover:opacity-80 ml-2 cursor-pointer"
+                  >
+                    <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
               </div>
 
-              {exp.highlights.map((bullet, hIdx) => (
-                <div key={hIdx} className="flex items-center gap-2">
-                  <span className="text-ink-soft text-xs">•</span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                <div>
+                  <label className="block text-ink-soft font-semibold mb-1">
+                    Position / Job Title
+                  </label>
                   <input
                     type="text"
-                    value={bullet}
+                    value={exp.position}
                     onChange={(e) =>
-                      handleHighlightChange(exp.id, hIdx, e.target.value)
+                      updateExperience(exp.id, { position: e.target.value })
                     }
-                    className="flex-1 input-base text-xs"
+                    className="input-base text-xs"
                   />
-                  <button
-                    type="button"
-                    onClick={() => removeHighlight(exp.id, hIdx)}
-                    className="text-ink-soft hover:text-destructive p-1 cursor-pointer"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
                 </div>
-              ))}
+
+                <div>
+                  <label className="block text-ink-soft font-semibold mb-1">
+                    Company / Organization
+                  </label>
+                  <input
+                    type="text"
+                    value={exp.company}
+                    onChange={(e) =>
+                      updateExperience(exp.id, { company: e.target.value })
+                    }
+                    className="input-base text-xs"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-ink-soft font-semibold mb-1">
+                    Start Date
+                  </label>
+                  <input
+                    type="text"
+                    value={exp.startDate}
+                    onChange={(e) =>
+                      updateExperience(exp.id, { startDate: e.target.value })
+                    }
+                    placeholder="YYYY-MM"
+                    className="input-base text-xs"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-ink-soft font-semibold mb-1">
+                    End Date
+                  </label>
+                  <input
+                    type="text"
+                    value={exp.endDate}
+                    onChange={(e) =>
+                      updateExperience(exp.id, { endDate: e.target.value })
+                    }
+                    placeholder="YYYY-MM or Present"
+                    disabled={exp.isCurrent}
+                    className="input-base text-xs disabled:opacity-50"
+                  />
+                </div>
+              </div>
+
+              {/* Highlights Bullet Points with Count Modal Trigger & Per-Bullet AI Improve */}
+              <div className="space-y-2.5 pt-2 border-t border-border">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="text-xs font-semibold text-ink">
+                    Key Achievements & Bullet Points
+                  </span>
+
+                  <div className="flex items-center gap-2">
+                    {/* Sleek Count Picker Button opening Modal */}
+                    <button
+                      type="button"
+                      onClick={() => setModalExpId(exp.id)}
+                      className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface-alt hover:bg-surface border border-border text-ink text-xs font-semibold shadow-xs hover:border-primary-glow/40 transition-all cursor-pointer"
+                      title="Customize bullet count & rerank"
+                    >
+                      <SlidersHorizontal className="w-3.5 h-3.5 text-primary-glow" />
+                      <span>{count} Bullets</span>
+                    </button>
+
+                    {/* Write with AI Button */}
+                    <button
+                      type="button"
+                      onClick={() => triggerExperienceAi(exp.id, exp.position, exp.company, count)}
+                      className="text-xs text-primary-glow hover:text-primary font-semibold flex items-center gap-1.5 bg-primary/10 hover:bg-primary/20 px-2.5 py-1 rounded-lg border border-primary/25 transition-all cursor-pointer shadow-xs"
+                      title={`Generate ${count} bullet points with LetGetIn AI Coach`}
+                    >
+                      <Sparkles className="w-3.5 h-3.5 text-primary-glow" />
+                      <span>Write with AI</span>
+                    </button>
+
+                    {/* Add Bullet Button */}
+                    <button
+                      type="button"
+                      onClick={() => addHighlight(exp.id)}
+                      className="text-xs text-primary-glow hover:underline font-semibold flex items-center gap-1 cursor-pointer"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Add Bullet</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Bullet List with Expandable Textareas & Per-Bullet AI Icon */}
+                <div className="space-y-2">
+                  {exp.highlights.map((bullet, hIdx) => (
+                    <div key={hIdx} className="flex items-start gap-2 group">
+                      <span className="text-ink-soft text-xs mt-2.5 shrink-0">•</span>
+
+                      {/* Expandable / Auto-Growing Bullet Textarea */}
+                      <textarea
+                        rows={1}
+                        value={bullet}
+                        onChange={(e) =>
+                          handleHighlightChange(exp.id, hIdx, e.target.value)
+                        }
+                        onFocus={(e) => {
+                          e.target.style.height = 'auto';
+                          e.target.style.height = `${Math.max(48, e.target.scrollHeight)}px`;
+                        }}
+                        onInput={(e: any) => {
+                          e.target.style.height = 'auto';
+                          e.target.style.height = `${Math.max(38, e.target.scrollHeight)}px`;
+                        }}
+                        placeholder="Describe quantifiable achievements, systems built, and percentage metrics..."
+                        className="flex-1 input-base text-xs leading-relaxed resize-y overflow-hidden transition-all focus:ring-1 focus:ring-primary-glow min-h-[38px] py-2"
+                      />
+
+                      {/* Per-Bullet AI Improve Button */}
+                      <button
+                        type="button"
+                        onClick={() =>
+                          triggerImproveBulletAi({
+                            section: 'experience',
+                            id: exp.id,
+                            bulletIndex: hIdx,
+                            currentBulletText: bullet,
+                            roleOrProjectTitle: `${exp.position || 'Role'} at ${exp.company || 'Company'}`,
+                          })
+                        }
+                        className="p-1.5 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary-glow border border-primary/20 transition-all cursor-pointer mt-1 shrink-0 shadow-xs"
+                        title="Improve this bullet point with LetGetIn AI Coach"
+                      >
+                        <Sparkles className="w-3.5 h-3.5" />
+                      </button>
+
+                      {/* Delete Bullet Button */}
+                      <button
+                        type="button"
+                        onClick={() => removeHighlight(exp.id, hIdx)}
+                        className="p-1.5 text-ink-soft hover:text-destructive hover:bg-surface-alt rounded-lg transition-colors cursor-pointer mt-1 shrink-0"
+                        title="Delete bullet point"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
-          </div>
-        ))
+          );
+        })
+      )}
+
+      {/* Rerank / Customize Bullet Count Modal */}
+      {activeModalExp && (
+        <AiBulletRerankModal
+          isOpen={!!modalExpId}
+          onClose={() => setModalExpId(null)}
+          title={`${activeModalExp.position || 'Role'} at ${activeModalExp.company || 'Company'}`}
+          currentCount={activeModalExp.highlights.length}
+          initialTargetCount={getBulletCount(activeModalExp.id)}
+          onConfirm={(targetCount) => {
+            setBulletCount(activeModalExp.id, targetCount);
+            triggerExperienceAi(activeModalExp.id, activeModalExp.position, activeModalExp.company, targetCount);
+          }}
+        />
       )}
     </div>
   );

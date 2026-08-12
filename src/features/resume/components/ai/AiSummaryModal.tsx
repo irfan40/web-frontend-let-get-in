@@ -2,10 +2,9 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, Wand2, X, RefreshCw, Check, Briefcase, Code, TrendingUp, Shuffle, MessageSquare } from 'lucide-react';
+import { Sparkles, Wand2, X, Briefcase, Code, TrendingUp, Shuffle } from 'lucide-react';
 import { useResumeStore } from '../../store/useResumeStore';
 import { useAiCoachStore } from '../../store/useAiCoachStore';
-import { apiClient } from '../../../../shared/services/apiClient';
 
 export interface SUMMARY_TEMPLATE_ITEM {
   id: string;
@@ -62,7 +61,7 @@ interface AiSummaryModalProps {
 
 export const AiSummaryModal: React.FC<AiSummaryModalProps> = ({ isOpen, onClose }) => {
   const { resume, updateSummary } = useResumeStore();
-  const { sendSummaryOptionsToCoach } = useAiCoachStore();
+  const { triggerSummaryGenerationAi, setAppliedNotice } = useAiCoachStore();
 
   const rawHeadline = resume.content.personalInfo?.headline;
   const headline = typeof rawHeadline === 'string'
@@ -79,86 +78,27 @@ export const AiSummaryModal: React.FC<AiSummaryModalProps> = ({ isOpen, onClose 
 
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('executive');
   const [customContext, setCustomContext] = useState<string>('');
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [generatedResults, setGeneratedResults] = useState<string[]>([]);
-  const [appliedSuccess, setAppliedSuccess] = useState(false);
 
   if (!isOpen) return null;
 
   const selectedTemplate = SUMMARY_TEMPLATES.find((t) => t.id === selectedTemplateId) || SUMMARY_TEMPLATES[0];
 
-  const handleGenerateAi = async () => {
-    setIsGenerating(true);
-    setGeneratedResults([]);
-    setAppliedSuccess(false);
-
-    try {
-      const res = await apiClient.post<never, { data: { suggestions?: any[]; optimizedData?: any } }>(
-        '/ai/optimize-section',
-        {
-          sectionName: 'summary',
-          sectionData: {
-            currentSummary: resume.content.summary,
-            headline,
-            templateStyle: selectedTemplate.title,
-            userContext: customContext,
-            skills: skillsList,
-            experiences: (resume.content.experiences || []).map((e) => `${e.position} at ${e.company}`),
-          },
-        }
-      );
-
-      const sanitizeStr = (input: any): string => {
-        if (!input) return '';
-        if (typeof input === 'string') return input;
-        if (typeof input === 'object') {
-          return String(input.currentSummary || input.summary || input.text || '');
-        }
-        return String(input);
-      };
-
-      let results: string[] = [];
-
-      if (res.data?.suggestions && Array.isArray(res.data.suggestions) && res.data.suggestions.length > 0) {
-        results = res.data.suggestions.map(sanitizeStr).filter(Boolean);
-      } else if (res.data?.optimizedData) {
-        const text = sanitizeStr(res.data.optimizedData);
-        results = [text].filter(Boolean);
-      }
-
-      if (results.length === 0) {
-        const base1 = selectedTemplate.buildText(headline, skillsList, customContext);
-        const base2 = `Dynamic ${headline} with expertise in ${skillsList || 'scalable web technologies'}. Recognized for strong technical leadership, high-quality code delivery, and solving complex architectural challenges. ${customContext ? customContext.trim() : ''}`;
-        results = [base1, base2];
-      }
-
-      setGeneratedResults(results);
-      // Synchronize generated summaries directly with LetGetIn AI Coach
-      sendSummaryOptionsToCoach(headline, results);
-    } catch {
-      const base1 = selectedTemplate.buildText(headline, skillsList, customContext);
-      const base2 = `Dynamic ${headline} with expertise in ${skillsList || 'scalable web technologies'}. Recognized for strong technical leadership, high-quality code delivery, and solving complex architectural challenges. ${customContext ? customContext.trim() : ''}`;
-      const results = [base1, base2];
-      setGeneratedResults(results);
-      sendSummaryOptionsToCoach(headline, results);
-    } finally {
-      setIsGenerating(false);
-    }
+  const handleWriteWithAiAndSendToCoach = () => {
+    // Dispatch AI generation directly inside LetGetIn AI Coach chat
+    triggerSummaryGenerationAi({
+      templateStyle: selectedTemplate.title,
+      customContext,
+    });
+    // Immediately close modal
+    onClose();
   };
 
-  const handleApply = (textToApply: any) => {
-    const textStr = typeof textToApply === 'string'
-      ? textToApply
-      : (textToApply && typeof textToApply === 'object')
-      ? String(textToApply.currentSummary || textToApply.summary || textToApply.text || '')
-      : String(textToApply || '');
-
-    updateSummary(textStr);
-    setAppliedSuccess(true);
-    setTimeout(() => {
-      setAppliedSuccess(false);
-      onClose();
-    }, 600);
+  const handleUseTemplateDirectly = () => {
+    const text = selectedTemplate.buildText(headline, skillsList, customContext);
+    updateSummary(text);
+    setAppliedNotice('Applied template summary to your resume!');
+    setTimeout(() => setAppliedNotice(null), 3500);
+    onClose();
   };
 
   return (
@@ -194,14 +134,6 @@ export const AiSummaryModal: React.FC<AiSummaryModalProps> = ({ isOpen, onClose 
           </div>
 
           <div className="p-6 space-y-6 max-h-[75vh] overflow-y-auto scrollbar-thin scrollbar-thumb-border">
-            {/* Success Alert */}
-            {appliedSuccess && (
-              <div className="p-3 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-xl text-emerald-700 dark:text-emerald-300 text-xs font-semibold flex items-center gap-2">
-                <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                Applied AI summary to your resume!
-              </div>
-            )}
-
             {/* Step 1: Select Template Style */}
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-ink mb-2.5 flex items-center gap-1.5">
@@ -256,11 +188,11 @@ export const AiSummaryModal: React.FC<AiSummaryModalProps> = ({ isOpen, onClose 
               />
             </div>
 
-            {/* Generate Button & Fast Apply Bar */}
+            {/* Action Buttons */}
             <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2 border-t border-border">
               <button
                 type="button"
-                onClick={() => handleApply(selectedTemplate.buildText(headline, skillsList, customContext))}
+                onClick={handleUseTemplateDirectly}
                 className="w-full sm:w-auto text-xs font-semibold text-ink hover:text-primary-glow bg-surface-alt hover:bg-surface border border-border px-4 py-2.5 rounded-xl transition-colors text-center cursor-pointer"
               >
                 Use Template Directly
@@ -268,67 +200,13 @@ export const AiSummaryModal: React.FC<AiSummaryModalProps> = ({ isOpen, onClose 
 
               <button
                 type="button"
-                onClick={handleGenerateAi}
-                disabled={isGenerating}
-                className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-2.5 bg-gradient-brand text-primary-foreground text-xs font-bold rounded-xl transition-all shadow-elegant hover:shadow-glow disabled:opacity-50 cursor-pointer"
+                onClick={handleWriteWithAiAndSendToCoach}
+                className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-2.5 bg-gradient-brand text-primary-foreground text-xs font-bold rounded-xl transition-all shadow-elegant hover:shadow-glow cursor-pointer"
               >
-                {isGenerating ? (
-                  <>
-                    <RefreshCw className="w-4 h-4 animate-spin" />
-                    <span>Writing Summary with AI...</span>
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="w-4 h-4" />
-                    <span>Write Summary & Send to Coach</span>
-                  </>
-                )}
+                <Sparkles className="w-4 h-4" />
+                <span>Write Summary & Send to Coach</span>
               </button>
             </div>
-
-            {/* Generated Results & Preview */}
-            {generatedResults.length > 0 && (
-              <div className="space-y-3 pt-4 border-t border-border">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-ink uppercase tracking-wider flex items-center gap-1.5">
-                    <Sparkles className="w-3.5 h-3.5 text-primary-glow" />
-                    Generated Summary Variations ({generatedResults.length}):
-                  </span>
-                  <span className="text-[11px] text-primary-glow font-semibold flex items-center gap-1">
-                    <MessageSquare className="w-3 h-3" />
-                    Synced with LetGetIn AI Coach
-                  </span>
-                </div>
-
-                {generatedResults.map((item, idx) => {
-                  const textContent = typeof item === 'string'
-                    ? item
-                    : typeof item === 'object' && item !== null
-                    ? String((item as any).currentSummary || (item as any).summary || (item as any).text || '')
-                    : String(item || '');
-                  return (
-                    <div
-                      key={idx}
-                      className="p-4 bg-surface-alt/60 border border-border rounded-xl space-y-3 shadow-xs"
-                    >
-                      <p className="text-xs text-ink leading-relaxed font-medium">
-                        &quot;{textContent}&quot;
-                      </p>
-                      <div className="flex justify-end">
-                        <button
-                          type="button"
-                          onClick={() => handleApply(textContent)}
-                          className="flex items-center gap-1.5 px-3.5 py-1.5 bg-gradient-brand text-primary-foreground text-xs font-bold rounded-xl transition-all shadow-sm cursor-pointer"
-                        >
-                          <Check className="w-3.5 h-3.5" />
-                          <span>Apply to Resume</span>
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
           </div>
         </motion.div>
       </div>

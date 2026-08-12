@@ -1,6 +1,26 @@
 import React from 'react';
 import { useResumeStore } from '../../store/useResumeStore';
-import { Settings, Palette, Type, AlignLeft } from 'lucide-react';
+import { Settings, Palette, Type, AlignLeft, Scaling } from 'lucide-react';
+import { CustomSelect, SelectOption } from '../common/CustomSelect';
+
+const FONT_OPTIONS: SelectOption[] = [
+  { value: 'Inter', label: 'Inter (Modern Clean)', sublabel: 'Recommended for tech & corporate roles' },
+  { value: 'Roboto', label: 'Roboto (Technical Standard)', sublabel: 'Clean geometric standard font' },
+  { value: 'Georgia', label: 'Georgia (Classic Serif)', sublabel: 'Traditional elegance for executive/legal roles' },
+  { value: 'Outfit', label: 'Outfit (Contemporary)', sublabel: 'Modern headings and stylish layout' },
+];
+
+const FONT_SIZE_OPTIONS: SelectOption[] = [
+  { value: 'sm', label: 'Compact (Small)', sublabel: 'Fits more content per page' },
+  { value: 'md', label: 'Normal (Medium)', sublabel: 'Standard balanced readability' },
+  { value: 'lg', label: 'Large (Spacious)', sublabel: 'Enhanced readability and whitespace' },
+];
+
+const LINE_SPACING_OPTIONS: SelectOption[] = [
+  { value: 'compact', label: 'Tight', sublabel: 'Dense line height' },
+  { value: 'normal', label: 'Normal', sublabel: 'Standard balanced spacing' },
+  { value: 'relaxed', label: 'Relaxed', sublabel: 'Airy line height' },
+];
 
 export const TemplateSettingsForm: React.FC = () => {
   const { resume, updateSettings } = useResumeStore();
@@ -35,8 +55,8 @@ export const TemplateSettingsForm: React.FC = () => {
               key={c.hex}
               onClick={() => updateSettings({ primaryColor: c.hex })}
               style={{ backgroundColor: c.hex }}
-              className={`w-8 h-8 rounded-full border-2 transition-transform ${
-                settings.primaryColor === c.hex ? 'border-primary-glow scale-110 shadow-md' : 'border-transparent opacity-80'
+              className={`w-8 h-8 rounded-full border-2 transition-transform cursor-pointer ${
+                settings.primaryColor === c.hex ? 'border-primary-glow scale-110 shadow-md ring-2 ring-primary-glow/30' : 'border-transparent opacity-80 hover:opacity-100'
               }`}
               title={c.name}
             />
@@ -50,37 +70,31 @@ export const TemplateSettingsForm: React.FC = () => {
         </div>
       </div>
 
-      {/* Font Family */}
+      {/* Font Family Custom Select */}
       <div>
         <label className="block text-xs font-semibold text-ink-soft mb-2 flex items-center gap-2">
           <Type className="w-3.5 h-3.5 text-primary-glow" />
           Typography Font Family
         </label>
-        <select
+        <CustomSelect
           value={settings.fontFamily}
-          onChange={(e) => updateSettings({ fontFamily: e.target.value })}
-          className="input-base text-xs"
-        >
-          <option value="Inter">Inter (Modern Clean)</option>
-          <option value="Roboto">Roboto (Technical Standard)</option>
-          <option value="Georgia">Georgia (Classic Serif)</option>
-          <option value="Outfit">Outfit (Contemporary)</option>
-        </select>
+          onChange={(val) => updateSettings({ fontFamily: val })}
+          options={FONT_OPTIONS}
+        />
       </div>
 
-      {/* Font Size & Line Spacing */}
-      <div className="grid grid-cols-2 gap-4">
+      {/* Font Size & Line Spacing Custom Selects */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label className="block text-xs font-semibold text-ink-soft mb-2">Font Size</label>
-          <select
+          <label className="block text-xs font-semibold text-ink-soft mb-2 flex items-center gap-1.5">
+            <Scaling className="w-3.5 h-3.5 text-primary-glow" />
+            Font Size
+          </label>
+          <CustomSelect
             value={settings.fontSize}
-            onChange={(e) => updateSettings({ fontSize: e.target.value as 'sm' | 'md' | 'lg' })}
-            className="input-base text-xs"
-          >
-            <option value="sm">Compact (Small)</option>
-            <option value="md">Normal (Medium)</option>
-            <option value="lg">Large (Spacious)</option>
-          </select>
+            onChange={(val) => updateSettings({ fontSize: val as 'sm' | 'md' | 'lg' })}
+            options={FONT_SIZE_OPTIONS}
+          />
         </div>
 
         <div>
@@ -88,15 +102,11 @@ export const TemplateSettingsForm: React.FC = () => {
             <AlignLeft className="w-3.5 h-3.5 text-primary-glow" />
             Line Spacing
           </label>
-          <select
+          <CustomSelect
             value={settings.lineSpacing}
-            onChange={(e) => updateSettings({ lineSpacing: e.target.value as 'compact' | 'normal' | 'relaxed' })}
-            className="input-base text-xs"
-          >
-            <option value="compact">Tight</option>
-            <option value="normal">Normal</option>
-            <option value="relaxed">Relaxed</option>
-          </select>
+            onChange={(val) => updateSettings({ lineSpacing: val as 'compact' | 'normal' | 'relaxed' })}
+            options={LINE_SPACING_OPTIONS}
+          />
         </div>
       </div>
     </div>

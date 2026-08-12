@@ -203,6 +203,11 @@
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
   }
+  select option {
+    background-color: var(--surface);
+    color: var(--ink);
+    padding: 8px 12px;
+  }
 }
 
 @media print {

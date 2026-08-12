@@ -16,8 +16,10 @@ import {
   Zap,
   Copy,
   Sparkles,
+  Plus,
 } from 'lucide-react';
 import { useAiCoachStore } from '../../store/useAiCoachStore';
+import { useResumeStore } from '../../store/useResumeStore';
 import { MarkdownRenderer } from './MarkdownRenderer';
 
 interface EmbeddedAiChatProps {
@@ -37,9 +39,15 @@ export const EmbeddedAiChat: React.FC<EmbeddedAiChatProps> = ({ onClose }) => {
     triggerSkillsAi,
   } = useAiCoachStore();
 
+  const { resume } = useResumeStore();
   const [inputMessage, setInputMessage] = useState('');
   const [isListening, setIsListening] = useState(false);
+  const [appliedActionIds, setAppliedActionIds] = useState<Set<string>>(new Set());
   const chatBottomRef = useRef<HTMLDivElement>(null);
+
+  const existingSkillsSet = new Set(
+    (resume.content.skills || []).map((s) => (typeof s === 'string' ? s : s.name).trim().toLowerCase())
+  );
 
   // Scroll to bottom on updates
   useEffect(() => {
@@ -47,9 +55,15 @@ export const EmbeddedAiChat: React.FC<EmbeddedAiChatProps> = ({ onClose }) => {
   }, [messages, isChatLoading]);
 
   const handleCopyMessage = (id: string, text: string) => {
+    // Strip markdown formatting when copying to clipboard if desired, or copy raw markdown
     navigator.clipboard.writeText(text);
     setCopiedMsgId(id);
     setTimeout(() => setCopiedMsgId(null), 2000);
+  };
+
+  const handleActionClick = (actionId: string, actionFn: () => void) => {
+    actionFn();
+    setAppliedActionIds((prev) => new Set(prev).add(actionId));
   };
 
   const toggleListening = () => {
@@ -95,6 +109,10 @@ export const EmbeddedAiChat: React.FC<EmbeddedAiChatProps> = ({ onClose }) => {
     sendMessage(text);
   };
 
+  const cleanUserText = (raw: string) => {
+    return raw.replace(/\*\*/g, '').trim();
+  };
+
   return (
     <div className="h-full flex flex-col bg-surface border border-border rounded-2xl overflow-hidden shadow-sm">
       {/* Top Header Bar */}
@@ -107,7 +125,7 @@ export const EmbeddedAiChat: React.FC<EmbeddedAiChatProps> = ({ onClose }) => {
             <span className="text-xs font-bold text-ink tracking-tight block">LetGetIn AI Coach</span>
             <span className="text-[10px] font-semibold text-emerald-600 flex items-center gap-1">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              Real-time Resume Context Active
+              Live Resume Context
             </span>
           </div>
         </div>
@@ -223,7 +241,7 @@ export const EmbeddedAiChat: React.FC<EmbeddedAiChatProps> = ({ onClose }) => {
                 </div>
                 <div>
                   <h4 className="text-xs font-bold text-ink group-hover:text-indigo-600 leading-tight">
-                    Highlight top keywords I&apos;m missing for ATS
+                    Highlight top keywords I am missing for ATS
                   </h4>
                   <p className="text-[11px] text-ink-soft mt-1">Find missing keyword keywords and section gaps</p>
                 </div>
@@ -276,7 +294,7 @@ export const EmbeddedAiChat: React.FC<EmbeddedAiChatProps> = ({ onClose }) => {
 
                 {/* Message Body */}
                 {msg.sender === 'user' ? (
-                  <p className="whitespace-pre-wrap">{msg.text}</p>
+                  <p className="whitespace-pre-wrap leading-relaxed">{cleanUserText(msg.text)}</p>
                 ) : (
                   <MarkdownRenderer content={msg.text} />
                 )}
@@ -287,17 +305,61 @@ export const EmbeddedAiChat: React.FC<EmbeddedAiChatProps> = ({ onClose }) => {
                     <span className="text-[10px] font-bold text-primary-glow uppercase tracking-wider block">
                       ⚡ 1-Click Resume Actions:
                     </span>
-                    {msg.suggestions.map((sug, sIdx) => (
-                      <button
-                        key={sug.id || sIdx}
-                        type="button"
-                        onClick={sug.action}
-                        className="w-full text-xs text-left bg-primary/10 hover:bg-primary/20 text-ink p-2.5 rounded-xl border border-primary/30 flex items-center justify-between transition-colors font-bold cursor-pointer shadow-xs group"
-                      >
-                        <span className="truncate pr-2 group-hover:text-primary-glow">{sug.label}</span>
-                        <Zap className="w-3.5 h-3.5 text-primary-glow shrink-0" />
-                      </button>
-                    ))}
+                    <div className="flex flex-col gap-1.5">
+                      {msg.suggestions.map((sug, sIdx) => {
+                        const isApplied = appliedActionIds.has(sug.id || `sug-${sIdx}`);
+                        const isSkillChip = sug.label.startsWith('+ Add "');
+                        const skillNameMatch = sug.label.match(/\+ Add "(.*?)"/);
+                        const isAlreadyInSkills = skillNameMatch
+                          ? existingSkillsSet.has(skillNameMatch[1].trim().toLowerCase())
+                          : false;
+
+                        if (isSkillChip) {
+                          return (
+                            <button
+                              key={sug.id || sIdx}
+                              type="button"
+                              disabled={isApplied || isAlreadyInSkills}
+                              onClick={() => handleActionClick(sug.id || `sug-${sIdx}`, sug.action)}
+                              className={`text-xs text-left px-3 py-2 rounded-xl border flex items-center justify-between transition-all font-semibold cursor-pointer shadow-xs ${
+                                isApplied || isAlreadyInSkills
+                                  ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600 cursor-default opacity-85'
+                                  : 'bg-surface-alt hover:bg-primary/10 border-border hover:border-primary/40 text-ink'
+                              }`}
+                            >
+                              <span className="truncate pr-2">{sug.label}</span>
+                              {isApplied || isAlreadyInSkills ? (
+                                <Check className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                              ) : (
+                                <Plus className="w-3.5 h-3.5 text-primary-glow shrink-0" />
+                              )}
+                            </button>
+                          );
+                        }
+
+                        return (
+                          <button
+                            key={sug.id || sIdx}
+                            type="button"
+                            onClick={() => handleActionClick(sug.id || `sug-${sIdx}`, sug.action)}
+                            className={`w-full text-xs text-left p-2.5 rounded-xl border flex items-center justify-between transition-all font-bold cursor-pointer shadow-xs group ${
+                              isApplied
+                                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600'
+                                : 'bg-primary/10 hover:bg-primary/20 text-ink border-primary/30'
+                            }`}
+                          >
+                            <span className="truncate pr-2 group-hover:text-primary-glow">
+                              {isApplied ? `✔ Applied: ${sug.label.replace(/^✔\s*/, '')}` : sug.label}
+                            </span>
+                            {isApplied ? (
+                              <Check className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                            ) : (
+                              <Zap className="w-3.5 h-3.5 text-primary-glow shrink-0" />
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
                 )}
               </div>
