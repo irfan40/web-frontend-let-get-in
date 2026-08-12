@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useResumeStore } from "@/features/resume/store/useResumeStore";
 import { useAuthStore } from "@/features/auth/store/useAuthStore";
 import { useAutosave } from "@/features/resume/hooks/useAutosave";
+import { useAiCoachStore } from "@/features/resume/store/useAiCoachStore";
 import { EditorHeader } from "@/features/resume/components/common/EditorHeader";
 import { SectionNav } from "@/features/resume/components/editor/SectionNav";
 import { FormAtsHeader } from "@/features/resume/components/editor/FormAtsHeader";
@@ -21,10 +22,12 @@ function BuilderContent() {
   const resumeId = searchParams.get("id");
   const { loadResume, syncFromProfile } = useResumeStore();
   const { isAuthenticated } = useAuthStore();
-  const [isChatOpen, setIsChatOpen] = useState(true);
-  const [activeMobileTab, setActiveMobileTab] = useState<
-    "form" | "chat" | "preview"
-  >("form");
+  const {
+    isOpen: isChatOpen,
+    setIsOpen: setIsChatOpen,
+    activeMobileTab,
+    setActiveMobileTab,
+  } = useAiCoachStore();
 
   // Initialize Autosave Hook
   useAutosave();
@@ -42,7 +45,7 @@ function BuilderContent() {
     <div className="h-screen flex flex-col bg-background text-foreground overflow-hidden">
       {/* Editor Header Toolbar */}
       <EditorHeader
-        onToggleAi={() => setIsChatOpen((prev) => !prev)}
+        onToggleAi={() => setIsChatOpen(!isChatOpen)}
         isAiOpen={isChatOpen}
         onDownloadPdf={triggerPdfDownload}
       />

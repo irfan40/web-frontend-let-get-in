@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useResumeStore } from '../../store/useResumeStore';
-import { Wrench, Plus, X, Sparkles, RefreshCw, Check } from 'lucide-react';
+import { useAiCoachStore } from '../../store/useAiCoachStore';
+import { Wrench, Plus, X, Sparkles, RefreshCw, Check, MessageSquare } from 'lucide-react';
 import { ISkill } from '../../types';
 
 const ROLE_PRESETS: Record<string, string[]> = {
@@ -13,6 +14,7 @@ const ROLE_PRESETS: Record<string, string[]> = {
 
 export const SkillsForm: React.FC = () => {
   const { resume, addSkill, removeSkill } = useResumeStore();
+  const { triggerSkillsAi } = useAiCoachStore();
   const skills = resume.content.skills;
   const headline = resume.content.personalInfo.headline || 'Software Engineer';
   const [skillInput, setSkillInput] = useState('');
@@ -55,10 +57,14 @@ export const SkillsForm: React.FC = () => {
     }
 
     const filtered = suggested.filter((sk) => !existingSkillNames.has(sk.toLowerCase()));
+    
+    // Trigger in LetGetIn AI Coach
+    triggerSkillsAi();
+
     setTimeout(() => {
       setAiSuggestions(filtered);
       setIsAiSuggesting(false);
-    }, 600);
+    }, 500);
   };
 
   const handleAddAllAi = () => {
@@ -80,20 +86,22 @@ export const SkillsForm: React.FC = () => {
             Targeting: <span className="text-primary-glow font-semibold">{headline}</span>
           </p>
         </div>
-        <button
-          type="button"
-          onClick={handleAiSuggest}
-          disabled={isAiSuggesting}
-          className="flex items-center gap-1.5 text-xs text-primary-foreground bg-gradient-brand px-3.5 py-1.5 rounded-xl transition-all font-semibold shadow-elegant hover:shadow-glow disabled:opacity-50"
-          title="Suggest skills based on current resume headline"
-        >
-          {isAiSuggesting ? (
-            <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-          ) : (
-            <Sparkles className="w-3.5 h-3.5" />
-          )}
-          <span>Suggest Skills with AI</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handleAiSuggest}
+            disabled={isAiSuggesting}
+            className="flex items-center gap-1.5 text-xs text-primary-foreground bg-gradient-brand px-3.5 py-1.5 rounded-xl transition-all font-semibold shadow-elegant hover:shadow-glow disabled:opacity-50 cursor-pointer"
+            title="Suggest skills and open LetGetIn AI Coach recommendations"
+          >
+            {isAiSuggesting ? (
+              <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <Sparkles className="w-3.5 h-3.5" />
+            )}
+            <span>Suggest Skills with AI</span>
+          </button>
+        </div>
       </div>
 
       {/* Manual Skill Input */}
@@ -109,7 +117,7 @@ export const SkillsForm: React.FC = () => {
         <button
           type="button"
           onClick={() => handleAdd()}
-          className="bg-gradient-brand text-primary-foreground text-xs font-semibold px-4 py-2 rounded-xl transition-all shadow-elegant flex items-center gap-1 shrink-0"
+          className="bg-gradient-brand text-primary-foreground text-xs font-semibold px-4 py-2 rounded-xl transition-all shadow-elegant flex items-center gap-1 shrink-0 cursor-pointer hover:shadow-glow"
         >
           <Plus className="w-4 h-4" /> Add Skill
         </button>
@@ -129,15 +137,26 @@ export const SkillsForm: React.FC = () => {
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-ink flex items-center gap-1.5">
               <Sparkles className="w-3.5 h-3.5 text-primary-glow" />
-              AI Skill Recommendations for &quot;{headline}&quot;
+              AI Recommendations for &quot;{headline}&quot;
             </span>
-            <button
-              type="button"
-              onClick={handleAddAllAi}
-              className="text-[11px] font-bold bg-gradient-brand text-primary-foreground px-2.5 py-1 rounded-lg shadow-sm transition-all"
-            >
-              Add All ({aiSuggestions.length})
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleAddAllAi}
+                className="text-[11px] font-bold bg-gradient-brand text-primary-foreground px-2.5 py-1 rounded-lg shadow-sm transition-all cursor-pointer"
+              >
+                Add All ({aiSuggestions.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => triggerSkillsAi()}
+                className="text-[11px] font-semibold text-primary-glow hover:underline flex items-center gap-1 cursor-pointer"
+                title="Chat with AI Coach about skills"
+              >
+                <MessageSquare className="w-3 h-3" />
+                <span>Coach Chat</span>
+              </button>
+            </div>
           </div>
           <div className="flex flex-wrap gap-2">
             {aiSuggestions.map((sk) => (
@@ -148,7 +167,7 @@ export const SkillsForm: React.FC = () => {
                   handleAdd(sk);
                   setAiSuggestions((prev) => prev.filter((s) => s !== sk));
                 }}
-                className="bg-surface hover:bg-surface-alt text-ink border border-border text-xs px-2.5 py-1 rounded-full flex items-center gap-1 transition-colors font-medium shadow-xs"
+                className="bg-surface hover:bg-surface-alt text-ink border border-border text-xs px-2.5 py-1 rounded-full flex items-center gap-1 transition-colors font-medium shadow-xs cursor-pointer"
               >
                 <Plus className="w-3 h-3 text-primary-glow" />
                 {sk}
@@ -178,7 +197,7 @@ export const SkillsForm: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => removeSkill(skill.id)}
-                  className="text-ink-soft hover:text-destructive transition-colors"
+                  className="text-ink-soft hover:text-destructive transition-colors cursor-pointer"
                   title="Remove skill"
                 >
                   <X className="w-3.5 h-3.5" />
@@ -200,7 +219,7 @@ export const SkillsForm: React.FC = () => {
               onClick={() => {
                 ROLE_PRESETS[presetName].forEach((sk) => handleAdd(sk));
               }}
-              className="text-xs bg-surface-alt hover:bg-surface border border-border text-ink px-2.5 py-1 rounded-xl transition-colors font-medium"
+              className="text-xs bg-surface-alt hover:bg-surface border border-border text-ink px-2.5 py-1 rounded-xl transition-colors font-medium cursor-pointer"
             >
               + {presetName}
             </button>
