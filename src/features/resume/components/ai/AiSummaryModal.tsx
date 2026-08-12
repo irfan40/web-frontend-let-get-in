@@ -2,7 +2,18 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, Wand2, X, Briefcase, Code, TrendingUp, Shuffle } from 'lucide-react';
+import {
+  Sparkles,
+  Wand2,
+  X,
+  Briefcase,
+  Code,
+  TrendingUp,
+  Shuffle,
+  ArrowRight,
+  Bot,
+  FileText,
+} from 'lucide-react';
 import { useResumeStore } from '../../store/useResumeStore';
 import { useAiCoachStore } from '../../store/useAiCoachStore';
 
@@ -12,27 +23,25 @@ export interface SUMMARY_TEMPLATE_ITEM {
   badge: string;
   icon: React.ComponentType<{ className?: string }>;
   description: string;
-  buildText: (headline: string, topSkills: string, extraContext: string) => string;
+  templateFormat: string;
 }
 
 export const SUMMARY_TEMPLATES: SUMMARY_TEMPLATE_ITEM[] = [
-  {
-    id: 'executive',
-    title: 'Executive & Leader',
-    badge: 'Senior & Lead Roles',
-    icon: Briefcase,
-    description: 'Emphasizes strategic leadership, system architecture scaling, and cross-functional engineering management.',
-    buildText: (headline, topSkills, extraContext) =>
-      `Results-driven ${headline || 'Engineering Professional'} with proven experience building scalable high-performance systems and leading cross-functional teams. Specialized in ${topSkills || 'modern software architecture'}, with a track record of driving technical excellence. ${extraContext ? extraContext.trim() : ''}`,
-  },
   {
     id: 'technical',
     title: 'Technical Specialist',
     badge: 'Specialized & Hands-on',
     icon: Code,
     description: 'Focuses on deep technical stack expertise, robust API development, latency optimization, and code quality.',
-    buildText: (headline, topSkills, extraContext) =>
-      `Detail-oriented ${headline || 'Software Engineer'} specializing in ${topSkills || 'full stack architecture and web services'}. Proven track record of optimizing application latency, building resilient APIs, and engineering clean, maintainable codebases. ${extraContext ? extraContext.trim() : ''}`,
+    templateFormat: 'Detail-oriented [Job Title] with [X] years of experience specializing in [Core Skills & Tech Stack]. Proven track record of optimizing application latency, building resilient APIs, and engineering clean, maintainable codebases.',
+  },
+  {
+    id: 'executive',
+    title: 'Executive & Leader',
+    badge: 'Senior & Lead Roles',
+    icon: Briefcase,
+    description: 'Emphasizes strategic leadership, system architecture scaling, and cross-functional engineering management.',
+    templateFormat: 'Results-driven [Job Title] with [X] years of experience building scalable high-performance systems and leading cross-functional teams. Specialized in [Core Skills], with a track record of driving technical excellence and delivering high-impact initiatives.',
   },
   {
     id: 'impact',
@@ -40,8 +49,7 @@ export const SUMMARY_TEMPLATES: SUMMARY_TEMPLATE_ITEM[] = [
     badge: 'Metrics & Performance',
     icon: TrendingUp,
     description: 'Highlights percentage metrics, performance optimizations, rapid product delivery, and business growth.',
-    buildText: (headline, topSkills, extraContext) =>
-      `Innovative ${headline || 'Developer'} focused on delivering high-impact digital products. Demonstrated success in optimizing system performance by 35%+, streamlining user workflows, and leveraging ${topSkills || 'modern engineering best practices'}. ${extraContext ? extraContext.trim() : ''}`,
+    templateFormat: 'Innovative [Job Title] with [X] years of experience focused on delivering high-impact software solutions. Demonstrated success in optimizing system performance by [X]%, streamlining core workflows, and driving business growth through [Key Skills].',
   },
   {
     id: 'versatile',
@@ -49,8 +57,7 @@ export const SUMMARY_TEMPLATES: SUMMARY_TEMPLATE_ITEM[] = [
     badge: 'Adaptable & Agile',
     icon: Shuffle,
     description: 'Emphasizes rapid learning agility, cross-domain problem solving, and versatile technical execution.',
-    buildText: (headline, topSkills, extraContext) =>
-      `Versatile ${headline || 'Tech Professional'} with strong expertise in software development, problem-solving, and cross-functional execution. Passionate about utilizing ${topSkills || 'modern tech stacks'} to deliver elegant, user-centric software solutions. ${extraContext ? extraContext.trim() : ''}`,
+    templateFormat: 'Versatile [Job Title / Professional] with a strong foundation in [Core Competencies], software engineering, and agile execution. Passionate about utilizing [Tech Stack] to deliver elegant, user-centric software solutions.',
   },
 ];
 
@@ -70,77 +77,89 @@ export const AiSummaryModal: React.FC<AiSummaryModalProps> = ({ isOpen, onClose 
     ? String((rawHeadline as any).headline)
     : 'Software Professional';
 
-  const skillsList = (resume.content.skills || [])
-    .map((s) => (typeof s === 'string' ? s : s?.name || ''))
-    .filter(Boolean)
-    .slice(0, 6)
-    .join(', ');
-
-  const [selectedTemplateId, setSelectedTemplateId] = useState<string>('executive');
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>('technical');
   const [customContext, setCustomContext] = useState<string>('');
 
   if (!isOpen) return null;
 
-  const selectedTemplate = SUMMARY_TEMPLATES.find((t) => t.id === selectedTemplateId) || SUMMARY_TEMPLATES[0];
+  const selectedTemplate =
+    SUMMARY_TEMPLATES.find((t) => t.id === selectedTemplateId) || SUMMARY_TEMPLATES[0];
 
-  const handleWriteWithAiAndSendToCoach = () => {
-    // Dispatch AI generation directly inside LetGetIn AI Coach chat
+  // Send template request to AI Agent in Chat drawer
+  const handleSendToAiAgent = () => {
     triggerSummaryGenerationAi({
       templateStyle: selectedTemplate.title,
-      customContext,
+      customContext: customContext.trim() ? customContext.trim() : undefined,
     });
-    // Immediately close modal
     onClose();
   };
 
-  const handleUseTemplateDirectly = () => {
-    const text = selectedTemplate.buildText(headline, skillsList, customContext);
+  // Direct template insertion
+  const handleUseRawTemplate = () => {
+    const skillsList = (resume.content.skills || [])
+      .map((s) => (typeof s === 'string' ? s : s?.name || ''))
+      .filter(Boolean)
+      .slice(0, 4)
+      .join(', ') || 'Software Architecture';
+
+    let text = selectedTemplate.templateFormat
+      .replace(/\[Job Title[^\]]*\]/g, headline || 'Software Engineer')
+      .replace(/\[Core Skills[^\]]*\]/g, skillsList)
+      .replace(/\[Tech Stack[^\]]*\]/g, skillsList)
+      .replace(/\[Core Competencies\]/g, skillsList);
+
+    if (customContext.trim()) {
+      text += ` ${customContext.trim()}`;
+    }
+
     updateSummary(text);
-    setAppliedNotice('Applied template summary to your resume!');
-    setTimeout(() => setAppliedNotice(null), 3500);
+    setAppliedNotice('Inserted template draft into Professional Summary!');
+    setTimeout(() => setAppliedNotice(null), 3000);
     onClose();
   };
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm overflow-y-auto">
         <motion.div
-          initial={{ opacity: 0, scale: 0.95, y: 10 }}
+          initial={{ opacity: 0, scale: 0.96, y: 12 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.95, y: 10 }}
-          className="relative w-full max-w-2xl bg-surface border border-border rounded-2xl shadow-elegant overflow-hidden my-8"
+          exit={{ opacity: 0, scale: 0.96, y: 12 }}
+          className="relative w-full max-w-2xl bg-surface border border-border rounded-2xl shadow-elegant overflow-hidden my-6 flex flex-col"
         >
-          {/* Header */}
-          <div className="flex items-center justify-between p-5 border-b border-border bg-surface-alt/50">
+          {/* Modal Header */}
+          <div className="flex items-center justify-between p-4 sm:p-5 border-b border-border bg-surface-alt/60">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-xl bg-gradient-brand text-primary-foreground flex items-center justify-center shadow-xs shrink-0">
-                <Sparkles className="w-5 h-5" />
+                <Bot className="w-5 h-5" />
               </div>
               <div>
-                <h2 className="text-sm font-bold text-ink flex items-center gap-2">
-                  AI Summary Generator & Template Assistant
+                <h2 className="text-sm sm:text-base font-bold text-ink flex items-center gap-2">
+                  Choose Summary Template for AI Coach
                 </h2>
                 <p className="text-xs text-ink-soft mt-0.5">
-                  Targeting Role: <span className="text-primary-glow font-semibold">{headline}</span>
+                  Select your preferred style. The AI Coach will analyze your resume context in chat, ask any missing questions, and craft your summary.
                 </p>
               </div>
             </div>
             <button
               onClick={onClose}
               className="p-1.5 text-ink-soft hover:text-ink hover:bg-surface-alt rounded-lg transition-colors cursor-pointer"
+              title="Close modal"
             >
               <X className="w-4 h-4" />
             </button>
           </div>
 
-          <div className="p-6 space-y-6 max-h-[75vh] overflow-y-auto scrollbar-thin scrollbar-thumb-border">
-            {/* Step 1: Select Template Style */}
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-ink mb-2.5 flex items-center gap-1.5">
-                <Wand2 className="w-4 h-4 text-primary-glow" />
-                Step 1: Choose a Summary Template Style
+          {/* Modal Body */}
+          <div className="p-5 sm:p-6 space-y-5">
+            {/* Step 1: Choose Template */}
+            <div className="space-y-2">
+              <label className="block text-xs font-bold uppercase tracking-wider text-ink flex items-center gap-1.5">
+                <Wand2 className="w-3.5 h-3.5 text-primary-glow" />
+                Select Summary Template Style
               </label>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 {SUMMARY_TEMPLATES.map((tmpl) => {
                   const IconComp = tmpl.icon;
                   const isSelected = selectedTemplateId === tmpl.id;
@@ -149,9 +168,9 @@ export const AiSummaryModal: React.FC<AiSummaryModalProps> = ({ isOpen, onClose 
                       key={tmpl.id}
                       type="button"
                       onClick={() => setSelectedTemplateId(tmpl.id)}
-                      className={`text-left p-3.5 rounded-xl border transition-all relative space-y-1.5 cursor-pointer ${
+                      className={`text-left p-3.5 rounded-xl border transition-all space-y-1.5 cursor-pointer ${
                         isSelected
-                          ? 'bg-primary/10 border-primary-glow shadow-sm ring-1 ring-primary-glow'
+                          ? 'bg-primary/10 border-primary-glow shadow-xs ring-1 ring-primary-glow'
                           : 'bg-surface border-border hover:border-primary-glow/40 hover:bg-surface-alt'
                       }`}
                     >
@@ -160,7 +179,7 @@ export const AiSummaryModal: React.FC<AiSummaryModalProps> = ({ isOpen, onClose 
                           <IconComp className={`w-4 h-4 ${isSelected ? 'text-primary-glow' : 'text-ink-soft'}`} />
                           {tmpl.title}
                         </span>
-                        <span className="text-[10px] font-semibold bg-surface-alt text-ink-soft border border-border px-1.5 py-0.5 rounded">
+                        <span className="text-[9px] font-semibold bg-surface-alt text-ink-soft border border-border px-1.5 py-0.5 rounded">
                           {tmpl.badge}
                         </span>
                       </div>
@@ -173,40 +192,52 @@ export const AiSummaryModal: React.FC<AiSummaryModalProps> = ({ isOpen, onClose 
               </div>
             </div>
 
-            {/* Step 2: Custom Context / Prompt */}
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-ink mb-1.5 flex items-center justify-between">
-                <span>Step 2: Add Custom Context or User Instructions (Optional)</span>
-                <span className="text-[10px] text-ink-soft font-normal">e.g. Target job, years of exp, key achievement</span>
+            {/* Template Preview Snippet */}
+            <div className="p-3 bg-surface-alt/60 border border-border rounded-xl space-y-1">
+              <span className="text-[10px] font-bold text-primary-glow uppercase tracking-wider block">
+                Template Architecture:
+              </span>
+              <p className="text-xs text-ink-soft italic leading-relaxed">
+                &ldquo;{selectedTemplate.templateFormat}&rdquo;
+              </p>
+            </div>
+
+            {/* Step 2: Custom Instructions / Target Goal (Optional) */}
+            <div className="space-y-1.5">
+              <label className="block text-xs font-semibold text-ink flex items-center justify-between">
+                <span>Add Extra Context or Target Instructions (Optional)</span>
+                <span className="text-[10px] text-ink-soft font-normal">e.g. Target company, special achievements</span>
               </label>
               <textarea
-                rows={3}
+                rows={2}
                 value={customContext}
                 onChange={(e) => setCustomContext(e.target.value)}
-                placeholder={`e.g. 5+ years building scalable cloud applications with React & Node.js, optimized throughput by 40%, targeting Senior Full Stack roles...`}
+                placeholder="e.g. Highlight 3+ years in fintech and AWS cloud architecture..."
                 className="input-base text-xs leading-relaxed resize-y"
               />
             </div>
+          </div>
 
-            {/* Action Buttons */}
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2 border-t border-border">
-              <button
-                type="button"
-                onClick={handleUseTemplateDirectly}
-                className="w-full sm:w-auto text-xs font-semibold text-ink hover:text-primary-glow bg-surface-alt hover:bg-surface border border-border px-4 py-2.5 rounded-xl transition-colors text-center cursor-pointer"
-              >
-                Use Template Directly
-              </button>
+          {/* Modal Footer Actions */}
+          <div className="p-4 border-t border-border bg-surface-alt/40 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <button
+              type="button"
+              onClick={handleUseRawTemplate}
+              className="w-full sm:w-auto text-xs font-semibold text-ink-soft hover:text-ink px-4 py-2 rounded-xl border border-border hover:bg-surface transition-colors cursor-pointer flex items-center justify-center gap-1.5"
+            >
+              <FileText className="w-3.5 h-3.5" />
+              <span>Use Draft Template Directly</span>
+            </button>
 
-              <button
-                type="button"
-                onClick={handleWriteWithAiAndSendToCoach}
-                className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-2.5 bg-gradient-brand text-primary-foreground text-xs font-bold rounded-xl transition-all shadow-elegant hover:shadow-glow cursor-pointer"
-              >
-                <Sparkles className="w-4 h-4" />
-                <span>Write Summary & Send to Coach</span>
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={handleSendToAiAgent}
+              className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-2.5 bg-gradient-brand text-primary-foreground text-xs font-bold rounded-xl transition-all shadow-elegant hover:shadow-glow cursor-pointer"
+            >
+              <Sparkles className="w-4 h-4" />
+              <span>Take Template to AI Chat Agent</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
           </div>
         </motion.div>
       </div>

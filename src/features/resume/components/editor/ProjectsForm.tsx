@@ -406,13 +406,14 @@ export const ProjectsForm: React.FC = () => {
           title={activeModalProj.title || 'Project'}
           currentCount={(activeModalProj.highlights || []).length}
           initialTargetCount={getBulletCount(activeModalProj.id)}
-          onConfirm={(targetCount) => {
+          onConfirm={(targetCount, customContext) => {
             setBulletCount(activeModalProj.id, targetCount);
             triggerProjectBulletsAi(
               activeModalProj.id,
               activeModalProj.title,
               getTechArray(activeModalProj.technologies),
-              targetCount
+              targetCount,
+              customContext
             );
           }}
         />

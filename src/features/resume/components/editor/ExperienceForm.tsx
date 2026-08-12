@@ -317,9 +317,9 @@ export const ExperienceForm: React.FC = () => {
           title={`${activeModalExp.position || 'Role'} at ${activeModalExp.company || 'Company'}`}
           currentCount={activeModalExp.highlights.length}
           initialTargetCount={getBulletCount(activeModalExp.id)}
-          onConfirm={(targetCount) => {
+          onConfirm={(targetCount, customContext) => {
             setBulletCount(activeModalExp.id, targetCount);
-            triggerExperienceAi(activeModalExp.id, activeModalExp.position, activeModalExp.company, targetCount);
+            triggerExperienceAi(activeModalExp.id, activeModalExp.position, activeModalExp.company, targetCount, customContext);
           }}
         />
       )}

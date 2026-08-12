@@ -1,13 +1,39 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useResumeStore } from '../../store/useResumeStore';
-import { Sparkles, MessageSquare, Wand2, X, Minimize2, Send, Check, RefreshCw, SpellCheck, GripHorizontal, Maximize2 } from 'lucide-react';
+import {
+  Sparkles,
+  MessageSquare,
+  Wand2,
+  X,
+  Minimize2,
+  Send,
+  Check,
+  RefreshCw,
+  SpellCheck,
+  GripHorizontal,
+  Maximize2,
+  Search,
+  AlertCircle,
+  CheckCircle2,
+} from 'lucide-react';
 import { apiClient } from '../../../../shared/services/apiClient';
+import { MarkdownRenderer } from './MarkdownRenderer';
+
+interface ChatAnalysis {
+  knownFacts: string[];
+  missingFacts: string[];
+  reason?: string;
+}
 
 interface ChatMessage {
   id: string;
   sender: 'user' | 'ai';
   text: string;
+  analysis?: ChatAnalysis;
+  status?: 'READY' | 'NEEDS_INFORMATION' | 'ANSWER';
+  questions?: string[];
   suggestions?: string[];
+  quickReplies?: string[];
   timestamp: string;
 }
 
@@ -73,11 +99,12 @@ export const FloatingAiChatbot: React.FC = () => {
   // Chat State
   const [inputMessage, setInputMessage] = useState('');
   const [isChatLoading, setIsChatLoading] = useState(false);
+  const [appliedActionText, setAppliedActionText] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: 'welcome',
       sender: 'ai',
-      text: `Hello! I am your AI Resume Advisor. Ask me anything, or click "Section Fix" to check spelling & grammar for your active section!`,
+      text: `Hello! I am your **Context-Aware AI Resume Coach**. Ask me for feedback, summary generation, or bullet point enhancements!`,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     },
   ]);
@@ -90,12 +117,12 @@ export const FloatingAiChatbot: React.FC = () => {
   } | null>(null);
 
   // Chat Send Handler
-  const handleSendMessage = async (e?: React.FormEvent) => {
+  const handleSendMessage = async (customText?: string, e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    if (!inputMessage.trim() || isChatLoading) return;
+    const userText = (customText || inputMessage).trim();
+    if (!userText || isChatLoading) return;
 
-    const userText = inputMessage.trim();
-    setInputMessage('');
+    if (!customText) setInputMessage('');
 
     const userMsg: ChatMessage = {
       id: `msg-${Date.now()}`,
@@ -104,20 +131,86 @@ export const FloatingAiChatbot: React.FC = () => {
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     };
 
-    setMessages((prev) => [...prev, userMsg]);
+    const updatedMessages = [...messages, userMsg];
+    setMessages(updatedMessages);
     setIsChatLoading(true);
 
+    const historyPayload = updatedMessages.slice(-8).map((m) => ({
+      sender: m.sender,
+      text: m.text,
+      analysis: m.analysis,
+      status: m.status,
+    }));
+
     try {
-      const response = await apiClient.post<never, { data: { reply: string; suggestions?: string[] } }>('/ai/chat', {
+      const response = await apiClient.post<
+        never,
+        {
+          data: {
+            intent?: string;
+            status?: 'READY' | 'NEEDS_INFORMATION' | 'ANSWER';
+            analysis?: {
+              knownFacts?: string[];
+              missingFacts?: string[];
+              reason?: string;
+            };
+            questions?: string[];
+            reply: string;
+            draft?: {
+              section: string;
+              content: any;
+            } | null;
+            action?: {
+              type: string;
+              section?: string;
+              payload?: any;
+            } | null;
+            suggestions?: Array<string | { label: string; actionType?: string; payload?: any }>;
+          };
+        }
+      >('/ai/chat', {
         message: userText,
         resumeContext: resume,
+        conversationHistory: historyPayload,
       });
+
+      const resData = response.data;
+      const actionSuggestions: string[] = [];
+      const quickReplies: string[] = [];
+
+      if (resData.draft?.section === 'summary' && typeof resData.draft.content === 'string') {
+        actionSuggestions.push(resData.draft.content);
+      }
+
+      if (Array.isArray(resData.suggestions)) {
+        resData.suggestions.forEach((sug) => {
+          if (typeof sug === 'string') {
+            if (sug.toLowerCase().includes('apply')) {
+              if (resData.draft?.content && typeof resData.draft.content === 'string') {
+                actionSuggestions.push(resData.draft.content);
+              }
+            } else {
+              quickReplies.push(sug);
+            }
+          }
+        });
+      }
 
       const aiMsg: ChatMessage = {
         id: `ai-${Date.now()}`,
         sender: 'ai',
-        text: response.data.reply,
-        suggestions: response.data.suggestions,
+        text: resData.reply,
+        analysis: resData.analysis
+          ? {
+              knownFacts: resData.analysis.knownFacts || [],
+              missingFacts: resData.analysis.missingFacts || [],
+              reason: resData.analysis.reason,
+            }
+          : undefined,
+        status: resData.status,
+        questions: resData.questions,
+        suggestions: actionSuggestions.length > 0 ? actionSuggestions : undefined,
+        quickReplies: quickReplies.slice(0, 3),
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       };
       setMessages((prev) => [...prev, aiMsg]);
@@ -125,7 +218,13 @@ export const FloatingAiChatbot: React.FC = () => {
       const fallbackMsg: ChatMessage = {
         id: `ai-err-${Date.now()}`,
         sender: 'ai',
-        text: `I analyzed your question regarding "${userText}". Based on your resume, ensure your job headline (${resume.content.personalInfo.headline || 'Software Engineer'}) matches your target role keywords.`,
+        text: `### 📋 Context Evaluation\n\nI analyzed your question regarding "${userText}". Based on your resume, ensure your job headline (${resume.content.personalInfo.headline || 'Software Engineer'}) matches your target role keywords.`,
+        analysis: {
+          knownFacts: [`Headline: ${resume.content.personalInfo.headline || 'Software Engineer'}`],
+          missingFacts: ['Quantifiable project outcome'],
+          reason: 'Generated via local analyzer.',
+        },
+        status: 'ANSWER',
         suggestions: ['Quantify experience achievements', 'Fix spelling in professional summary'],
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       };
@@ -193,13 +292,19 @@ export const FloatingAiChatbot: React.FC = () => {
     setSectionOptimizationResult(null);
   };
 
+  const handleApplySuggestion = (text: string) => {
+    updateSummary(text);
+    setAppliedActionText('Applied summary to resume!');
+    setTimeout(() => setAppliedActionText(null), 3000);
+  };
+
   return (
     <>
       {/* Floating Launcher Button (Fixed Bottom-Right) */}
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="fixed bottom-6 right-6 z-50 bg-gradient-to-tr from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white p-3.5 rounded-full shadow-2xl transition-all duration-300 transform hover:scale-105 flex items-center justify-center gap-2 ring-4 ring-purple-500/20 active:scale-95"
+          className="fixed bottom-6 right-6 z-50 bg-gradient-to-tr from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white p-3.5 rounded-full shadow-2xl transition-all duration-300 transform hover:scale-105 flex items-center justify-center gap-2 ring-4 ring-purple-500/20 active:scale-95 cursor-pointer"
           title="Open Floating AI Chatbot"
         >
           <Sparkles className="w-5 h-5 text-white" />
@@ -216,7 +321,7 @@ export const FloatingAiChatbot: React.FC = () => {
             top: `${position.y}px`,
           }}
           className={`fixed z-50 bg-slate-900 border border-slate-700/80 rounded-2xl shadow-2xl flex flex-col transition-shadow ${
-            isMinimized ? 'w-80 h-14' : 'w-96 h-[500px]'
+            isMinimized ? 'w-80 h-14' : 'w-96 h-[520px]'
           }`}
         >
           {/* Draggable Header Bar */}
@@ -237,14 +342,14 @@ export const FloatingAiChatbot: React.FC = () => {
             <div className="flex items-center gap-1">
               <button
                 onClick={() => setIsMinimized((prev) => !prev)}
-                className="text-slate-400 hover:text-white p-1 rounded hover:bg-slate-800"
+                className="text-slate-400 hover:text-white p-1 rounded hover:bg-slate-800 cursor-pointer"
                 title={isMinimized ? 'Expand Window' : 'Minimize Window'}
               >
                 {isMinimized ? <Maximize2 className="w-3.5 h-3.5" /> : <Minimize2 className="w-3.5 h-3.5" />}
               </button>
               <button
                 onClick={() => setIsOpen(false)}
-                className="text-slate-400 hover:text-rose-400 p-1 rounded hover:bg-slate-800"
+                className="text-slate-400 hover:text-rose-400 p-1 rounded hover:bg-slate-800 cursor-pointer"
                 title="Close AI Assistant"
               >
                 <X className="w-3.5 h-3.5" />
@@ -258,16 +363,16 @@ export const FloatingAiChatbot: React.FC = () => {
               <div className="flex border-b border-slate-800 bg-slate-950/40 p-1 gap-1">
                 <button
                   onClick={() => setActiveTab('chat')}
-                  className={`flex-1 py-1.5 text-xs font-semibold rounded-lg flex items-center justify-center gap-1.5 transition-colors ${
+                  className={`flex-1 py-1.5 text-xs font-semibold rounded-lg flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${
                     activeTab === 'chat' ? 'bg-indigo-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'
                   }`}
                 >
                   <MessageSquare className="w-3.5 h-3.5" />
-                  <span>GPT Context Chat</span>
+                  <span>AI Context Chat</span>
                 </button>
                 <button
                   onClick={() => setActiveTab('section')}
-                  className={`flex-1 py-1.5 text-xs font-semibold rounded-lg flex items-center justify-center gap-1.5 transition-colors ${
+                  className={`flex-1 py-1.5 text-xs font-semibold rounded-lg flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${
                     activeTab === 'section' ? 'bg-indigo-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'
                   }`}
                 >
@@ -279,6 +384,13 @@ export const FloatingAiChatbot: React.FC = () => {
               {/* TAB 1: Conversational AI Chat */}
               {activeTab === 'chat' && (
                 <div className="flex-1 flex flex-col min-h-0 bg-slate-900/50">
+                  {appliedActionText && (
+                    <div className="bg-emerald-500/20 text-emerald-300 text-xs px-3 py-1.5 border-b border-emerald-500/30 flex items-center gap-1.5">
+                      <Check className="w-3.5 h-3.5" />
+                      <span>{appliedActionText}</span>
+                    </div>
+                  )}
+
                   <div className="flex-1 p-3 overflow-y-auto space-y-3 scrollbar-thin scrollbar-thumb-slate-800">
                     {messages.map((msg) => (
                       <div
@@ -286,23 +398,88 @@ export const FloatingAiChatbot: React.FC = () => {
                         className={`flex flex-col ${msg.sender === 'user' ? 'items-end' : 'items-start'}`}
                       >
                         <div
-                          className={`max-w-[85%] rounded-2xl p-3 text-xs leading-relaxed ${
+                          className={`max-w-[88%] rounded-2xl p-3 text-xs leading-relaxed ${
                             msg.sender === 'user'
                               ? 'bg-indigo-600 text-white rounded-br-none shadow-md'
                               : 'bg-slate-800 border border-slate-700 text-slate-200 rounded-bl-none'
                           }`}
                         >
-                          <p>{msg.text}</p>
+                          {/* Resume Analysis Box */}
+                          {msg.sender === 'ai' && msg.analysis && (msg.analysis.knownFacts.length > 0 || msg.analysis.missingFacts.length > 0 || msg.analysis.reason) && (
+                            <div className="mb-2.5 p-2.5 rounded-xl border bg-slate-900/80 border-slate-700 space-y-1.5 text-xs">
+                              <div className="flex items-center justify-between">
+                                <span className="font-bold text-slate-300 text-[10px] uppercase tracking-wider flex items-center gap-1">
+                                  <Search className="w-3 h-3 text-indigo-400" />
+                                  Analysis
+                                </span>
+                                {msg.status === 'NEEDS_INFORMATION' && (
+                                  <span className="text-[9px] font-bold bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded flex items-center gap-1">
+                                    <AlertCircle className="w-2.5 h-2.5" /> Needs Info
+                                  </span>
+                                )}
+                                {msg.status === 'READY' && (
+                                  <span className="text-[9px] font-bold bg-emerald-500/20 text-emerald-300 px-1.5 py-0.5 rounded flex items-center gap-1">
+                                    <CheckCircle2 className="w-2.5 h-2.5" /> Ready
+                                  </span>
+                                )}
+                              </div>
+
+                              {msg.analysis.knownFacts.length > 0 && (
+                                <div className="space-y-0.5 pt-1 border-t border-slate-800">
+                                  <span className="text-[10px] text-emerald-400 font-semibold">✓ Detected:</span>
+                                  <ul className="pl-3 text-[10px] text-slate-400 list-disc">
+                                    {msg.analysis.knownFacts.map((f, i) => (
+                                      <li key={i}>{f}</li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              )}
+
+                              {msg.analysis.missingFacts.length > 0 && (
+                                <div className="space-y-0.5 pt-1 border-t border-slate-800">
+                                  <span className="text-[10px] text-amber-400 font-semibold">⚠ Missing:</span>
+                                  <ul className="pl-3 text-[10px] text-slate-400 list-disc">
+                                    {msg.analysis.missingFacts.map((m, i) => (
+                                      <li key={i}>{m}</li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          {msg.sender === 'user' ? (
+                            <p>{msg.text}</p>
+                          ) : (
+                            <MarkdownRenderer content={msg.text} />
+                          )}
+
+                          {/* Quick replies */}
+                          {msg.quickReplies && msg.quickReplies.length > 0 && (
+                            <div className="mt-2 pt-1.5 border-t border-slate-700/80 flex flex-wrap gap-1">
+                              {msg.quickReplies.map((qr, i) => (
+                                <button
+                                  key={i}
+                                  onClick={() => handleSendMessage(qr)}
+                                  className="text-[9px] bg-slate-950/80 hover:bg-indigo-950 text-indigo-300 px-2 py-0.5 rounded border border-indigo-800/40 transition-colors cursor-pointer"
+                                >
+                                  {qr}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* 1-Click action */}
                           {msg.suggestions && msg.suggestions.length > 0 && (
                             <div className="mt-2.5 pt-2 border-t border-slate-700/80 space-y-1">
-                              <span className="text-[10px] font-bold text-indigo-300">Suggested Action:</span>
+                              <span className="text-[10px] font-bold text-indigo-300">1-Click Action:</span>
                               {msg.suggestions.map((sug, sIdx) => (
                                 <button
                                   key={sIdx}
-                                  onClick={() => updateSummary(sug)}
-                                  className="w-full text-[10px] text-left bg-slate-950/60 hover:bg-indigo-950 text-indigo-200 p-1.5 rounded border border-indigo-800/40 flex items-center justify-between gap-1 transition-colors"
+                                  onClick={() => handleApplySuggestion(sug)}
+                                  className="w-full text-[10px] text-left bg-slate-950/60 hover:bg-indigo-950 text-indigo-200 p-1.5 rounded border border-indigo-800/40 flex items-center justify-between gap-1 transition-colors cursor-pointer"
                                 >
-                                  <span className="truncate">{sug}</span>
+                                  <span className="truncate">✔ Apply to Professional Summary</span>
                                   <Check className="w-3 h-3 text-emerald-400 flex-shrink-0" />
                                 </button>
                               ))}
@@ -315,13 +492,13 @@ export const FloatingAiChatbot: React.FC = () => {
                     {isChatLoading && (
                       <div className="flex items-center gap-2 text-xs text-indigo-400 bg-slate-800/60 p-2.5 rounded-xl border border-slate-700/50 w-fit">
                         <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                        <span>AI thinking with resume context...</span>
+                        <span>AI evaluating resume context...</span>
                       </div>
                     )}
                   </div>
 
                   {/* Input Form */}
-                  <form onSubmit={handleSendMessage} className="p-2.5 border-t border-slate-800 bg-slate-950 flex gap-2">
+                  <form onSubmit={(e) => handleSendMessage(undefined, e)} className="p-2.5 border-t border-slate-800 bg-slate-950 flex gap-2">
                     <input
                       type="text"
                       value={inputMessage}
@@ -332,7 +509,7 @@ export const FloatingAiChatbot: React.FC = () => {
                     <button
                       type="submit"
                       disabled={isChatLoading || !inputMessage.trim()}
-                      className="bg-indigo-600 hover:bg-indigo-500 text-white p-2 rounded-xl transition-colors disabled:opacity-40"
+                      className="bg-indigo-600 hover:bg-indigo-500 text-white p-2 rounded-xl transition-colors disabled:opacity-40 cursor-pointer"
                     >
                       <Send className="w-4 h-4" />
                     </button>
@@ -358,7 +535,7 @@ export const FloatingAiChatbot: React.FC = () => {
                     <button
                       onClick={handleOptimizeCurrentSection}
                       disabled={isOptimizing}
-                      className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-bold py-2 rounded-xl transition-all shadow flex items-center justify-center gap-2 disabled:opacity-50"
+                      className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-bold py-2 rounded-xl transition-all shadow flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
                     >
                       {isOptimizing ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <SpellCheck className="w-3.5 h-3.5" />}
                       <span>Fix Spelling & Grammar in {activeSection}</span>
@@ -380,7 +557,7 @@ export const FloatingAiChatbot: React.FC = () => {
                       </div>
                       <button
                         onClick={handleApplySectionFix}
-                        className="w-full bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold py-2 rounded-xl transition-colors shadow flex items-center justify-center gap-1.5"
+                        className="w-full bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold py-2 rounded-xl transition-colors shadow flex items-center justify-center gap-1.5 cursor-pointer"
                       >
                         <Check className="w-4 h-4" /> Apply AI Fix to {activeSection}
                       </button>

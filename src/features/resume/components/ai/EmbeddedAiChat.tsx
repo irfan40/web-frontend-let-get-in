@@ -7,6 +7,8 @@ import {
   X,
   RotateCcw,
   CheckCircle,
+  CheckCircle2,
+  AlertCircle,
   PlusCircle,
   Edit3,
   Search,
@@ -55,7 +57,6 @@ export const EmbeddedAiChat: React.FC<EmbeddedAiChatProps> = ({ onClose }) => {
   }, [messages, isChatLoading]);
 
   const handleCopyMessage = (id: string, text: string) => {
-    // Strip markdown formatting when copying to clipboard if desired, or copy raw markdown
     navigator.clipboard.writeText(text);
     setCopiedMsgId(id);
     setTimeout(() => setCopiedMsgId(null), 2000);
@@ -125,7 +126,7 @@ export const EmbeddedAiChat: React.FC<EmbeddedAiChatProps> = ({ onClose }) => {
             <span className="text-xs font-bold text-ink tracking-tight block">LetGetIn AI Coach</span>
             <span className="text-[10px] font-semibold text-emerald-600 flex items-center gap-1">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              Live Resume Context
+              Live Context Active
             </span>
           </div>
         </div>
@@ -292,11 +293,93 @@ export const EmbeddedAiChat: React.FC<EmbeddedAiChatProps> = ({ onClose }) => {
                   </div>
                 )}
 
+                {/* User-Visible Resume Analysis Box */}
+                {msg.sender === 'ai' && msg.analysis && (msg.analysis.knownFacts.length > 0 || msg.analysis.missingFacts.length > 0 || msg.analysis.reason) && (
+                  <div className="mb-3 p-3 rounded-xl border bg-surface-alt/70 border-border/80 shadow-2xs space-y-2 text-xs">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5 font-bold text-ink text-[11px] uppercase tracking-wider">
+                        <Search className="w-3.5 h-3.5 text-primary-glow" />
+                        <span>Resume Analysis</span>
+                      </div>
+                      {msg.status === 'NEEDS_INFORMATION' && (
+                        <span className="text-[10px] font-bold bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30 px-2 py-0.5 rounded-full flex items-center gap-1">
+                          <AlertCircle className="w-3 h-3 text-amber-500 shrink-0" />
+                          Needs Details
+                        </span>
+                      )}
+                      {msg.status === 'READY' && (
+                        <span className="text-[10px] font-bold bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full flex items-center gap-1">
+                          <CheckCircle2 className="w-3 h-3 text-emerald-500 shrink-0" />
+                          Ready to Apply
+                        </span>
+                      )}
+                      {msg.status === 'ANSWER' && (
+                        <span className="text-[10px] font-bold bg-sky-500/15 text-sky-700 dark:text-sky-400 border border-sky-500/30 px-2 py-0.5 rounded-full flex items-center gap-1">
+                          <Sparkles className="w-3 h-3 text-sky-500 shrink-0" />
+                          Context Verified
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Detected Facts */}
+                    {msg.analysis.knownFacts && msg.analysis.knownFacts.length > 0 && (
+                      <div className="space-y-1 pt-1.5 border-t border-border/50">
+                        <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 flex items-center gap-1">
+                          <Check className="w-3 h-3 text-emerald-500" /> Detected Profile Facts:
+                        </span>
+                        <ul className="space-y-0.5 pl-3.5 text-[11px] text-ink-soft">
+                          {msg.analysis.knownFacts.map((fact, fIdx) => (
+                            <li key={fIdx} className="list-disc leading-tight">{fact}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {/* Missing Information */}
+                    {msg.analysis.missingFacts && msg.analysis.missingFacts.length > 0 && (
+                      <div className="space-y-1 pt-1.5 border-t border-border/50">
+                        <span className="text-[10px] font-bold text-amber-700 dark:text-amber-400 flex items-center gap-1">
+                          <AlertCircle className="w-3 h-3 text-amber-500" /> Missing Information:
+                        </span>
+                        <ul className="space-y-0.5 pl-3.5 text-[11px] text-ink-soft">
+                          {msg.analysis.missingFacts.map((miss, mIdx) => (
+                            <li key={mIdx} className="list-disc leading-tight">{miss}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {/* Concise conclusion/reason */}
+                    {msg.analysis.reason && (
+                      <p className="text-[10px] text-ink-soft italic pt-1 border-t border-border/40">
+                        {msg.analysis.reason}
+                      </p>
+                    )}
+                  </div>
+                )}
+
                 {/* Message Body */}
                 {msg.sender === 'user' ? (
                   <p className="whitespace-pre-wrap leading-relaxed">{cleanUserText(msg.text)}</p>
                 ) : (
                   <MarkdownRenderer content={msg.text} />
+                )}
+
+                {/* Quick Reply Suggestion Chips */}
+                {msg.sender === 'ai' && msg.quickReplies && msg.quickReplies.length > 0 && (
+                  <div className="mt-3 pt-2 border-t border-border/60 flex flex-wrap gap-1.5">
+                    {msg.quickReplies.map((qr, qrIdx) => (
+                      <button
+                        key={qrIdx}
+                        type="button"
+                        onClick={() => sendMessage(qr)}
+                        className="text-[10px] font-semibold bg-surface-alt hover:bg-primary/15 text-ink border border-border hover:border-primary/40 px-2.5 py-1 rounded-lg transition-all flex items-center gap-1 cursor-pointer shadow-2xs"
+                      >
+                        <Sparkles className="w-2.5 h-2.5 text-primary-glow shrink-0" />
+                        <span>{qr}</span>
+                      </button>
+                    ))}
+                  </div>
                 )}
 
                 {/* 1-Click Interactive Actions */}
