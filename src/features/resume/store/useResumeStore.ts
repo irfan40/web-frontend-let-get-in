@@ -78,6 +78,9 @@ interface ResumeStoreState {
   // Settings Actions
   updateSettings: (settings: Partial<ITemplateSettings>) => void;
 
+  // ATS Score Action
+  updateAtsScore: (atsScore: number) => void;
+
   // Full Replacement (e.g. AI Accept or Restore)
   setResume: (resume: IResume) => void;
 
@@ -480,6 +483,16 @@ export const useResumeStore = create<ResumeStoreState>((set, get) => ({
       resume: {
         ...state.resume,
         settings: { ...state.resume.settings, ...settings },
+      },
+      isDirty: true,
+      saveStatus: 'unsaved',
+    })),
+
+  updateAtsScore: (atsScore: number) =>
+    set((state) => ({
+      resume: {
+        ...state.resume,
+        atsScore,
       },
       isDirty: true,
       saveStatus: 'unsaved',

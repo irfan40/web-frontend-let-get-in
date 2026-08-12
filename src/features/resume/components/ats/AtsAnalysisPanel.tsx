@@ -154,9 +154,9 @@ export const AtsAnalysisPanel: React.FC<AtsAnalysisPanelProps> = ({ isEmbedded =
             </div>
           </div>
           <button
-            onClick={runAtsAnalysis}
+            onClick={() => runAtsAnalysis()}
             disabled={isAnalyzing}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-xl transition-colors disabled:opacity-50"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-xl transition-colors disabled:opacity-50 cursor-pointer"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isAnalyzing ? 'animate-spin text-blue-400' : ''}`} />
             <span>Re-analyze</span>
@@ -206,7 +206,12 @@ export const AtsAnalysisPanel: React.FC<AtsAnalysisPanelProps> = ({ isEmbedded =
         {/* Tab Body */}
         <div>
           {activeTab === 'ats' && (
-            <AtsScoreMeter result={result} isAnalyzing={isAnalyzing} onImproveAction={handleImproveAction} />
+            <AtsScoreMeter
+              result={result}
+              isAnalyzing={isAnalyzing}
+              onImproveAction={handleImproveAction}
+              onRunAnalysis={runAtsAnalysis}
+            />
           )}
           {activeTab === 'health' && <HealthDashboard metrics={result?.healthMetrics || []} />}
           {activeTab === 'jobMatch' && <JobMatcher onTailorAction={handleTailorAction} />}
@@ -256,9 +261,9 @@ export const AtsAnalysisPanel: React.FC<AtsAnalysisPanelProps> = ({ isEmbedded =
 
               <div className="flex items-center gap-2">
                 <button
-                  onClick={runAtsAnalysis}
+                  onClick={() => runAtsAnalysis()}
                   disabled={isAnalyzing}
-                  className="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition-colors disabled:opacity-50"
+                  className="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition-colors disabled:opacity-50 cursor-pointer"
                   title="Re-analyze ATS"
                 >
                   <RefreshCw className={`w-3.5 h-3.5 ${isAnalyzing ? 'animate-spin text-blue-400' : ''}`} />
@@ -266,31 +271,10 @@ export const AtsAnalysisPanel: React.FC<AtsAnalysisPanelProps> = ({ isEmbedded =
               </div>
             </div>
 
-            {/* Mode Switch Bar */}
+            {/* Intelligence Status Bar */}
             <div className="px-4 py-2 bg-slate-950/60 border-b border-slate-800/60 flex items-center justify-between text-[11px] text-slate-400">
-              <span>Analysis Mode:</span>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setUserMode('auto')}
-                  className={`px-2 py-0.5 rounded font-medium ${
-                    userMode === 'auto'
-                      ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
-                      : 'text-slate-500 hover:text-slate-300'
-                  }`}
-                >
-                  Auto-Debounce
-                </button>
-                <button
-                  onClick={() => setUserMode('manual')}
-                  className={`px-2 py-0.5 rounded font-medium ${
-                    userMode === 'manual'
-                      ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
-                      : 'text-slate-500 hover:text-slate-300'
-                  }`}
-                >
-                  Manual
-                </button>
-              </div>
+              <span>Engine Status:</span>
+              <span className="text-sky-400 font-medium">On-Demand AI ATS Analyzer</span>
             </div>
 
             {/* Navigation Tabs */}
@@ -351,6 +335,7 @@ export const AtsAnalysisPanel: React.FC<AtsAnalysisPanelProps> = ({ isEmbedded =
                   result={result}
                   isAnalyzing={isAnalyzing}
                   onImproveAction={handleImproveAction}
+                  onRunAnalysis={runAtsAnalysis}
                 />
               )}
 

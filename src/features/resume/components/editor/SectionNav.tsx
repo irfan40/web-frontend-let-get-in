@@ -19,10 +19,10 @@ export const SECTIONS = [
 ];
 
 export const SectionNav: React.FC = () => {
-  const { activeSection, setActiveSection } = useResumeStore();
+  const { resume, activeSection, setActiveSection } = useResumeStore();
   const { result } = useAtsAnalysis();
 
-  const currentScore = result?.overallScore ?? 0;
+  const currentScore = result?.overallScore ?? resume.atsScore ?? 0;
 
   return (
     <div className="w-full bg-surface/80 backdrop-blur border border-border rounded-2xl p-1.5 flex items-center gap-1.5 overflow-x-auto no-scrollbar shadow-sm select-none">

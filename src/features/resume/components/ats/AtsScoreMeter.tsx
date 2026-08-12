@@ -2,32 +2,62 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { CheckCircle2, AlertTriangle, Sparkles, Wand2, ShieldCheck } from 'lucide-react';
+import { CheckCircle2, AlertTriangle, Sparkles, Wand2, ShieldCheck, RefreshCw } from 'lucide-react';
 import { AtsAnalysisResult } from '../../hooks/useAtsAnalysis';
 
 interface AtsScoreMeterProps {
   result: AtsAnalysisResult | null;
   isAnalyzing: boolean;
   onImproveAction: (actionType: 'summary' | 'experience' | 'skills' | 'projects' | 'metrics' | 'keywords') => void;
+  onRunAnalysis?: () => void;
 }
 
 export const AtsScoreMeter: React.FC<AtsScoreMeterProps> = ({
   result,
   isAnalyzing,
   onImproveAction,
+  onRunAnalysis,
 }) => {
-  if (!result) return null;
+  if (!result) {
+    return (
+      <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-8 text-center space-y-4">
+        <div className="w-12 h-12 rounded-2xl bg-blue-500/10 border border-blue-500/20 text-blue-400 flex items-center justify-center mx-auto">
+          <ShieldCheck className="w-6 h-6" />
+        </div>
+        <div>
+          <h3 className="text-base font-bold text-slate-100">Ready for ATS Evaluation</h3>
+          <p className="text-xs text-slate-400 max-w-md mx-auto mt-1">
+            Click &apos;Analyze Resume&apos; to scan your current resume content for ATS parser compliance, keyword coverage, and recruiter impact.
+          </p>
+        </div>
+        {onRunAnalysis && (
+          <button
+            onClick={onRunAnalysis}
+            disabled={isAnalyzing}
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-brand text-white text-xs font-bold rounded-xl shadow-md hover:opacity-90 transition-all disabled:opacity-60 cursor-pointer"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${isAnalyzing ? 'animate-spin' : ''}`} />
+            <span>{isAnalyzing ? 'Analyzing Resume...' : 'Analyze Resume Now'}</span>
+          </button>
+        )}
+      </div>
+    );
+  }
 
   const getScoreColor = (score: number) => {
+    if (score === 0) return 'text-slate-400 border-slate-700 bg-slate-800/50';
     if (score >= 80) return 'text-emerald-400 border-emerald-500/30 bg-emerald-500/10';
     if (score >= 65) return 'text-blue-400 border-blue-500/30 bg-blue-500/10';
-    return 'text-amber-400 border-amber-500/30 bg-amber-500/10';
+    if (score >= 40) return 'text-amber-400 border-amber-500/30 bg-amber-500/10';
+    return 'text-rose-400 border-rose-500/30 bg-rose-500/10';
   };
 
   const getScoreLabel = (score: number) => {
-    if (score >= 80) return 'Great Job! Your resume is above average.';
-    if (score >= 65) return 'Good Progress! Ready for recruiter review.';
-    return 'Action Needed! Optimize key sections for ATS screeners.';
+    if (score === 0) return 'No content detected. Fill in your resume details to see your score.';
+    if (score >= 80) return 'Great Job! Your resume is highly ATS-compliant.';
+    if (score >= 65) return 'Good Progress! Ready for recruiter review with minor tweaks.';
+    if (score >= 40) return 'Needs Optimization! Add key metrics, skills, and strong action verbs.';
+    return 'Action Needed! Incomplete resume sections found.';
   };
 
   return (
@@ -57,11 +87,15 @@ export const AtsScoreMeter: React.FC<AtsScoreMeterProps> = ({
             animate={{ width: `${result.overallScore}%` }}
             transition={{ duration: 0.8, ease: 'easeOut' }}
             className={`h-full rounded-full ${
-              result.overallScore >= 80
+              result.overallScore === 0
+                ? 'bg-slate-700'
+                : result.overallScore >= 80
                 ? 'bg-gradient-to-r from-emerald-500 to-teal-400'
                 : result.overallScore >= 65
                 ? 'bg-gradient-to-r from-blue-500 to-indigo-500'
-                : 'bg-gradient-to-r from-amber-500 to-orange-500'
+                : result.overallScore >= 40
+                ? 'bg-gradient-to-r from-amber-500 to-orange-500'
+                : 'bg-gradient-to-r from-rose-500 to-red-500'
             }`}
           />
         </div>
@@ -95,14 +129,18 @@ export const AtsScoreMeter: React.FC<AtsScoreMeterProps> = ({
             <CheckCircle2 className="w-4 h-4" />
             Strengths ({result.strengths.length})
           </h4>
-          <ul className="space-y-2 text-xs text-slate-300">
-            {result.strengths.map((str, idx) => (
-              <li key={idx} className="flex items-start gap-2">
-                <span className="text-emerald-400 font-bold">✔</span>
-                <span>{str}</span>
-              </li>
-            ))}
-          </ul>
+          {result.strengths.length > 0 ? (
+            <ul className="space-y-2 text-xs text-slate-300">
+              {result.strengths.map((str, idx) => (
+                <li key={idx} className="flex items-start gap-2">
+                  <span className="text-emerald-400 font-bold">✔</span>
+                  <span>{str}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-xs text-slate-500 italic">No strong sections identified yet. Populate your resume fields to build ATS strength.</p>
+          )}
         </div>
 
         {/* Needs Improvement */}
@@ -111,14 +149,18 @@ export const AtsScoreMeter: React.FC<AtsScoreMeterProps> = ({
             <AlertTriangle className="w-4 h-4" />
             Needs Improvement ({result.weaknesses.length})
           </h4>
-          <ul className="space-y-2 text-xs text-slate-300">
-            {result.weaknesses.map((weak, idx) => (
-              <li key={idx} className="flex items-start gap-2">
-                <span className="text-amber-400 font-bold">⚠</span>
-                <span>{weak}</span>
-              </li>
-            ))}
-          </ul>
+          {result.weaknesses.length > 0 ? (
+            <ul className="space-y-2 text-xs text-slate-300">
+              {result.weaknesses.map((weak, idx) => (
+                <li key={idx} className="flex items-start gap-2">
+                  <span className="text-amber-400 font-bold">⚠</span>
+                  <span>{weak}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-xs text-slate-500 italic">No critical issues found.</p>
+          )}
         </div>
       </div>
 
@@ -141,7 +183,7 @@ export const AtsScoreMeter: React.FC<AtsScoreMeterProps> = ({
               </div>
               <button
                 onClick={() => onImproveAction(rec.actionType)}
-                className="self-end sm:self-center flex items-center gap-1.5 px-3.5 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-semibold rounded-lg transition-all shadow-md shrink-0"
+                className="self-end sm:self-center flex items-center gap-1.5 px-3.5 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-semibold rounded-lg transition-all shadow-md shrink-0 cursor-pointer"
               >
                 <Wand2 className="w-3.5 h-3.5" />
                 <span>Improve with AI</span>
