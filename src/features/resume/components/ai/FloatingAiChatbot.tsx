@@ -131,11 +131,22 @@ export const FloatingAiChatbot: React.FC = () => {
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     };
 
-    const updatedMessages = [...messages, userMsg];
+    const aiMsgId = `ai-${Date.now()}`;
+    const initialAiMsg: ChatMessage = {
+      id: aiMsgId,
+      sender: 'ai',
+      text: 'Evaluating resume context...',
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    };
+
+    const updatedMessages = [...messages, userMsg, initialAiMsg];
     setMessages(updatedMessages);
     setIsChatLoading(true);
 
-    const historyPayload = updatedMessages.slice(-8).map((m) => ({
+    const { activeResumeContext } = useResumeStore.getState();
+    const effectiveActiveContext = activeResumeContext || (activeSection ? { section: activeSection } : undefined);
+
+    const historyPayload = messages.concat(userMsg).slice(-20).map((m) => ({
       sender: m.sender,
       text: m.text,
       analysis: m.analysis,
@@ -143,38 +154,99 @@ export const FloatingAiChatbot: React.FC = () => {
     }));
 
     try {
-      const response = await apiClient.post<
-        never,
-        {
-          data: {
-            intent?: string;
-            status?: 'READY' | 'NEEDS_INFORMATION' | 'ANSWER';
-            analysis?: {
-              knownFacts?: string[];
-              missingFacts?: string[];
-              reason?: string;
-            };
-            questions?: string[];
-            reply: string;
-            draft?: {
-              section: string;
-              content: any;
-            } | null;
-            action?: {
-              type: string;
-              section?: string;
-              payload?: any;
-            } | null;
-            suggestions?: Array<string | { label: string; actionType?: string; payload?: any }>;
-          };
-        }
-      >('/ai/chat', {
-        message: userText,
-        resumeContext: resume,
-        conversationHistory: historyPayload,
-      });
+      const NEXT_PUBLIC_API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
+      const chatUrl = `${NEXT_PUBLIC_API_URL}/ai/chat`;
 
-      const resData = response.data;
+      let resData: any = null;
+
+      try {
+        const response = await fetch(chatUrl, {
+          method: 'POST',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+            Accept: 'text/event-stream, application/json',
+          },
+          body: JSON.stringify({
+            message: userText,
+            resumeContext: resume,
+            conversationHistory: historyPayload,
+            activeResumeContext: effectiveActiveContext,
+            stream: true,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error ${response.status}`);
+        }
+
+        const contentType = response.headers.get('content-type') || '';
+        if (contentType.includes('text/event-stream') && response.body) {
+          const reader = response.body.getReader();
+          const decoder = new TextDecoder();
+          let rawBuffer = '';
+          let progressiveAccumulated = '';
+
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            const chunkStr = decoder.decode(value, { stream: true });
+            rawBuffer += chunkStr;
+
+            const lines = rawBuffer.split('\n\n');
+            rawBuffer = lines.pop() || '';
+
+            for (const line of lines) {
+              const trimmed = line.trim();
+              if (trimmed.startsWith('data: ')) {
+                try {
+                  const eventData = JSON.parse(trimmed.slice(6));
+                  if (eventData.type === 'chunk' && eventData.text) {
+                    progressiveAccumulated += eventData.text;
+                    const match = progressiveAccumulated.match(/"reply"\s*:\s*"((?:[^"\\]|\\.)*)/);
+                    if (match && match[1]) {
+                      const extractedText = match[1]
+                        .replace(/\\n/g, '\n')
+                        .replace(/\\"/g, '"')
+                        .replace(/\\\\/g, '\\');
+                      if (extractedText.trim().length > 0) {
+                        setMessages((prev) =>
+                          prev.map((m) => (m.id === aiMsgId ? { ...m, text: extractedText } : m))
+                        );
+                      }
+                    }
+                  } else if (eventData.type === 'done' && eventData.data) {
+                    resData = eventData.data;
+                  } else if (eventData.type === 'error') {
+                    throw new Error(eventData.error || 'Stream error');
+                  }
+                } catch {
+                  // Partial chunk parse error during streaming is expected
+                }
+              }
+            }
+          }
+        } else {
+          const json = await response.json();
+          resData = json.data || json;
+        }
+      } catch (streamError) {
+        console.warn('[FloatingAiChatbot] Streaming fetch fallback to standard API client:', streamError);
+        const postRes = await apiClient.post<never, any>('/ai/chat', {
+          message: userText,
+          resumeContext: resume,
+          conversationHistory: historyPayload,
+          activeResumeContext: effectiveActiveContext,
+          stream: false,
+        });
+        resData = postRes.data || postRes;
+      }
+
+      if (!resData) {
+        throw new Error('No response data received from AI chat');
+      }
+
       const actionSuggestions: string[] = [];
       const quickReplies: string[] = [];
 
@@ -183,7 +255,7 @@ export const FloatingAiChatbot: React.FC = () => {
       }
 
       if (Array.isArray(resData.suggestions)) {
-        resData.suggestions.forEach((sug) => {
+        resData.suggestions.forEach((sug: any) => {
           if (typeof sug === 'string') {
             if (sug.toLowerCase().includes('apply')) {
               if (resData.draft?.content && typeof resData.draft.content === 'string') {
@@ -197,7 +269,7 @@ export const FloatingAiChatbot: React.FC = () => {
       }
 
       const aiMsg: ChatMessage = {
-        id: `ai-${Date.now()}`,
+        id: aiMsgId,
         sender: 'ai',
         text: resData.reply,
         analysis: resData.analysis
@@ -213,10 +285,10 @@ export const FloatingAiChatbot: React.FC = () => {
         quickReplies: quickReplies.slice(0, 3),
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       };
-      setMessages((prev) => [...prev, aiMsg]);
+      setMessages((prev) => prev.map((m) => (m.id === aiMsgId ? aiMsg : m)));
     } catch {
       const fallbackMsg: ChatMessage = {
-        id: `ai-err-${Date.now()}`,
+        id: aiMsgId,
         sender: 'ai',
         text: `### 📋 Context Evaluation\n\nI analyzed your question regarding "${userText}". Based on your resume, ensure your job headline (${resume.content.personalInfo.headline || 'Software Engineer'}) matches your target role keywords.`,
         analysis: {
@@ -228,7 +300,7 @@ export const FloatingAiChatbot: React.FC = () => {
         suggestions: ['Quantify experience achievements', 'Fix spelling in professional summary'],
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       };
-      setMessages((prev) => [...prev, fallbackMsg]);
+      setMessages((prev) => prev.map((m) => (m.id === aiMsgId ? fallbackMsg : m)));
     } finally {
       setIsChatLoading(false);
     }

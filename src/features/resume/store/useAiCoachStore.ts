@@ -40,6 +40,46 @@ export interface ChatMessage {
   timestamp: string;
 }
 
+export function extractBulletStrings(raw: any): string[] {
+  if (!raw) return [];
+  if (typeof raw === 'string') {
+    const trimmed = raw.trim();
+    if (!trimmed) return [];
+    if (trimmed.includes('\n') && (trimmed.includes('•') || trimmed.includes('- ') || trimmed.includes('* '))) {
+      return trimmed
+        .split('\n')
+        .map((line) => line.replace(/^[\s•\-\*]+/, '').replace(/^\d+[\.\)]\s*/, '').trim())
+        .filter(Boolean);
+    }
+    return [trimmed.replace(/^[\s•\-\*]+/, '').replace(/^\d+[\.\)]\s*/, '').trim()];
+  }
+  if (Array.isArray(raw)) {
+    return raw.flatMap((item) => extractBulletStrings(item)).filter(Boolean);
+  }
+  if (typeof raw === 'object' && raw !== null) {
+    if (Array.isArray(raw.bullets)) return extractBulletStrings(raw.bullets);
+    if (Array.isArray(raw.highlights)) return extractBulletStrings(raw.highlights);
+    if (Array.isArray(raw.items)) return extractBulletStrings(raw.items);
+
+    if (typeof raw.text === 'string' && raw.text.trim()) return [raw.text.trim()];
+    if (typeof raw.bullet === 'string' && raw.bullet.trim()) return [raw.bullet.trim()];
+    if (typeof raw.highlight === 'string' && raw.highlight.trim()) return [raw.highlight.trim()];
+    if (typeof raw.content === 'string' && raw.content.trim()) return [raw.content.trim()];
+    if (typeof raw.description === 'string' && raw.description.trim()) return [raw.description.trim()];
+    if (raw.title && (raw.detail || raw.description || raw.text)) {
+      return [`${raw.title}: ${raw.detail || raw.description || raw.text}`.trim()];
+    }
+
+    const entries = Object.entries(raw).filter(
+      ([k, v]) => typeof v === 'string' && v.trim().length > 0 && !['section', 'projectTitle', 'company', 'position', 'type'].includes(k)
+    );
+    if (entries.length > 0) {
+      return entries.map(([k, v]) => (isNaN(Number(k)) ? `${k}: ${v}` : `${v}`)).filter(Boolean);
+    }
+  }
+  return [];
+}
+
 interface AiCoachState {
   isOpen: boolean;
   activeMobileTab: 'form' | 'chat' | 'preview';
@@ -107,13 +147,23 @@ export const useAiCoachStore = create<AiCoachState>((set, get) => ({
       timestamp,
     };
 
+    const aiMsgId = `ai-${Date.now()}`;
+    const initialAiMsg: ChatMessage = {
+      id: aiMsgId,
+      sender: 'ai',
+      text: 'Evaluating resume context...',
+      timestamp,
+    };
+
     set((state) => ({
-      messages: [...state.messages, userMsg],
+      messages: [...state.messages, userMsg, initialAiMsg],
       isChatLoading: true,
     }));
 
-    const resumeState = useResumeStore.getState().resume;
-    const historyPayload = get().messages.slice(-8).map((m) => ({
+    const { resume: resumeState, activeSection, activeResumeContext } = useResumeStore.getState();
+    const effectiveActiveContext = activeResumeContext || (activeSection ? { section: activeSection } : undefined);
+
+    const historyPayload = get().messages.slice(-20).map((m) => ({
       sender: m.sender,
       text: m.text,
       analysis: m.analysis,
@@ -121,38 +171,101 @@ export const useAiCoachStore = create<AiCoachState>((set, get) => ({
     }));
 
     try {
-      const response = await apiClient.post<
-        never,
-        {
-          data: {
-            intent?: string;
-            status?: 'READY' | 'NEEDS_INFORMATION' | 'ANSWER';
-            analysis?: {
-              knownFacts?: string[];
-              missingFacts?: string[];
-              reason?: string;
-            };
-            questions?: string[];
-            reply: string;
-            draft?: {
-              section: string;
-              content: any;
-            } | null;
-            action?: {
-              type: string;
-              section?: string;
-              payload?: any;
-            } | null;
-            suggestions?: Array<string | { label: string; actionType?: string; payload?: any }>;
-          };
-        }
-      >('/ai/chat', {
-        message: cleanedText,
-        resumeContext: resumeState,
-        conversationHistory: historyPayload,
-      });
+      const NEXT_PUBLIC_API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
+      const chatUrl = `${NEXT_PUBLIC_API_URL}/ai/chat`;
 
-      const resData = response.data;
+      let resData: any = null;
+
+      try {
+        const response = await fetch(chatUrl, {
+          method: 'POST',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+            Accept: 'text/event-stream, application/json',
+          },
+          body: JSON.stringify({
+            message: cleanedText,
+            resumeContext: resumeState,
+            conversationHistory: historyPayload,
+            activeResumeContext: effectiveActiveContext,
+            stream: true,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error ${response.status}`);
+        }
+
+        const contentType = response.headers.get('content-type') || '';
+        if (contentType.includes('text/event-stream') && response.body) {
+          const reader = response.body.getReader();
+          const decoder = new TextDecoder();
+          let rawBuffer = '';
+          let progressiveAccumulated = '';
+
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            const chunkStr = decoder.decode(value, { stream: true });
+            rawBuffer += chunkStr;
+
+            const lines = rawBuffer.split('\n\n');
+            rawBuffer = lines.pop() || '';
+
+            for (const line of lines) {
+              const trimmed = line.trim();
+              if (trimmed.startsWith('data: ')) {
+                try {
+                  const eventData = JSON.parse(trimmed.slice(6));
+                  if (eventData.type === 'chunk' && eventData.text) {
+                    progressiveAccumulated += eventData.text;
+                    const match = progressiveAccumulated.match(/"reply"\s*:\s*"((?:[^"\\]|\\.)*)/);
+                    if (match && match[1]) {
+                      const extractedText = match[1]
+                        .replace(/\\n/g, '\n')
+                        .replace(/\\"/g, '"')
+                        .replace(/\\\\/g, '\\');
+                      if (extractedText.trim().length > 0) {
+                        set((state) => ({
+                          messages: state.messages.map((m) =>
+                            m.id === aiMsgId ? { ...m, text: extractedText } : m
+                          ),
+                        }));
+                      }
+                    }
+                  } else if (eventData.type === 'done' && eventData.data) {
+                    resData = eventData.data;
+                  } else if (eventData.type === 'error') {
+                    throw new Error(eventData.error || 'Stream error');
+                  }
+                } catch {
+                  // Partial chunk parse error during streaming is expected
+                }
+              }
+            }
+          }
+        } else {
+          const json = await response.json();
+          resData = json.data || json;
+        }
+      } catch (streamError) {
+        console.warn('[useAiCoachStore] Streaming fetch fallback to standard API client:', streamError);
+        const postRes = await apiClient.post<never, any>('/ai/chat', {
+          message: cleanedText,
+          resumeContext: resumeState,
+          conversationHistory: historyPayload,
+          activeResumeContext: effectiveActiveContext,
+          stream: false,
+        });
+        resData = postRes.data || postRes;
+      }
+
+      if (!resData) {
+        throw new Error('No response data received from AI chat');
+      }
+
       const replyText = resData.reply || 'I analyzed your resume request.';
       const actionSuggestions: ChatSuggestionAction[] = [];
       const quickReplies: string[] = [];
@@ -163,7 +276,7 @@ export const useAiCoachStore = create<AiCoachState>((set, get) => ({
 
       if (serverAction?.type === 'UPDATE_SUMMARY' || serverDraft?.section === 'summary') {
         const rawContent = serverAction?.payload ?? serverDraft?.content;
-        const summaryText = typeof rawContent === 'string' ? rawContent : JSON.stringify(rawContent);
+        const summaryText = typeof rawContent === 'string' ? rawContent : extractBulletStrings(rawContent).join(' ');
         if (summaryText && summaryText.trim().length > 0) {
           actionSuggestions.push({
             id: `sum-${Date.now()}`,
@@ -177,9 +290,7 @@ export const useAiCoachStore = create<AiCoachState>((set, get) => ({
         }
       } else if (serverAction?.type === 'ADD_SKILLS' || serverDraft?.section === 'skills') {
         const rawSkills = serverAction?.payload?.skills || serverAction?.payload || serverDraft?.content || [];
-        const skillsList: string[] = Array.isArray(rawSkills)
-          ? rawSkills.map((s: any) => (typeof s === 'string' ? s : s?.name)).filter(Boolean)
-          : [];
+        const skillsList = extractBulletStrings(rawSkills);
         if (skillsList.length > 0) {
           actionSuggestions.push({
             id: `skills-all-${Date.now()}`,
@@ -205,11 +316,9 @@ export const useAiCoachStore = create<AiCoachState>((set, get) => ({
           });
         }
       } else if (serverAction?.type === 'ADD_EXPERIENCE_BULLETS' || serverDraft?.section === 'experiences') {
-        const rawBullets = Array.isArray(serverAction?.payload?.bullets)
-          ? serverAction.payload.bullets
-          : Array.isArray(serverDraft?.content)
-          ? serverDraft.content
-          : [serverAction?.payload || serverDraft?.content].filter(Boolean);
+        const rawBullets = extractBulletStrings(
+          serverAction?.payload?.bullets || serverAction?.payload || serverDraft?.content
+        );
         const targetCompany = serverAction?.payload?.company || '';
         const targetPos = serverAction?.payload?.position || '';
 
@@ -256,11 +365,9 @@ export const useAiCoachStore = create<AiCoachState>((set, get) => ({
           });
         }
       } else if (serverAction?.type === 'ADD_PROJECT_BULLETS' || serverAction?.type === 'UPDATE_PROJECT' || serverDraft?.section === 'projects') {
-        const rawBullets = Array.isArray(serverAction?.payload?.bullets)
-          ? serverAction.payload.bullets
-          : Array.isArray(serverDraft?.content)
-          ? serverDraft.content
-          : [serverAction?.payload || serverDraft?.content].filter(Boolean);
+        const rawBullets = extractBulletStrings(
+          serverAction?.payload?.bullets || serverAction?.payload || serverDraft?.content
+        );
         const targetProjTitle = serverAction?.payload?.projectTitle || '';
 
         if (rawBullets.length > 0) {
@@ -309,10 +416,9 @@ export const useAiCoachStore = create<AiCoachState>((set, get) => ({
 
       // 2. Process string suggestions / quick replies
       if (Array.isArray(resData.suggestions)) {
-        resData.suggestions.forEach((sug) => {
+        resData.suggestions.forEach((sug: any) => {
           if (typeof sug === 'string') {
             if (sug.toLowerCase().includes('apply') && !actionSuggestions.some((a) => a.label.includes('Apply'))) {
-              // Handle general apply string
               actionSuggestions.push({
                 id: `sug-${Date.now()}-${Math.random()}`,
                 label: `✔ ${sug}`,
@@ -331,35 +437,36 @@ export const useAiCoachStore = create<AiCoachState>((set, get) => ({
         });
       }
 
-      const aiMsg: ChatMessage = {
-        id: `ai-${Date.now()}`,
-        sender: 'ai',
-        text: replyText,
-        analysis: resData.analysis
-          ? {
-              knownFacts: resData.analysis.knownFacts || [],
-              missingFacts: resData.analysis.missingFacts || [],
-              reason: resData.analysis.reason,
-            }
-          : undefined,
-        status: resData.status,
-        questions: resData.questions,
-        draft: serverDraft,
-        action: serverAction,
-        suggestions: actionSuggestions,
-        quickReplies: quickReplies.slice(0, 3),
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      };
-
       set((state) => ({
-        messages: [...state.messages, aiMsg],
+        messages: state.messages.map((m) =>
+          m.id === aiMsgId
+            ? {
+                ...m,
+                text: replyText,
+                analysis: resData.analysis
+                  ? {
+                      knownFacts: resData.analysis.knownFacts || [],
+                      missingFacts: resData.analysis.missingFacts || [],
+                      reason: resData.analysis.reason,
+                    }
+                  : undefined,
+                status: resData.status,
+                questions: resData.questions,
+                draft: serverDraft,
+                action: serverAction,
+                suggestions: actionSuggestions,
+                quickReplies: quickReplies.slice(0, 3),
+                timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+              }
+            : m
+        ),
         isChatLoading: false,
       }));
     } catch (err) {
       console.warn('[useAiCoachStore] API fallback:', err);
       const headline = resumeState.content.personalInfo.headline || 'Software Engineer';
       const fallbackMsg: ChatMessage = {
-        id: `ai-${Date.now()}`,
+        id: aiMsgId,
         sender: 'ai',
         text: `### 📋 Context Evaluation for ${headline}\n\nI evaluated your request against your active resume. To ensure maximum accuracy and impact:\n\n- **Target Role Alignment**: Configured as *${headline}*.\n- **Action Verbs**: Begin experience bullets with verbs like *Architected, Spearheaded, Engineered, Optimized*.\n- **Quantifiable Metrics**: Add numbers (*increased performance by 35%*, *handled 10k daily requests*).`,
         analysis: {
@@ -385,7 +492,7 @@ export const useAiCoachStore = create<AiCoachState>((set, get) => ({
       };
 
       set((state) => ({
-        messages: [...state.messages, fallbackMsg],
+        messages: state.messages.map((m) => (m.id === aiMsgId ? fallbackMsg : m)),
         isChatLoading: false,
       }));
     }

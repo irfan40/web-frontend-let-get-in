@@ -14,7 +14,8 @@ import {
 } from "lucide-react";
 
 export const FormAtsHeader: React.FC = () => {
-  const { isAnalyzing, result, hasAnalyzed, isStale, runAtsAnalysis } = useAtsAnalysis();
+  const { isAnalyzing, result, hasAnalyzed, isStale, runAtsAnalysis } =
+    useAtsAnalysis();
   const { resume, updateSummary, updateExperience } = useResumeStore();
   const [activeTab, setActiveTab] = useState<"analysis" | "tailor">("analysis");
   const [targetJobTitle, setTargetJobTitle] = useState("");
@@ -140,7 +141,8 @@ export const FormAtsHeader: React.FC = () => {
                   )}
                 </div>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Analyze your current resume data to get an instant ATS score, prioritized fixes, and keyword gaps.
+                  Analyze your current resume data to get an instant ATS score,
+                  prioritized fixes, and keyword gaps.
                 </p>
               </div>
             </div>
@@ -153,7 +155,13 @@ export const FormAtsHeader: React.FC = () => {
               <RefreshCw
                 className={`w-3.5 h-3.5 ${isAnalyzing ? "animate-spin" : ""}`}
               />
-              <span>{isAnalyzing ? "Analyzing..." : hasAnalyzed ? "Re-analyze resume" : "Analyze resume"}</span>
+              <span>
+                {isAnalyzing
+                  ? "Analyzing..."
+                  : hasAnalyzed
+                    ? "Re-analyze resume"
+                    : "Analyze resume"}
+              </span>
             </button>
           </div>
 
@@ -166,7 +174,7 @@ export const FormAtsHeader: React.FC = () => {
               </span>
               <span
                 className={`font-extrabold px-2.5 py-0.5 rounded-full border text-xs ${getScoreColorBadge(
-                  score
+                  score,
                 )}`}
               >
                 {score}%
@@ -178,7 +186,7 @@ export const FormAtsHeader: React.FC = () => {
             <div className="w-full sm:w-1/3 bg-slate-200 h-2 rounded-full overflow-hidden">
               <div
                 className={`h-full transition-all duration-500 rounded-full ${getScoreProgressColor(
-                  score
+                  score,
                 )}`}
                 style={{ width: `${Math.max(score > 0 ? 6 : 0, score)}%` }}
               />
@@ -235,7 +243,9 @@ export const FormAtsHeader: React.FC = () => {
           {tailorSuccess && (
             <div className="flex items-center gap-2 text-xs font-semibold text-emerald-600 bg-emerald-50 p-2 rounded-xl border border-emerald-200">
               <CheckCircle2 className="w-4 h-4" />
-              <span>Resume tailored & ATS analysis updated with target job keywords!</span>
+              <span>
+                Resume tailored & ATS analysis updated with target job keywords!
+              </span>
             </div>
           )}
         </form>

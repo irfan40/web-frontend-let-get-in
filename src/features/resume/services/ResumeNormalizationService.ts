@@ -74,16 +74,48 @@ export class ResumeNormalizationService {
   }
 
   static cleanWhitespace(str: any): string {
-    if (!str) return '';
+    if (!str && str !== '') return '';
     if (typeof str !== 'string') {
       if (typeof str === 'object' && str !== null) {
-        if ('currentSummary' in str && typeof str.currentSummary === 'string') return this.cleanWhitespace(str.currentSummary);
-        if ('summary' in str && typeof str.summary === 'string') return this.cleanWhitespace(str.summary);
-        if ('text' in str && typeof str.text === 'string') return this.cleanWhitespace(str.text);
+        // 1. Check if there is an explicit bullet/text content field
+        for (const key of ['bulletPoint', 'bullet', 'highlight', 'text', 'content', 'description', 'detail', 'currentSummary', 'summary', 'point', 'value']) {
+          if (typeof str[key] === 'string' && str[key].trim()) {
+            return this.cleanWhitespace(str[key]);
+          }
+        }
+
+        // 2. Check for title + text combination
+        if (str.title && (str.detail || str.description || str.text)) {
+          return this.cleanWhitespace(`${str.title}: ${str.detail || str.description || str.text}`);
+        }
+
+        // 3. Filter out pure metadata fields (e.g. { projectName: "Study-Point" })
+        const nonMetaEntries = Object.entries(str).filter(([k, v]) => {
+          const lk = k.toLowerCase().replace(/[^a-z]/g, '');
+          return (
+            !['id', 'section', 'type', 'projectname', 'projecttitle', 'title', 'company', 'position', 'role', 'date', 'startdate', 'enddate', 'location', 'link', 'url', 'status', 'intent'].includes(lk) &&
+            typeof v === 'string' &&
+            v.trim().length > 0
+          );
+        });
+
+        if (nonMetaEntries.length > 0) {
+          const stringValues = nonMetaEntries.map(([k, v]) => (isNaN(Number(k)) ? `${k}: ${v}` : String(v)));
+          return this.cleanWhitespace(stringValues.join(' '));
+        }
+
+        // If it only contained metadata keys like { projectName: "Study-Point" }, return empty string
+        return '';
       }
       return String(str || '').trim();
     }
-    return str.replace(/\s+/g, ' ').trim();
+
+    let cleaned = str.replace(/\s+/g, ' ').trim();
+    // Clean accidental prefix tags like "bulletPoint:", "bullet:", "highlight:", or leading markdown bullet symbols
+    cleaned = cleaned.replace(/^(?:bulletPoint|bullet|highlight|point)\s*:\s*/i, '');
+    cleaned = cleaned.replace(/^[\s•\-\*\u2022\u2023\u25E6\u2043\u2219]+\s*/, '');
+    cleaned = cleaned.replace(/^\d+[\.\)]\s*/, '');
+    return cleaned.trim();
   }
 
   static normalizeEmail(email: string | undefined | null): string {

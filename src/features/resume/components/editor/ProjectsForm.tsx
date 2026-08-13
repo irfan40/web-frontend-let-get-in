@@ -6,7 +6,7 @@ import { IProject } from "../../types";
 import { AiBulletRerankModal } from "../ai/AiBulletRerankModal";
 
 export const ProjectsForm: React.FC = () => {
-  const { resume, addProject, updateProject, removeProject, reorderProjects } =
+  const { resume, addProject, updateProject, removeProject, reorderProjects, setActiveResumeContext } =
     useResumeStore();
   const { triggerProjectDescriptionAi, triggerProjectBulletsAi, triggerImproveBulletAi } = useAiCoachStore();
   const projects = resume.content.projects;
@@ -339,20 +339,38 @@ export const ProjectsForm: React.FC = () => {
 
                 {/* Bullet List with Expandable Textareas & Per-Bullet AI Icon */}
                 <div className="space-y-2">
-                  {(proj.highlights || []).map((bullet, hIdx) => (
+                  {(proj.highlights || []).map((bullet, hIdx) => {
+                    const bulletStr = typeof bullet === 'string' ? bullet : typeof bullet === 'object' && bullet ? ((bullet as any).text || (bullet as any).bullet || (bullet as any).highlight || (bullet as any).description || Object.values(bullet)[0] || '') : String(bullet || '');
+                    return (
                     <div key={hIdx} className="flex items-start gap-2 group">
                       <span className="text-ink-soft text-xs mt-2.5 shrink-0">•</span>
 
                       {/* Expandable / Auto-Growing Bullet Textarea */}
                       <textarea
                         rows={1}
-                        value={bullet}
-                        onChange={(e) =>
-                          handleHighlightChange(proj.id, hIdx, e.target.value)
-                        }
+                        value={bulletStr}
+                        onChange={(e) => {
+                          handleHighlightChange(proj.id, hIdx, e.target.value);
+                          setActiveResumeContext({
+                            section: 'projects',
+                            itemId: proj.id,
+                            field: 'bullet',
+                            bulletIndex: hIdx,
+                            value: e.target.value,
+                            title: proj.title,
+                          });
+                        }}
                         onFocus={(e) => {
                           e.target.style.height = 'auto';
                           e.target.style.height = `${Math.max(48, e.target.scrollHeight)}px`;
+                          setActiveResumeContext({
+                            section: 'projects',
+                            itemId: proj.id,
+                            field: 'bullet',
+                            bulletIndex: hIdx,
+                            value: bulletStr,
+                            title: proj.title,
+                          });
                         }}
                         onInput={(e: any) => {
                           e.target.style.height = 'auto';
@@ -390,7 +408,8 @@ export const ProjectsForm: React.FC = () => {
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     </div>
-                  ))}
+                  );
+                })}
                 </div>
               </div>
             </div>

@@ -5,7 +5,7 @@ import { Wrench, Plus, X, Sparkles, Check } from 'lucide-react';
 import { ISkill } from '../../types';
 
 export const SkillsForm: React.FC = () => {
-  const { resume, addSkill, removeSkill } = useResumeStore();
+  const { resume, addSkill, removeSkill, setActiveResumeContext } = useResumeStore();
   const { triggerSkillsAi } = useAiCoachStore();
   const headline = resume.content.personalInfo.headline || 'Software Engineer';
   const [skillInput, setSkillInput] = useState('');
@@ -68,7 +68,21 @@ export const SkillsForm: React.FC = () => {
         <input
           type="text"
           value={skillInput}
-          onChange={(e) => setSkillInput(e.target.value)}
+          onFocus={() =>
+            setActiveResumeContext({
+              section: 'skills',
+              field: 'skill',
+              value: skillInput,
+            })
+          }
+          onChange={(e) => {
+            setSkillInput(e.target.value);
+            setActiveResumeContext({
+              section: 'skills',
+              field: 'skill',
+              value: e.target.value,
+            });
+          }}
           onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
           placeholder="e.g. React, TypeScript, Docker, Node.js..."
           className="input-base text-xs flex-1"

@@ -3,7 +3,7 @@ import { useResumeStore } from '../../store/useResumeStore';
 import { User, Mail, Phone, MapPin, Globe, Briefcase } from 'lucide-react';
 
 export const PersonalInfoForm: React.FC = () => {
-  const { resume, updatePersonalInfo } = useResumeStore();
+  const { resume, updatePersonalInfo, setActiveResumeContext } = useResumeStore();
   const info = resume.content.personalInfo;
 
   return (
@@ -36,7 +36,21 @@ export const PersonalInfoForm: React.FC = () => {
             <input
               type="text"
               value={info.headline || ''}
-              onChange={(e) => updatePersonalInfo({ headline: e.target.value })}
+              onFocus={() =>
+                setActiveResumeContext({
+                  section: 'personalInfo',
+                  field: 'headline',
+                  value: info.headline || '',
+                })
+              }
+              onChange={(e) => {
+                updatePersonalInfo({ headline: e.target.value });
+                setActiveResumeContext({
+                  section: 'personalInfo',
+                  field: 'headline',
+                  value: e.target.value,
+                });
+              }}
               placeholder="e.g. Senior Full Stack Engineer"
               className="input-base pl-9 text-xs"
             />

@@ -12,6 +12,7 @@ export const ExperienceForm: React.FC = () => {
     updateExperience,
     removeExperience,
     reorderExperiences,
+    setActiveResumeContext,
   } = useResumeStore();
   const { triggerExperienceAi, triggerImproveBulletAi } = useAiCoachStore();
   const experiences = resume.content.experiences;
@@ -250,20 +251,40 @@ export const ExperienceForm: React.FC = () => {
 
                 {/* Bullet List with Expandable Textareas & Per-Bullet AI Icon */}
                 <div className="space-y-2">
-                  {exp.highlights.map((bullet, hIdx) => (
+                  {exp.highlights.map((bullet, hIdx) => {
+                    const bulletStr = typeof bullet === 'string' ? bullet : typeof bullet === 'object' && bullet ? ((bullet as any).text || (bullet as any).bullet || (bullet as any).highlight || (bullet as any).description || Object.values(bullet)[0] || '') : String(bullet || '');
+                    return (
                     <div key={hIdx} className="flex items-start gap-2 group">
                       <span className="text-ink-soft text-xs mt-2.5 shrink-0">•</span>
 
                       {/* Expandable / Auto-Growing Bullet Textarea */}
                       <textarea
                         rows={1}
-                        value={bullet}
-                        onChange={(e) =>
-                          handleHighlightChange(exp.id, hIdx, e.target.value)
-                        }
+                        value={bulletStr}
+                        onChange={(e) => {
+                          handleHighlightChange(exp.id, hIdx, e.target.value);
+                          setActiveResumeContext({
+                            section: 'experience',
+                            itemId: exp.id,
+                            field: 'bullet',
+                            bulletIndex: hIdx,
+                            value: e.target.value,
+                            position: exp.position,
+                            company: exp.company,
+                          });
+                        }}
                         onFocus={(e) => {
                           e.target.style.height = 'auto';
                           e.target.style.height = `${Math.max(48, e.target.scrollHeight)}px`;
+                          setActiveResumeContext({
+                            section: 'experience',
+                            itemId: exp.id,
+                            field: 'bullet',
+                            bulletIndex: hIdx,
+                            value: bulletStr,
+                            position: exp.position,
+                            company: exp.company,
+                          });
                         }}
                         onInput={(e: any) => {
                           e.target.style.height = 'auto';
@@ -301,7 +322,8 @@ export const ExperienceForm: React.FC = () => {
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     </div>
-                  ))}
+                  );
+                })}
                 </div>
               </div>
             </div>

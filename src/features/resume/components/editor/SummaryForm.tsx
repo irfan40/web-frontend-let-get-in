@@ -4,7 +4,7 @@ import { FileText, Sparkles } from 'lucide-react';
 import { AiSummaryModal } from '../ai/AiSummaryModal';
 
 export const SummaryForm: React.FC = () => {
-  const { resume, updateSummary } = useResumeStore();
+  const { resume, updateSummary, setActiveResumeContext } = useResumeStore();
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const headline = resume.content.personalInfo.headline || 'Software Professional';
@@ -43,7 +43,21 @@ export const SummaryForm: React.FC = () => {
         <textarea
           rows={6}
           value={summaryText}
-          onChange={(e) => updateSummary(e.target.value)}
+          onFocus={() =>
+            setActiveResumeContext({
+              section: 'summary',
+              field: 'summary',
+              value: summaryText,
+            })
+          }
+          onChange={(e) => {
+            updateSummary(e.target.value);
+            setActiveResumeContext({
+              section: 'summary',
+              field: 'summary',
+              value: e.target.value,
+            });
+          }}
           placeholder="Write a compelling 3-4 sentence summary of your experience, key skills, and engineering accomplishments..."
           className="input-base text-xs leading-relaxed resize-y"
         />

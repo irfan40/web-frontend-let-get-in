@@ -22,15 +22,29 @@ import { StorageProviderFactory } from '../storage/factory';
 
 export type SaveStatus = 'idle' | 'unsaved' | 'saving' | 'saved' | 'error';
 
+export interface ActiveResumeContext {
+  section?: string;
+  itemId?: string;
+  field?: string;
+  value?: string;
+  position?: string;
+  company?: string;
+  title?: string;
+  bulletIndex?: number;
+  [key: string]: unknown;
+}
+
 interface ResumeStoreState {
   resume: IResume;
   isDirty: boolean;
   saveStatus: SaveStatus;
   lastSavedAt: string | null;
   activeSection: string;
+  activeResumeContext: ActiveResumeContext | null;
   
-  // Section Navigation
+  // Section Navigation & Focus
   setActiveSection: (section: string) => void;
+  setActiveResumeContext: (ctx: ActiveResumeContext | null) => void;
 
   // Header & Title Actions
   updateTitle: (title: string) => void;
@@ -116,8 +130,10 @@ export const useResumeStore = create<ResumeStoreState>((set, get) => ({
   saveStatus: 'idle',
   lastSavedAt: null,
   activeSection: 'personalInfo',
+  activeResumeContext: null,
 
   setActiveSection: (section) => set({ activeSection: section }),
+  setActiveResumeContext: (ctx) => set({ activeResumeContext: ctx }),
 
   updateTitle: (title) =>
     set((state) => ({
@@ -165,7 +181,15 @@ export const useResumeStore = create<ResumeStoreState>((set, get) => ({
         ...state.resume,
         content: {
           ...state.resume.content,
-          experiences: [...state.resume.content.experiences, experience],
+          experiences: [
+            ...state.resume.content.experiences,
+            {
+              ...experience,
+              highlights: (experience.highlights || []).map((h) =>
+                typeof h === 'string' ? h : ResumeNormalizationService.cleanWhitespace(h)
+              ),
+            },
+          ],
         },
       },
       isDirty: true,
@@ -178,9 +202,16 @@ export const useResumeStore = create<ResumeStoreState>((set, get) => ({
         ...state.resume,
         content: {
           ...state.resume.content,
-          experiences: state.resume.content.experiences.map((exp) =>
-            exp.id === id ? { ...exp, ...experience } : exp
-          ),
+          experiences: state.resume.content.experiences.map((exp) => {
+            if (exp.id !== id) return exp;
+            const updated = { ...exp, ...experience };
+            if (updated.highlights) {
+              updated.highlights = updated.highlights.map((h) =>
+                typeof h === 'string' ? h : ResumeNormalizationService.cleanWhitespace(h)
+              );
+            }
+            return updated;
+          }),
         },
       },
       isDirty: true,
@@ -270,7 +301,15 @@ export const useResumeStore = create<ResumeStoreState>((set, get) => ({
         ...state.resume,
         content: {
           ...state.resume.content,
-          projects: [...state.resume.content.projects, project],
+          projects: [
+            ...state.resume.content.projects,
+            {
+              ...project,
+              highlights: (project.highlights || []).map((h) =>
+                typeof h === 'string' ? h : ResumeNormalizationService.cleanWhitespace(h)
+              ),
+            },
+          ],
         },
       },
       isDirty: true,
@@ -283,9 +322,16 @@ export const useResumeStore = create<ResumeStoreState>((set, get) => ({
         ...state.resume,
         content: {
           ...state.resume.content,
-          projects: state.resume.content.projects.map((proj) =>
-            proj.id === id ? { ...proj, ...project } : proj
-          ),
+          projects: state.resume.content.projects.map((proj) => {
+            if (proj.id !== id) return proj;
+            const updated = { ...proj, ...project };
+            if (updated.highlights) {
+              updated.highlights = updated.highlights.map((h) =>
+                typeof h === 'string' ? h : ResumeNormalizationService.cleanWhitespace(h)
+              );
+            }
+            return updated;
+          }),
         },
       },
       isDirty: true,
