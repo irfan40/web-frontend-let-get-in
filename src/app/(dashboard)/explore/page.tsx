@@ -21,6 +21,8 @@ import {
   AlertTriangle,
   Layers,
   CheckCircle2,
+  Grid3X3,
+  Columns2,
 } from "lucide-react";
 
 type TabMode = "recommendations" | "all" | "saved";
@@ -48,7 +50,7 @@ export default function ExplorePage() {
     employmentType: "all",
   });
 
-  // Selected Job for Split-View Details
+  // Selected Job for 1-column Split View Detail (null = 3-column grid)
   const [selectedJob, setSelectedJob] = useState<IJob | null>(null);
 
   // Apply Modal State
@@ -124,10 +126,6 @@ export default function ExplorePage() {
             setTotal(data?.total ?? jobList.length);
             setTotalPages(data?.totalPages ?? 1);
             setCandidateProfile(data?.candidateProfile);
-            // Default selected job to the first job if not selected
-            if (jobList.length > 0) {
-              setSelectedJob((prev) => prev || jobList[0]);
-            }
           }
         } else if (activeTab === "all") {
           const data = await jobService.getJobs(filters);
@@ -136,9 +134,6 @@ export default function ExplorePage() {
             setJobs(jobList);
             setTotal(data?.total ?? jobList.length);
             setTotalPages(data?.totalPages ?? 1);
-            if (jobList.length > 0) {
-              setSelectedJob((prev) => prev || jobList[0]);
-            }
           }
         } else if (activeTab === "saved") {
           const data = await jobService.getJobs({ limit: 100 });
@@ -150,9 +145,6 @@ export default function ExplorePage() {
             setJobs(filtered);
             setTotal(filtered.length);
             setTotalPages(1);
-            if (filtered.length > 0) {
-              setSelectedJob((prev) => prev || filtered[0]);
-            }
           }
         }
       } catch (err: any) {
@@ -210,7 +202,6 @@ export default function ExplorePage() {
     });
   };
 
-  // Open apply modal for a specific job
   const handleOpenApplyModal = (job: IJob) => {
     setJobToApply(job);
     setIsApplyModalOpen(true);
@@ -284,6 +275,20 @@ export default function ExplorePage() {
             <span>Saved Roles ({savedJobIds.length})</span>
           </button>
         </div>
+
+        {/* Layout indicator badge */}
+        {selectedJob && (
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setSelectedJob(null)}
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary bg-primary/10 hover:bg-primary/15 px-3 py-1.5 rounded-xl border border-primary/20 transition cursor-pointer"
+            >
+              <Grid3X3 className="w-3.5 h-3.5" />
+              <span>Show 3 Columns</span>
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Filter Bar */}
@@ -306,57 +311,163 @@ export default function ExplorePage() {
           <button
             type="button"
             onClick={() => fetchJobs()}
-            className="font-semibold underline hover:no-underline text-xs"
+            className="font-semibold underline hover:no-underline text-xs cursor-pointer"
           >
             Try Again
           </button>
         </div>
       )}
 
-      {/* Split-Screen Master-Detail Layout */}
+      {/* Main Jobs Section */}
       {isLoading ? (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          {/* Skeleton Left List */}
-          <div className="lg:col-span-5 space-y-3">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <div
-                key={i}
-                className="rounded-2xl bg-card border border-border p-5 space-y-3 animate-pulse h-32"
-              />
-            ))}
-          </div>
-
-          {/* Skeleton Right Detail Panel */}
-          <div className="lg:col-span-7 rounded-3xl bg-card border border-border p-8 h-[600px] animate-pulse" />
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div
+              key={i}
+              className="rounded-2xl bg-card border border-border p-5 space-y-4 animate-pulse h-80 flex flex-col justify-between"
+            >
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-11 h-11 rounded-xl bg-surface-alt" />
+                  <div className="flex-1 space-y-2">
+                    <div className="h-4 bg-surface-alt rounded w-3/4" />
+                    <div className="h-3 bg-surface-alt rounded w-1/2" />
+                  </div>
+                </div>
+                <div className="h-16 bg-surface-alt/60 rounded-xl mt-4" />
+                <div className="flex gap-2 pt-2">
+                  <div className="h-6 w-16 bg-surface-alt rounded-lg" />
+                  <div className="h-6 w-20 bg-surface-alt rounded-lg" />
+                  <div className="h-6 w-14 bg-surface-alt rounded-lg" />
+                </div>
+              </div>
+              <div className="h-9 bg-surface-alt rounded-xl" />
+            </div>
+          ))}
         </div>
       ) : jobs.length > 0 ? (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          {/* Left Column: Job Cards List */}
-          <div className="lg:col-span-5 space-y-3 max-h-[calc(100vh-140px)] overflow-y-auto pr-1 scrollbar-thin">
-            {jobs.map((job) => {
-              const isSelected = (selectedJob?._id || jobs[0]?._id) === job._id;
-              const isApplied = appliedJobIds.includes(job._id);
-              const isSaved = savedJobIds.includes(job._id);
+        selectedJob ? (
+          /* ============================================================
+             SPLIT VIEW (1-COLUMN JOBS ON LEFT + DETAIL PANEL ON RIGHT)
+             ============================================================ */
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start animate-in fade-in duration-200">
+            {/* Left 1-Column Scrollable Job List */}
+            <div className="lg:col-span-5 xl:col-span-4 space-y-3 max-h-[calc(100vh-140px)] overflow-y-auto pr-1.5 scrollbar-thin">
+              <div className="flex items-center justify-between px-1 pb-1">
+                <span className="text-xs font-bold text-ink-soft uppercase tracking-wider">
+                  {jobs.length} Roles • Select to preview
+                </span>
+                <span className="text-[11px] text-ink-soft">
+                  Scroll for more
+                </span>
+              </div>
 
-              return (
-                <JobCard
-                  key={job._id}
-                  job={job}
-                  isSelected={isSelected}
-                  onSelect={(j) => setSelectedJob(j)}
-                  isSaved={isSaved}
-                  onToggleSave={handleToggleSave}
-                  isApplied={isApplied}
-                />
-              );
-            })}
+              {jobs.map((job) => {
+                const isSelected = selectedJob._id === job._id;
+                const isApplied = appliedJobIds.includes(job._id);
+                const isSaved = savedJobIds.includes(job._id);
+
+                return (
+                  <JobCard
+                    key={job._id}
+                    job={job}
+                    layoutMode="compact"
+                    isSelected={isSelected}
+                    onSelect={(j) => setSelectedJob(j)}
+                    isSaved={isSaved}
+                    onToggleSave={handleToggleSave}
+                    isApplied={isApplied}
+                  />
+                );
+              })}
+
+              {/* Pagination Controls in Column View */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between border-t border-border pt-3 mt-3">
+                  <p className="text-[11px] text-ink-soft">
+                    Page <span className="font-bold text-ink">{filters.page}</span> of{" "}
+                    <span className="font-bold text-ink">{totalPages}</span>
+                  </p>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      disabled={(filters.page || 1) <= 1}
+                      onClick={() =>
+                        setFilters((f) => ({
+                          ...f,
+                          page: Math.max(1, (f.page || 1) - 1),
+                        }))
+                      }
+                      className="p-1 rounded-lg border border-border text-ink-soft hover:text-ink disabled:opacity-40 transition cursor-pointer"
+                      aria-label="Previous Page"
+                    >
+                      <ChevronLeft className="w-3.5 h-3.5" />
+                    </button>
+                    <span className="text-xs font-semibold px-2 py-0.5 bg-surface-alt rounded border border-border text-ink">
+                      {filters.page}
+                    </span>
+                    <button
+                      type="button"
+                      disabled={(filters.page || 1) >= totalPages}
+                      onClick={() =>
+                        setFilters((f) => ({
+                          ...f,
+                          page: Math.min(totalPages, (f.page || 1) + 1),
+                        }))
+                      }
+                      className="p-1 rounded-lg border border-border text-ink-soft hover:text-ink disabled:opacity-40 transition cursor-pointer"
+                      aria-label="Next Page"
+                    >
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Right Side Sticky Detail Panel */}
+            <div className="lg:col-span-7 xl:col-span-8 sticky top-4 max-h-[calc(100vh-140px)] flex flex-col">
+              <JobDetailPanel
+                job={selectedJob}
+                onClose={() => setSelectedJob(null)}
+                isSaved={savedJobIds.includes(selectedJob._id)}
+                onToggleSave={handleToggleSave}
+                onStartApplication={(j) => handleOpenApplyModal(j)}
+                isApplied={appliedJobIds.includes(selectedJob._id)}
+              />
+            </div>
+          </div>
+        ) : (
+          /* ============================================================
+             DEFAULT VIEW (FULL 3-COLUMN RESPONSIVE JOB GRID)
+             ============================================================ */
+          <div className="space-y-6 animate-in fade-in duration-200">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+              {jobs.map((job) => {
+                const isApplied = appliedJobIds.includes(job._id);
+                const isSaved = savedJobIds.includes(job._id);
+
+                return (
+                  <JobCard
+                    key={job._id}
+                    job={job}
+                    layoutMode="grid"
+                    isSelected={false}
+                    onSelect={(j) => setSelectedJob(j)}
+                    isSaved={isSaved}
+                    onToggleSave={handleToggleSave}
+                    isApplied={isApplied}
+                  />
+                );
+              })}
+            </div>
 
             {/* Pagination Controls */}
             {totalPages > 1 && (
-              <div className="flex items-center justify-between border-t border-border pt-4 mt-4">
+              <div className="flex items-center justify-between border-t border-border pt-4 mt-6">
                 <p className="text-xs text-ink-soft">
-                  Page <span className="font-bold text-ink">{filters.page}</span> of{" "}
-                  <span className="font-bold text-ink">{totalPages}</span>
+                  Showing page <span className="font-bold text-ink">{filters.page}</span> of{" "}
+                  <span className="font-bold text-ink">{totalPages}</span> ({total} total roles)
                 </p>
 
                 <div className="flex items-center gap-2">
@@ -369,13 +480,13 @@ export default function ExplorePage() {
                         page: Math.max(1, (f.page || 1) - 1),
                       }))
                     }
-                    className="p-1.5 rounded-xl border border-border text-ink-soft hover:text-ink hover:bg-surface-alt disabled:opacity-40 disabled:cursor-not-allowed transition"
+                    className="p-2 rounded-xl border border-border text-ink-soft hover:text-ink hover:bg-surface-alt disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer"
                     aria-label="Previous Page"
                   >
                     <ChevronLeft className="w-4 h-4" />
                   </button>
 
-                  <span className="text-xs font-semibold px-2.5 py-1 bg-surface-alt rounded-lg border border-border text-ink">
+                  <span className="text-xs font-bold px-3 py-1.5 bg-surface-alt rounded-xl border border-border text-ink">
                     {filters.page}
                   </span>
 
@@ -388,7 +499,7 @@ export default function ExplorePage() {
                         page: Math.min(totalPages, (f.page || 1) + 1),
                       }))
                     }
-                    className="p-1.5 rounded-xl border border-border text-ink-soft hover:text-ink hover:bg-surface-alt disabled:opacity-40 disabled:cursor-not-allowed transition"
+                    className="p-2 rounded-xl border border-border text-ink-soft hover:text-ink hover:bg-surface-alt disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer"
                     aria-label="Next Page"
                   >
                     <ChevronRight className="w-4 h-4" />
@@ -397,21 +508,10 @@ export default function ExplorePage() {
               </div>
             )}
           </div>
-
-          {/* Right Column: Sticky Detail Panel */}
-          <div className="lg:col-span-7 sticky top-4 max-h-[calc(100vh-140px)] flex flex-col">
-            <JobDetailPanel
-              job={selectedJob || jobs[0] || null}
-              isSaved={savedJobIds.includes((selectedJob || jobs[0])?._id || "")}
-              onToggleSave={handleToggleSave}
-              onStartApplication={handleOpenApplyModal}
-              isApplied={appliedJobIds.includes((selectedJob || jobs[0])?._id || "")}
-            />
-          </div>
-        </div>
+        )
       ) : (
         /* Empty State */
-        <div className="rounded-3xl border border-dashed border-border bg-card p-12 text-center space-y-4 max-w-lg mx-auto my-12">
+        <div className="rounded-3xl border border-dashed border-border bg-card p-12 text-center space-y-4 max-w-lg mx-auto my-12 shadow-xs">
           <div className="w-16 h-16 rounded-2xl bg-primary/10 text-primary grid place-items-center mx-auto">
             <Layers className="w-8 h-8" />
           </div>
@@ -425,7 +525,7 @@ export default function ExplorePage() {
             <button
               type="button"
               onClick={handleResetFilters}
-              className="inline-flex items-center gap-1.5 bg-primary text-white font-semibold text-xs px-4 py-2.5 rounded-xl hover:bg-primary-deep transition shadow-xs"
+              className="inline-flex items-center gap-1.5 bg-primary text-white font-semibold text-xs px-4 py-2.5 rounded-xl hover:bg-primary-deep transition shadow-xs cursor-pointer"
             >
               Clear All Filters
             </button>
