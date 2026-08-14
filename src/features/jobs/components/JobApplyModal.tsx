@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   X,
   Briefcase,
@@ -11,9 +11,9 @@ import {
   ArrowRight,
   Loader2,
   Check,
-} from 'lucide-react';
-import { IJob } from '../types/job.types';
-import { useAuthStore } from '@/features/auth/store/useAuthStore';
+} from "lucide-react";
+import { IJob } from "../types/job.types";
+import { useAuthStore } from "@/features/auth/store/useAuthStore";
 
 interface JobApplyModalProps {
   isOpen: boolean;
@@ -32,10 +32,10 @@ export const JobApplyModal: React.FC<JobApplyModalProps> = ({
 }) => {
   const { user } = useAuthStore();
 
-  const [step, setStep] = useState<'form' | 'recommendations'>('form');
-  const [fullName, setFullName] = useState('');
-  const [email, setEmail] = useState('');
-  const [linkedinUrl, setLinkedinUrl] = useState('');
+  const [step, setStep] = useState<"form" | "recommendations">("form");
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [linkedinUrl, setLinkedinUrl] = useState("");
   const [noLinkedin, setNoLinkedin] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -43,11 +43,11 @@ export const JobApplyModal: React.FC<JobApplyModalProps> = ({
   // Pre-fill user details when modal opens
   useEffect(() => {
     if (isOpen) {
-      setStep('form');
+      setStep("form");
       setErrorMsg(null);
-      setFullName(user?.fullName || user?.username || '');
-      setEmail(user?.email || '');
-      setLinkedinUrl('');
+      setFullName(user?.fullName || user?.username || "");
+      setEmail(user?.email || "");
+      setLinkedinUrl("");
       setNoLinkedin(false);
     }
   }, [isOpen, user]);
@@ -56,11 +56,17 @@ export const JobApplyModal: React.FC<JobApplyModalProps> = ({
 
   // Format Salary / Rate for header
   const formatRate = () => {
-    if (!job.salary || (!job.salary.min && !job.salary.max)) return '$50-$60 per hour';
+    if (!job.salary || (!job.salary.min && !job.salary.max))
+      return "$50-$60 per hour";
     const { min, max, currency, period } = job.salary;
-    const periodLabel = period === 'yearly' ? 'per year' : period === 'monthly' ? 'per month' : 'per hour';
-    const symbol = currency === 'INR' ? '₹' : '$';
-    if (currency === 'INR') {
+    const periodLabel =
+      period === "yearly"
+        ? "per year"
+        : period === "monthly"
+          ? "per month"
+          : "per hour";
+    const symbol = currency === "INR" ? "₹" : "$";
+    if (currency === "INR") {
       const minLPA = (min / 100000).toFixed(0);
       const maxLPA = (max / 100000).toFixed(0);
       return `₹${minLPA}–${maxLPA} LPA`;
@@ -71,29 +77,29 @@ export const JobApplyModal: React.FC<JobApplyModalProps> = ({
   };
 
   // Filter other recommended roles for Step 2
-  const otherRoles = allJobs
-    .filter((j) => j._id !== job._id)
-    .slice(0, 3);
+  const otherRoles = allJobs.filter((j) => j._id !== job._id).slice(0, 3);
 
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
 
     if (!fullName.trim()) {
-      setErrorMsg('Full legal name is required.');
+      setErrorMsg("Full legal name is required.");
       return;
     }
     if (!email.trim() || !/^\S+@\S+\.\S+$/.test(email)) {
-      setErrorMsg('A valid email address is required.');
+      setErrorMsg("A valid email address is required.");
       return;
     }
     if (!noLinkedin && !linkedinUrl.trim()) {
-      setErrorMsg('Please enter your LinkedIn profile URL or check "I don\'t have a LinkedIn".');
+      setErrorMsg(
+        'Please enter your LinkedIn profile URL or check "I don\'t have a LinkedIn".',
+      );
       return;
     }
 
     // Move to step 2 ("Before you apply")
-    setStep('recommendations');
+    setStep("recommendations");
   };
 
   const handleFinalizeApplication = (targetJobId?: string) => {
@@ -125,7 +131,7 @@ export const JobApplyModal: React.FC<JobApplyModalProps> = ({
             <X className="w-5 h-5" />
           </button>
 
-          {step === 'form' ? (
+          {step === "form" ? (
             /* STEP 1: INITIAL APPLICATION FORM */
             <div className="p-6 sm:p-8 space-y-6">
               {/* Header */}
@@ -199,7 +205,7 @@ export const JobApplyModal: React.FC<JobApplyModalProps> = ({
                       checked={noLinkedin}
                       onChange={(e) => {
                         setNoLinkedin(e.target.checked);
-                        if (e.target.checked) setLinkedinUrl('');
+                        if (e.target.checked) setLinkedinUrl("");
                       }}
                       className="w-4 h-4 rounded border-border text-primary focus:ring-primary cursor-pointer"
                     />
@@ -213,7 +219,7 @@ export const JobApplyModal: React.FC<JobApplyModalProps> = ({
                 <div className="pt-2">
                   <button
                     type="submit"
-                    className="w-full bg-[#5345ec] hover:bg-[#4335dc] text-white font-bold py-3 px-5 rounded-2xl transition-all shadow-md active:scale-[0.99] cursor-pointer text-sm"
+                    className="w-full bg-gradient-brand hover:bg-[#4335dc] text-white font-bold py-3 px-5 rounded-2xl transition-all shadow-md active:scale-[0.99] cursor-pointer text-sm"
                   >
                     Start application
                   </button>

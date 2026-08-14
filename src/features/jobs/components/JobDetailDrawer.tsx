@@ -626,7 +626,7 @@ export const JobDetailDrawer: React.FC<JobDetailDrawerProps> = ({
                 className={`flex-1 py-3.5 px-6 rounded-2xl font-bold text-sm text-white shadow-lg transition-all active:scale-[0.99] cursor-pointer flex items-center justify-center gap-2 ${
                   isApplied
                     ? "bg-emerald-600 hover:bg-emerald-700"
-                    : "bg-[#5345ec] hover:bg-[#4335dc]"
+                    : "bg-gradient-brand "
                 }`}
               >
                 {isApplied ? (

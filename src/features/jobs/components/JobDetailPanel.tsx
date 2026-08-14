@@ -122,14 +122,6 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
 
   const rate = formatRate();
 
-  const handleShare = () => {
-    if (typeof window !== "undefined") {
-      navigator.clipboard.writeText(window.location.href);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }
-  };
-
   const companyInitial = (job.company.name || "C").charAt(0).toUpperCase();
   const stepsCompleted = isApplied ? 1 : 0;
   const progressPercent = isApplied ? 20 : 0;
@@ -153,81 +145,9 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
             </button>
           )}
 
-          {/* Icon 2: Expand / Full-Width Workspace Toggle */}
-          {onToggleExpand && (
-            <button
-              type="button"
-              onClick={onToggleExpand}
-              className="p-1.5 rounded-lg border border-border/70 text-ink-soft hover:text-ink hover:bg-surface-alt/70 transition cursor-pointer"
-              title={
-                isExpanded
-                  ? "Collapse workspace (Split view)"
-                  : "Expand workspace (Full width)"
-              }
-              aria-label={
-                isExpanded ? "Collapse workspace" : "Expand workspace"
-              }
-            >
-              {isExpanded ? (
-                <Minimize2 className="w-4 h-4" />
-              ) : (
-                <Maximize2 className="w-4 h-4" />
-              )}
-            </button>
-          )}
-
           <div className="h-4 w-px bg-border/80 mx-0.5 hidden sm:block" />
 
           {/* Role ID Tag */}
-          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-primary-glow bg-primary/10 px-2.5 py-0.5 rounded-full border border-primary/20">
-            <Sparkles className="w-3 h-3" /> Job ID:{" "}
-            {job._id.slice(-6).toUpperCase()}
-          </span>
-        </div>
-
-        {/* Right Actions: Share, Bookmark, and Close */}
-        <div className="flex items-center gap-1.5">
-          <button
-            type="button"
-            onClick={handleShare}
-            className="p-1.5 sm:p-2 rounded-xl border border-border/70 text-ink-soft hover:text-ink hover:bg-surface-alt transition cursor-pointer"
-            title="Copy share link"
-            aria-label="Share Job"
-          >
-            {copied ? (
-              <Check className="w-4 h-4 text-emerald-600" />
-            ) : (
-              <Share2 className="w-4 h-4" />
-            )}
-          </button>
-
-          {onToggleSave && (
-            <button
-              type="button"
-              onClick={() => onToggleSave(job._id)}
-              className="p-1.5 sm:p-2 rounded-xl border border-border/70 text-ink-soft hover:text-ink hover:bg-surface-alt transition cursor-pointer"
-              title={isSaved ? "Remove from bookmarks" : "Bookmark role"}
-              aria-label={isSaved ? "Remove from bookmarks" : "Bookmark role"}
-            >
-              <Bookmark
-                className={`w-4 h-4 ${
-                  isSaved ? "fill-primary text-primary" : ""
-                }`}
-              />
-            </button>
-          )}
-
-          {onClose && (
-            <button
-              type="button"
-              onClick={onClose}
-              className="p-1.5 sm:p-2 rounded-xl bg-surface-alt hover:bg-secondary border border-border/70 text-ink hover:text-destructive transition cursor-pointer ml-1"
-              title="Close details & show 3 columns of jobs"
-              aria-label="Close details"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          )}
         </div>
       </div>
 
@@ -269,7 +189,9 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                     : job.location.country}
                 </span>
                 <span>•</span>
-                <span className="capitalize">{job.employmentType} contract</span>
+                <span className="capitalize">
+                  {job.employmentType} contract
+                </span>
               </div>
             </div>
 
@@ -320,7 +242,9 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
               <p className="font-bold text-sm sm:text-base text-ink mt-1 capitalize">
                 {job.workplaceType}
               </p>
-              <p className="text-[10px] text-ink-soft">{job.location.country}</p>
+              <p className="text-[10px] text-ink-soft">
+                {job.location.country}
+              </p>
             </div>
 
             <div>
@@ -553,9 +477,9 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
               <div className="mt-3 p-3 rounded-xl bg-surface-alt/60 border border-border/60 flex items-start gap-2.5 text-xs text-ink-soft leading-relaxed">
                 <Info className="w-4 h-4 text-primary-glow shrink-0 mt-0.5" />
                 <span>
-                  All application steps are reused whenever another role requires
-                  the same step, so you never have to upload your resume or take
-                  the same interview twice.
+                  All application steps are reused whenever another role
+                  requires the same step, so you never have to upload your
+                  resume or take the same interview twice.
                 </span>
               </div>
             </div>
@@ -666,7 +590,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
           className={`flex-1 py-3.5 px-6 rounded-2xl font-bold text-sm text-white shadow-lg transition-all active:scale-[0.99] cursor-pointer flex items-center justify-center gap-2 ${
             isApplied
               ? "bg-emerald-600 hover:bg-emerald-700"
-              : "bg-[#5345ec] hover:bg-[#4335dc]"
+              : "bg-gradient-brand hover:bg-[#4335dc]"
           }`}
         >
           {isApplied ? (

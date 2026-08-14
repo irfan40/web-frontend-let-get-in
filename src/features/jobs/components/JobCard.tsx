@@ -57,11 +57,7 @@ export const JobCard: React.FC<JobCardProps> = ({
     }
     const { min, max, currency, period } = job.salary;
     const periodLabel =
-      period === "yearly"
-        ? "/yr"
-        : period === "monthly"
-          ? "/mo"
-          : "/hr";
+      period === "yearly" ? "/yr" : period === "monthly" ? "/mo" : "/hr";
 
     if (currency === "INR") {
       const minLPA = (min / 100000).toFixed(min % 100000 === 0 ? 0 : 1);
@@ -115,7 +111,7 @@ export const JobCard: React.FC<JobCardProps> = ({
               <div
                 className={`w-10 h-10 rounded-xl font-bold text-xs grid place-items-center shrink-0 shadow-2xs transition-transform duration-200 ${
                   isSelected
-                    ? "bg-[#5345ec] text-white"
+                    ? "bg-gradient-brand text-white"
                     : "bg-gradient-brand text-white group-hover:scale-105"
                 }`}
               >
@@ -125,14 +121,18 @@ export const JobCard: React.FC<JobCardProps> = ({
               <div className="min-w-0">
                 <h4
                   className={`font-bold text-sm leading-snug line-clamp-1 transition-colors ${
-                    isSelected ? "text-primary font-extrabold" : "text-ink group-hover:text-primary"
+                    isSelected
+                      ? "text-primary font-extrabold"
+                      : "text-ink group-hover:text-primary"
                   }`}
                   title={job.title}
                 >
                   {job.title}
                 </h4>
                 <p className="text-xs text-ink-soft flex items-center gap-1 mt-0.5 font-medium">
-                  <span className="truncate max-w-[130px]">{job.company.name}</span>
+                  <span className="truncate max-w-[130px]">
+                    {job.company.name}
+                  </span>
                   <span className="text-border">•</span>
                   <span className="capitalize">{job.experienceLevel}</span>
                 </p>
@@ -159,7 +159,9 @@ export const JobCard: React.FC<JobCardProps> = ({
             <div className="flex items-center gap-1 text-[11px] truncate">
               <MapPin className="w-3 h-3 text-ink-soft/70 shrink-0" />
               <span className="truncate">
-                {job.location.city ? `${job.location.city}` : job.location.country}
+                {job.location.city
+                  ? `${job.location.city}`
+                  : job.location.country}
               </span>
             </div>
 
@@ -185,7 +187,9 @@ export const JobCard: React.FC<JobCardProps> = ({
                       : "bg-surface-alt text-ink-soft border-border/60"
                   }`}
                 >
-                  {isMatched && <CheckCircle2 className="w-2.5 h-2.5 text-primary shrink-0" />}
+                  {isMatched && (
+                    <CheckCircle2 className="w-2.5 h-2.5 text-primary shrink-0" />
+                  )}
                   <span className="truncate max-w-[80px]">{skill}</span>
                 </span>
               );
