@@ -24,7 +24,6 @@ import {
   Send,
   Calendar,
   PanelLeftClose,
-  PanelLeftOpen,
   Maximize2,
   Minimize2,
   X,
@@ -141,24 +140,16 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
       <div className="p-3.5 sm:p-4 border-b border-border/80 flex items-center justify-between bg-surface-alt/30 shrink-0">
         {/* Left Area: Two Small Minimal Icons (Panel Toggle & Expand) + Role ID */}
         <div className="flex items-center gap-2">
-          {/* Icon 1: Panel / Layout Toggle */}
+          {/* Icon 1: Panel / Layout Toggle (Closes details & returns to 3 columns) */}
           {onTogglePanel && (
             <button
               type="button"
               onClick={onTogglePanel}
               className="p-1.5 rounded-lg border border-border/70 text-ink-soft hover:text-ink hover:bg-surface-alt/70 transition cursor-pointer"
-              title={
-                isPanelCollapsed
-                  ? "Show job listings panel (Split view)"
-                  : "Hide job listings panel (Focus view)"
-              }
-              aria-label="Toggle job listings panel"
+              title="Close details & show 3 columns of jobs"
+              aria-label="Close details and show 3 columns of jobs"
             >
-              {isPanelCollapsed ? (
-                <PanelLeftOpen className="w-4 h-4" />
-              ) : (
-                <PanelLeftClose className="w-4 h-4" />
-              )}
+              <PanelLeftClose className="w-4 h-4" />
             </button>
           )}
 
@@ -188,10 +179,10 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
           <div className="h-4 w-px bg-border/80 mx-0.5 hidden sm:block" />
 
           {/* Role ID Tag */}
-          {/* <span className="inline-flex items-center gap-1 text-[11px] font-bold text-primary-glow bg-primary/10 px-2.5 py-0.5 rounded-full border border-primary/20">
+          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-primary-glow bg-primary/10 px-2.5 py-0.5 rounded-full border border-primary/20">
             <Sparkles className="w-3 h-3" /> Job ID:{" "}
             {job._id.slice(-6).toUpperCase()}
-          </span> */}
+          </span>
         </div>
 
         {/* Right Actions: Share, Bookmark, and Close */}
@@ -231,7 +222,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
               type="button"
               onClick={onClose}
               className="p-1.5 sm:p-2 rounded-xl bg-surface-alt hover:bg-secondary border border-border/70 text-ink hover:text-destructive transition cursor-pointer ml-1"
-              title="Close details"
+              title="Close details & show 3 columns of jobs"
               aria-label="Close details"
             >
               <X className="w-4 h-4" />
@@ -278,9 +269,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                     : job.location.country}
                 </span>
                 <span>•</span>
-                <span className="capitalize">
-                  {job.employmentType} contract
-                </span>
+                <span className="capitalize">{job.employmentType} contract</span>
               </div>
             </div>
 
@@ -331,9 +320,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
               <p className="font-bold text-sm sm:text-base text-ink mt-1 capitalize">
                 {job.workplaceType}
               </p>
-              <p className="text-[10px] text-ink-soft">
-                {job.location.country}
-              </p>
+              <p className="text-[10px] text-ink-soft">{job.location.country}</p>
             </div>
 
             <div>
@@ -566,9 +553,9 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
               <div className="mt-3 p-3 rounded-xl bg-surface-alt/60 border border-border/60 flex items-start gap-2.5 text-xs text-ink-soft leading-relaxed">
                 <Info className="w-4 h-4 text-primary-glow shrink-0 mt-0.5" />
                 <span>
-                  All application steps are reused whenever another role
-                  requires the same step, so you never have to upload your
-                  resume or take the same interview twice.
+                  All application steps are reused whenever another role requires
+                  the same step, so you never have to upload your resume or take
+                  the same interview twice.
                 </span>
               </div>
             </div>
