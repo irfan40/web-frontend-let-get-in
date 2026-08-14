@@ -2,7 +2,6 @@
 
 import React, { useState } from "react";
 import {
-  X,
   Building2,
   MapPin,
   Briefcase,
@@ -24,6 +23,11 @@ import {
   DollarSign,
   Send,
   Calendar,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Maximize2,
+  Minimize2,
+  X,
 } from "lucide-react";
 import { IJob } from "../types/job.types";
 
@@ -34,6 +38,10 @@ interface JobDetailPanelProps {
   onToggleSave?: (jobId: string) => void;
   onStartApplication: (job: IJob) => void;
   isApplied?: boolean;
+  isPanelCollapsed?: boolean;
+  onTogglePanel?: () => void;
+  isExpanded?: boolean;
+  onToggleExpand?: () => void;
 }
 
 export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
@@ -43,6 +51,10 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
   onToggleSave,
   onStartApplication,
   isApplied = false,
+  isPanelCollapsed = false,
+  onTogglePanel,
+  isExpanded = false,
+  onToggleExpand,
 }) => {
   const [copied, setCopied] = useState(false);
   const [isApplicationAccordionOpen, setIsApplicationAccordionOpen] =
@@ -125,23 +137,71 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
 
   return (
     <div className="bg-card border border-border rounded-3xl flex flex-col h-full shadow-sm overflow-hidden relative">
-      {/* Top Action Bar */}
-      <div className="p-4 sm:p-5 border-b border-border/80 flex items-center justify-between bg-surface-alt/30 shrink-0">
-        <div className="flex items-center gap-2 text-ink-soft text-xs font-semibold">
-          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-primary-glow bg-primary/10 px-3 py-1 rounded-full border border-primary/20">
-            <Sparkles className="w-3.5 h-3.5" /> Role Details
-          </span>
-          <span className="text-xs text-ink-soft font-mono">
-            #{job._id.slice(-6).toUpperCase()}
-          </span>
+      {/* Top Action Bar with Two Left Control Icons & Right Actions */}
+      <div className="p-3.5 sm:p-4 border-b border-border/80 flex items-center justify-between bg-surface-alt/30 shrink-0">
+        {/* Left Area: Two Small Minimal Icons (Panel Toggle & Expand) + Role ID */}
+        <div className="flex items-center gap-2">
+          {/* Icon 1: Panel / Layout Toggle */}
+          {onTogglePanel && (
+            <button
+              type="button"
+              onClick={onTogglePanel}
+              className="p-1.5 rounded-lg border border-border/70 text-ink-soft hover:text-ink hover:bg-surface-alt/70 transition cursor-pointer"
+              title={
+                isPanelCollapsed
+                  ? "Show job listings panel (Split view)"
+                  : "Hide job listings panel (Focus view)"
+              }
+              aria-label="Toggle job listings panel"
+            >
+              {isPanelCollapsed ? (
+                <PanelLeftOpen className="w-4 h-4" />
+              ) : (
+                <PanelLeftClose className="w-4 h-4" />
+              )}
+            </button>
+          )}
+
+          {/* Icon 2: Expand / Full-Width Workspace Toggle */}
+          {onToggleExpand && (
+            <button
+              type="button"
+              onClick={onToggleExpand}
+              className="p-1.5 rounded-lg border border-border/70 text-ink-soft hover:text-ink hover:bg-surface-alt/70 transition cursor-pointer"
+              title={
+                isExpanded
+                  ? "Collapse workspace (Split view)"
+                  : "Expand workspace (Full width)"
+              }
+              aria-label={
+                isExpanded ? "Collapse workspace" : "Expand workspace"
+              }
+            >
+              {isExpanded ? (
+                <Minimize2 className="w-4 h-4" />
+              ) : (
+                <Maximize2 className="w-4 h-4" />
+              )}
+            </button>
+          )}
+
+          <div className="h-4 w-px bg-border/80 mx-0.5 hidden sm:block" />
+
+          {/* Role ID Tag */}
+          {/* <span className="inline-flex items-center gap-1 text-[11px] font-bold text-primary-glow bg-primary/10 px-2.5 py-0.5 rounded-full border border-primary/20">
+            <Sparkles className="w-3 h-3" /> Job ID:{" "}
+            {job._id.slice(-6).toUpperCase()}
+          </span> */}
         </div>
 
-        <div className="flex items-center gap-2">
+        {/* Right Actions: Share, Bookmark, and Close */}
+        <div className="flex items-center gap-1.5">
           <button
             type="button"
             onClick={handleShare}
-            className="p-2 rounded-xl border border-border text-ink-soft hover:text-ink hover:bg-surface-alt transition cursor-pointer"
+            className="p-1.5 sm:p-2 rounded-xl border border-border/70 text-ink-soft hover:text-ink hover:bg-surface-alt transition cursor-pointer"
             title="Copy share link"
+            aria-label="Share Job"
           >
             {copied ? (
               <Check className="w-4 h-4 text-emerald-600" />
@@ -154,8 +214,9 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
             <button
               type="button"
               onClick={() => onToggleSave(job._id)}
-              className="p-2 rounded-xl border border-border text-ink-soft hover:text-ink hover:bg-surface-alt transition cursor-pointer"
-              title={isSaved ? "Remove bookmark" : "Bookmark role"}
+              className="p-1.5 sm:p-2 rounded-xl border border-border/70 text-ink-soft hover:text-ink hover:bg-surface-alt transition cursor-pointer"
+              title={isSaved ? "Remove from bookmarks" : "Bookmark role"}
+              aria-label={isSaved ? "Remove from bookmarks" : "Bookmark role"}
             >
               <Bookmark
                 className={`w-4 h-4 ${
@@ -165,33 +226,32 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
             </button>
           )}
 
-          {/* Close button to return to 3-column view */}
           {onClose && (
             <button
               type="button"
               onClick={onClose}
-              className="p-2 rounded-xl bg-surface-alt hover:bg-secondary border border-border text-ink hover:text-destructive transition cursor-pointer flex items-center gap-1 ml-1"
-              title="Close details (Show 3-column grid)"
+              className="p-1.5 sm:p-2 rounded-xl bg-surface-alt hover:bg-secondary border border-border/70 text-ink hover:text-destructive transition cursor-pointer ml-1"
+              title="Close details"
               aria-label="Close details"
             >
-              <X className="w-5 h-5" />
+              <X className="w-4 h-4" />
             </button>
           )}
         </div>
       </div>
 
-      {/* Main Scrollable Content */}
-      <div className="flex-1 overflow-y-auto p-5 sm:p-7 space-y-6 scrollbar-thin">
-        {/* Title, Match Badge, Salary Card */}
+      {/* Main Scrollable Content (Hidden Scrollbar, Fully Scrollable) */}
+      <div className="flex-1 overflow-y-auto p-5 sm:p-7 space-y-6 no-scrollbar">
+        {/* Title, Match Badge, Rate Header */}
         <div className="space-y-4">
-          <div className="flex items-start justify-between gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
             <div className="space-y-2">
               <div className="flex items-center gap-2 flex-wrap">
                 <span
-                  className={`inline-flex items-center gap-1 text-xs font-bold px-3 py-1 rounded-full border shadow-xs ${matchTone}`}
+                  className={`inline-flex items-center gap-1 text-xs font-bold px-3 py-1 rounded-full border shadow-2xs ${matchTone}`}
                 >
                   <Sparkles className="w-3.5 h-3.5 fill-current" />
-                  {match}% Semantic Match
+                  {match}% Match
                 </span>
 
                 {job.workplaceType === "remote" && (
@@ -218,12 +278,26 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                     : job.location.country}
                 </span>
                 <span>•</span>
-                <span className="capitalize">{job.employmentType}</span>
+                <span className="capitalize">
+                  {job.employmentType} contract
+                </span>
               </div>
+            </div>
+
+            {/* Large Rate Block */}
+            <div className="sm:text-right shrink-0">
+              <div className="text-2xl sm:text-3xl font-extrabold text-ink tracking-tight">
+                {rate.main}
+              </div>
+              {rate.sub && (
+                <div className="text-xs font-semibold text-ink-soft mt-0.5">
+                  {rate.sub}
+                </div>
+              )}
             </div>
           </div>
 
-          {/* Highlight Compensation & Key Specs Card */}
+          {/* Quick Specs 4-Box Grid */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-surface-alt/50 border border-border/80 rounded-2xl p-4">
             <div>
               <span className="text-[11px] text-ink-soft font-semibold uppercase tracking-wider flex items-center gap-1">
@@ -257,7 +331,9 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
               <p className="font-bold text-sm sm:text-base text-ink mt-1 capitalize">
                 {job.workplaceType}
               </p>
-              <p className="text-[10px] text-ink-soft">{job.location.country}</p>
+              <p className="text-[10px] text-ink-soft">
+                {job.location.country}
+              </p>
             </div>
 
             <div>
@@ -281,26 +357,26 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
             </div>
             <div className="min-w-0">
               <p className="text-xs text-ink-soft font-semibold">
-                Hiring Organization
+                Posted by {job.company.name}
               </p>
-              <p className="font-bold text-sm sm:text-base text-ink truncate">
-                {job.company.name}
-              </p>
-              {job.company.website && (
-                <a
-                  href={
-                    job.company.website.startsWith("http")
+              <a
+                href={
+                  job.company.website
+                    ? job.company.website.startsWith("http")
                       ? job.company.website
                       : `https://${job.company.website}`
-                  }
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-xs font-semibold text-primary hover:underline flex items-center gap-1 mt-0.5"
-                >
-                  <span>Visit company website</span>
-                  <ExternalLink className="w-3 h-3" />
-                </a>
-              )}
+                    : "#"
+                }
+                target="_blank"
+                rel="noreferrer"
+                className="text-xs font-bold text-ink hover:text-primary transition flex items-center gap-1 mt-0.5"
+              >
+                <span>
+                  {job.company.website ||
+                    `${job.company.name.toLowerCase().replace(/\s+/g, "")}.com`}
+                </span>
+                <ExternalLink className="w-3 h-3 text-ink-soft" />
+              </a>
             </div>
           </div>
 
@@ -316,7 +392,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
           )}
         </div>
 
-        {/* AI Match Breakdown Card */}
+        {/* AI Match Fit Breakdown */}
         <div className="rounded-2xl bg-gradient-to-br from-primary/5 via-surface-alt to-primary/10 border border-primary/20 p-5 space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 font-bold text-sm text-ink">
@@ -392,7 +468,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
           >
             <div className="flex items-center gap-3">
               <h3 className="font-bold text-sm sm:text-base text-ink">
-                Application Readiness
+                Application
               </h3>
               <span
                 className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider ${
@@ -401,13 +477,13 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                     : "bg-surface-alt text-ink-soft border border-border"
                 }`}
               >
-                {isApplied ? "In review" : "Ready to apply"}
+                {isApplied ? "In review" : "Not started"}
               </span>
             </div>
 
             <div className="flex items-center gap-3">
               <span className="text-xs font-semibold text-ink-soft">
-                {stepsCompleted} of 5 steps ({progressPercent}%)
+                {stepsCompleted} of 5 steps completed ({progressPercent}%)
               </span>
               {isApplicationAccordionOpen ? (
                 <ChevronUp className="w-4 h-4 text-ink-soft" />
@@ -425,16 +501,15 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
             />
           </div>
 
-          {/* Steps */}
+          {/* 5 Application Steps */}
           {isApplicationAccordionOpen && (
-            <div className="p-4 sm:p-5 space-y-3 border-t border-border/70 bg-surface-alt/10">
-              <div className="flex items-center justify-between py-1 text-xs">
+            <div className="p-4 sm:p-5 space-y-3.5 border-t border-border/70 bg-surface-alt/10">
+              {/* Step 1: Resume */}
+              <div className="flex items-center justify-between py-1 text-xs sm:text-sm">
                 <div>
-                  <p className="font-bold text-ink">Resume & Profile</p>
-                  <p className="text-ink-soft">
-                    {isApplied
-                      ? "Attached and verified"
-                      : "Ready from LetGetIn profile"}
+                  <p className="font-bold text-ink">Resume</p>
+                  <p className="text-[11px] text-ink-soft">
+                    {isApplied ? "Resume profile attached" : "Not done"}
                   </p>
                 </div>
                 {isApplied ? (
@@ -444,31 +519,56 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                 )}
               </div>
 
-              <div className="flex items-center justify-between py-1 text-xs border-t border-border/50 pt-2.5">
+              {/* Step 2: Domain Expert Interview */}
+              <div className="flex items-center justify-between py-1 text-xs sm:text-sm border-t border-border/50 pt-3">
                 <div>
-                  <p className="font-bold text-ink">Domain Skills Screening</p>
-                  <p className="text-ink-soft">
-                    Auto-evaluated via Gemini Vector Engine
-                  </p>
+                  <div className="flex items-center gap-2">
+                    <p className="font-bold text-ink">
+                      Domain Expert Interview
+                    </p>
+                    <span className="text-[10px] font-extrabold uppercase px-1.5 py-0.2 rounded bg-surface-alt text-ink-soft border border-border">
+                      CORE
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-ink-soft">Not done</p>
                 </div>
                 <Circle className="w-5 h-5 text-border shrink-0" />
               </div>
 
-              <div className="flex items-center justify-between py-1 text-xs border-t border-border/50 pt-2.5">
+              {/* Step 3: Project Assessment */}
+              <div className="flex items-center justify-between py-1 text-xs sm:text-sm border-t border-border/50 pt-3">
                 <div>
-                  <p className="font-bold text-ink">
-                    Availability & Work Authorization
-                  </p>
-                  <p className="text-ink-soft">Standard confirmation step</p>
+                  <p className="font-bold text-ink">Project Assessment</p>
+                  <p className="text-[11px] text-ink-soft">Not done</p>
                 </div>
                 <Circle className="w-5 h-5 text-border shrink-0" />
               </div>
 
+              {/* Step 4: Availability */}
+              <div className="flex items-center justify-between py-1 text-xs sm:text-sm border-t border-border/50 pt-3">
+                <div>
+                  <p className="font-bold text-ink">Availability</p>
+                  <p className="text-[11px] text-ink-soft">Not done</p>
+                </div>
+                <Circle className="w-5 h-5 text-border shrink-0" />
+              </div>
+
+              {/* Step 5: Work Authorization */}
+              <div className="flex items-center justify-between py-1 text-xs sm:text-sm border-t border-border/50 pt-3">
+                <div>
+                  <p className="font-bold text-ink">Work Authorization</p>
+                  <p className="text-[11px] text-ink-soft">Not done</p>
+                </div>
+                <Circle className="w-5 h-5 text-border shrink-0" />
+              </div>
+
+              {/* Step Note */}
               <div className="mt-3 p-3 rounded-xl bg-surface-alt/60 border border-border/60 flex items-start gap-2.5 text-xs text-ink-soft leading-relaxed">
                 <Info className="w-4 h-4 text-primary-glow shrink-0 mt-0.5" />
                 <span>
-                  Your application is automatically formatted and tailored using
-                  your verified resume data.
+                  All application steps are reused whenever another role
+                  requires the same step, so you never have to upload your
+                  resume or take the same interview twice.
                 </span>
               </div>
             </div>
@@ -483,12 +583,10 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
           </p>
         </div>
 
-        {/* Required Skills */}
+        {/* Skills Alignment */}
         {job.skills && job.skills.length > 0 && (
           <div className="space-y-3">
-            <h3 className="font-bold text-base text-ink">
-              Required Skills & Technologies
-            </h3>
+            <h3 className="font-bold text-base text-ink">Required Skills</h3>
             <div className="flex flex-wrap gap-2">
               {job.skills.map((skill) => {
                 const isMatched = matchedSkills.some(
@@ -526,7 +624,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                   key={i}
                   className="flex items-start gap-2.5 text-xs sm:text-sm text-ink-soft leading-relaxed"
                 >
-                  <span className="w-2 h-2 rounded-full bg-primary mt-1.5 shrink-0" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#5345ec] mt-2 shrink-0" />
                   <span>{resp}</span>
                 </li>
               ))}
@@ -537,16 +635,14 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
         {/* Requirements */}
         {job.requirements && job.requirements.length > 0 && (
           <div className="space-y-3">
-            <h3 className="font-bold text-base text-ink">
-              Requirements & Qualifications
-            </h3>
+            <h3 className="font-bold text-base text-ink">Requirements</h3>
             <ul className="space-y-2.5">
               {job.requirements.map((req, i) => (
                 <li
                   key={i}
                   className="flex items-start gap-2.5 text-xs sm:text-sm text-ink-soft leading-relaxed"
                 >
-                  <Check className="w-4 h-4 text-emerald-600 mt-0.5 shrink-0" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-2 shrink-0" />
                   <span>{req}</span>
                 </li>
               ))}
@@ -554,7 +650,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
           </div>
         )}
 
-        {/* Benefits */}
+        {/* Benefits & Perks */}
         {job.benefits && job.benefits.length > 0 && (
           <div className="space-y-3">
             <h3 className="font-bold text-base text-ink flex items-center gap-2">
@@ -575,7 +671,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
         )}
       </div>
 
-      {/* Sticky Bottom Action Bar */}
+      {/* Sticky Bottom Action Bar (Unobscured, Fully Sticky) */}
       <div className="p-4 sm:p-5 border-t border-border bg-card/95 backdrop-blur-xs sticky bottom-0 z-10 shrink-0 flex items-center gap-3">
         <button
           type="button"
@@ -593,9 +689,8 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
             </>
           ) : (
             <>
-              <Send className="w-4 h-4" />
-              <span>Start Application</span>
-              <ExternalLink className="w-3.5 h-3.5 ml-1" />
+              <span>Start application</span>
+              <ExternalLink className="w-4 h-4 ml-1" />
             </>
           )}
         </button>
