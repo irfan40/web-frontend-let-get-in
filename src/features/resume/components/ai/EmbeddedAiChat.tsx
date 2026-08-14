@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from "react";
 import {
   Check,
   RefreshCw,
@@ -19,10 +19,10 @@ import {
   Copy,
   Sparkles,
   Plus,
-} from 'lucide-react';
-import { useAiCoachStore } from '../../store/useAiCoachStore';
-import { useResumeStore } from '../../store/useResumeStore';
-import { MarkdownRenderer } from './MarkdownRenderer';
+} from "lucide-react";
+import { useAiCoachStore } from "../../store/useAiCoachStore";
+import { useResumeStore } from "../../store/useResumeStore";
+import { MarkdownRenderer } from "./MarkdownRenderer";
 
 interface EmbeddedAiChatProps {
   onClose?: () => void;
@@ -42,18 +42,22 @@ export const EmbeddedAiChat: React.FC<EmbeddedAiChatProps> = ({ onClose }) => {
   } = useAiCoachStore();
 
   const { resume } = useResumeStore();
-  const [inputMessage, setInputMessage] = useState('');
+  const [inputMessage, setInputMessage] = useState("");
   const [isListening, setIsListening] = useState(false);
-  const [appliedActionIds, setAppliedActionIds] = useState<Set<string>>(new Set());
+  const [appliedActionIds, setAppliedActionIds] = useState<Set<string>>(
+    new Set(),
+  );
   const chatBottomRef = useRef<HTMLDivElement>(null);
 
   const existingSkillsSet = new Set(
-    (resume.content.skills || []).map((s) => (typeof s === 'string' ? s : s.name).trim().toLowerCase())
+    (resume.content.skills || []).map((s) =>
+      (typeof s === "string" ? s : s.name).trim().toLowerCase(),
+    ),
   );
 
   // Scroll to bottom on updates
   useEffect(() => {
-    chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    chatBottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isChatLoading]);
 
   const handleCopyMessage = (id: string, text: string) => {
@@ -68,8 +72,13 @@ export const EmbeddedAiChat: React.FC<EmbeddedAiChatProps> = ({ onClose }) => {
   };
 
   const toggleListening = () => {
-    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-      alert('Speech recognition is not supported in this browser. Please type your message.');
+    if (
+      !("webkitSpeechRecognition" in window) &&
+      !("SpeechRecognition" in window)
+    ) {
+      alert(
+        "Speech recognition is not supported in this browser. Please type your message.",
+      );
       return;
     }
 
@@ -80,11 +89,12 @@ export const EmbeddedAiChat: React.FC<EmbeddedAiChatProps> = ({ onClose }) => {
 
     try {
       const SpeechRecognition =
-        (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+        (window as any).SpeechRecognition ||
+        (window as any).webkitSpeechRecognition;
       const recognition = new SpeechRecognition();
       recognition.continuous = false;
       recognition.interimResults = false;
-      recognition.lang = 'en-US';
+      recognition.lang = "en-US";
 
       recognition.onstart = () => setIsListening(true);
       recognition.onend = () => setIsListening(false);
@@ -92,7 +102,9 @@ export const EmbeddedAiChat: React.FC<EmbeddedAiChatProps> = ({ onClose }) => {
       recognition.onresult = (event: any) => {
         const transcript = event.results[0][0].transcript;
         if (transcript) {
-          setInputMessage((prev) => (prev ? `${prev} ${transcript}` : transcript));
+          setInputMessage((prev) =>
+            prev ? `${prev} ${transcript}` : transcript,
+          );
         }
       };
 
@@ -106,12 +118,12 @@ export const EmbeddedAiChat: React.FC<EmbeddedAiChatProps> = ({ onClose }) => {
     if (e) e.preventDefault();
     if (!inputMessage.trim()) return;
     const text = inputMessage.trim();
-    setInputMessage('');
+    setInputMessage("");
     sendMessage(text);
   };
 
   const cleanUserText = (raw: string) => {
-    return raw.replace(/\*\*/g, '').trim();
+    return raw.replace(/\*\*/g, "").trim();
   };
 
   return (
@@ -123,7 +135,9 @@ export const EmbeddedAiChat: React.FC<EmbeddedAiChatProps> = ({ onClose }) => {
             <Bot className="w-4 h-4" />
           </div>
           <div>
-            <span className="text-xs font-bold text-ink tracking-tight block">LetGetIn AI Coach</span>
+            <span className="text-xs font-bold text-ink tracking-tight block">
+              LetGetIn AI Coach
+            </span>
             <span className="text-[10px] font-semibold text-emerald-600 flex items-center gap-1">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
               Live Context Active
@@ -174,7 +188,7 @@ export const EmbeddedAiChat: React.FC<EmbeddedAiChatProps> = ({ onClose }) => {
               type="button"
               onClick={() =>
                 sendMessage(
-                  'How does my resume compare to top candidates with my job title? What am I missing and how can I improve?'
+                  "How does my resume compare to top candidates with my job title? What am I missing and how can I improve?",
                 )
               }
               className="text-left bg-surface border border-amber-200/80 hover:border-amber-400 p-3 rounded-2xl transition-all shadow-xs hover:shadow-sm group cursor-pointer"
@@ -185,9 +199,12 @@ export const EmbeddedAiChat: React.FC<EmbeddedAiChatProps> = ({ onClose }) => {
                 </div>
                 <div>
                   <h4 className="text-xs font-bold text-ink group-hover:text-amber-600 leading-tight">
-                    How does my resume compare to top candidates? What am I missing?
+                    How does my resume compare to top candidates? What am I
+                    missing?
                   </h4>
-                  <p className="text-[11px] text-ink-soft mt-1">Get a prioritized recruiter benchmark review</p>
+                  <p className="text-[11px] text-ink-soft mt-1">
+                    Get a prioritized recruiter benchmark review
+                  </p>
                 </div>
               </div>
             </button>
@@ -206,7 +223,9 @@ export const EmbeddedAiChat: React.FC<EmbeddedAiChatProps> = ({ onClose }) => {
                   <h4 className="text-xs font-bold text-ink group-hover:text-sky-600 leading-tight">
                     Suggest high-demand technical skills for my role
                   </h4>
-                  <p className="text-[11px] text-ink-soft mt-1">Boost ATS match with 1-click skill additions</p>
+                  <p className="text-[11px] text-ink-soft mt-1">
+                    Boost ATS match with 1-click skill additions
+                  </p>
                 </div>
               </div>
             </button>
@@ -214,7 +233,11 @@ export const EmbeddedAiChat: React.FC<EmbeddedAiChatProps> = ({ onClose }) => {
             {/* Card 3: Improve Existing Experience */}
             <button
               type="button"
-              onClick={() => sendMessage('Review and strengthen my work experience bullet points with action verbs and quantifiable metrics.')}
+              onClick={() =>
+                sendMessage(
+                  "Review and strengthen my work experience bullet points with action verbs and quantifiable metrics.",
+                )
+              }
               className="text-left bg-surface border border-emerald-200/80 hover:border-emerald-400 p-3 rounded-2xl transition-all shadow-xs hover:shadow-sm group cursor-pointer"
             >
               <div className="flex items-start gap-2.5">
@@ -225,7 +248,9 @@ export const EmbeddedAiChat: React.FC<EmbeddedAiChatProps> = ({ onClose }) => {
                   <h4 className="text-xs font-bold text-ink group-hover:text-emerald-600 leading-tight">
                     Enhance bullet points with action verbs & metric impact
                   </h4>
-                  <p className="text-[11px] text-ink-soft mt-1">Generate high-converting recruiter bullets</p>
+                  <p className="text-[11px] text-ink-soft mt-1">
+                    Generate high-converting recruiter bullets
+                  </p>
                 </div>
               </div>
             </button>
@@ -233,7 +258,11 @@ export const EmbeddedAiChat: React.FC<EmbeddedAiChatProps> = ({ onClose }) => {
             {/* Card 4: ATS Keywords */}
             <button
               type="button"
-              onClick={() => sendMessage("Highlight top keywords and ATS gaps in my resume content.")}
+              onClick={() =>
+                sendMessage(
+                  "Highlight top keywords and ATS gaps in my resume content.",
+                )
+              }
               className="text-left bg-surface border border-indigo-200/80 hover:border-indigo-400 p-3 rounded-2xl transition-all shadow-xs hover:shadow-sm group cursor-pointer"
             >
               <div className="flex items-start gap-2.5">
@@ -244,7 +273,9 @@ export const EmbeddedAiChat: React.FC<EmbeddedAiChatProps> = ({ onClose }) => {
                   <h4 className="text-xs font-bold text-ink group-hover:text-indigo-600 leading-tight">
                     Highlight top keywords I am missing for ATS
                   </h4>
-                  <p className="text-[11px] text-ink-soft mt-1">Find missing keyword keywords and section gaps</p>
+                  <p className="text-[11px] text-ink-soft mt-1">
+                    Find missing keyword keywords and section gaps
+                  </p>
                 </div>
               </div>
             </button>
@@ -256,131 +287,135 @@ export const EmbeddedAiChat: React.FC<EmbeddedAiChatProps> = ({ onClose }) => {
           {messages.map((msg) => (
             <div
               key={msg.id}
-              className={`flex flex-col ${msg.sender === 'user' ? 'items-end' : 'items-start'}`}
+              className={`flex flex-col ${msg.sender === "user" ? "items-end" : "items-start"}`}
             >
               <div
                 className={`max-w-[95%] w-full rounded-2xl p-3.5 text-xs leading-relaxed ${
-                  msg.sender === 'user'
-                    ? 'bg-gradient-brand text-primary-foreground font-medium rounded-br-none shadow-sm ml-auto max-w-[85%]'
-                    : 'bg-surface border border-border text-ink rounded-bl-none shadow-xs'
+                  msg.sender === "user"
+                    ? "bg-gradient-brand text-primary-foreground font-medium rounded-br-none shadow-sm ml-auto max-w-[85%]"
+                    : "bg-surface border border-border text-ink rounded-bl-none shadow-xs"
                 }`}
               >
                 {/* AI Bubble Header */}
-                {msg.sender === 'ai' && (
+                {msg.sender === "ai" && (
                   <div className="flex items-center justify-between mb-2 pb-1.5 border-b border-border text-[11px]">
                     <span className="font-bold text-ink flex items-center gap-1.5">
                       <Sparkles className="w-3.5 h-3.5 text-primary-glow" />
                       LetGetIn AI Coach
                     </span>
-                    <button
-                      type="button"
-                      onClick={() => handleCopyMessage(msg.id, msg.text)}
-                      className="flex items-center gap-1 text-[11px] font-semibold text-ink-soft hover:text-primary-glow px-2 py-0.5 rounded-lg border border-border hover:bg-surface-alt transition-all cursor-pointer"
-                      title="Copy response"
-                    >
-                      {copiedMsgId === msg.id ? (
-                        <>
-                          <Check className="w-3 h-3 text-emerald-500" />
-                          <span className="text-emerald-500 font-bold">Copied!</span>
-                        </>
-                      ) : (
-                        <>
-                          <Copy className="w-3 h-3" />
-                          <span>Copy</span>
-                        </>
-                      )}
-                    </button>
                   </div>
                 )}
 
                 {/* User-Visible Resume Analysis Box */}
-                {msg.sender === 'ai' && msg.analysis && (msg.analysis.knownFacts.length > 0 || msg.analysis.missingFacts.length > 0 || msg.analysis.reason) && (
-                  <div className="mb-3 p-3 rounded-xl border bg-surface-alt/70 border-border/80 shadow-2xs space-y-2 text-xs">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-1.5 font-bold text-ink text-[11px] uppercase tracking-wider">
-                        <Search className="w-3.5 h-3.5 text-primary-glow" />
-                        <span>Resume Analysis</span>
+                {msg.sender === "ai" &&
+                  msg.analysis &&
+                  (msg.analysis.knownFacts.length > 0 ||
+                    msg.analysis.missingFacts.length > 0 ||
+                    msg.analysis.reason) && (
+                    <div className="mb-3 p-3 rounded-xl border bg-surface-alt/70 border-border/80 shadow-2xs space-y-2 text-xs">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1.5 font-bold text-ink text-[11px] uppercase tracking-wider">
+                          <Search className="w-3.5 h-3.5 text-primary-glow" />
+                          <span>Resume Analysis</span>
+                        </div>
+                        {msg.status === "NEEDS_INFORMATION" && (
+                          <span className="text-[10px] font-bold bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30 px-2 py-0.5 rounded-full flex items-center gap-1">
+                            <AlertCircle className="w-3 h-3 text-amber-500 shrink-0" />
+                            Needs Details
+                          </span>
+                        )}
+                        {msg.status === "READY" && (
+                          <span className="text-[10px] font-bold bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full flex items-center gap-1">
+                            <CheckCircle2 className="w-3 h-3 text-emerald-500 shrink-0" />
+                            Ready to Apply
+                          </span>
+                        )}
+                        {msg.status === "ANSWER" && (
+                          <span className="text-[10px] font-bold bg-sky-500/15 text-sky-700 dark:text-sky-400 border border-sky-500/30 px-2 py-0.5 rounded-full flex items-center gap-1">
+                            <Sparkles className="w-3 h-3 text-sky-500 shrink-0" />
+                            Context Verified
+                          </span>
+                        )}
                       </div>
-                      {msg.status === 'NEEDS_INFORMATION' && (
-                        <span className="text-[10px] font-bold bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30 px-2 py-0.5 rounded-full flex items-center gap-1">
-                          <AlertCircle className="w-3 h-3 text-amber-500 shrink-0" />
-                          Needs Details
-                        </span>
-                      )}
-                      {msg.status === 'READY' && (
-                        <span className="text-[10px] font-bold bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full flex items-center gap-1">
-                          <CheckCircle2 className="w-3 h-3 text-emerald-500 shrink-0" />
-                          Ready to Apply
-                        </span>
-                      )}
-                      {msg.status === 'ANSWER' && (
-                        <span className="text-[10px] font-bold bg-sky-500/15 text-sky-700 dark:text-sky-400 border border-sky-500/30 px-2 py-0.5 rounded-full flex items-center gap-1">
-                          <Sparkles className="w-3 h-3 text-sky-500 shrink-0" />
-                          Context Verified
-                        </span>
+
+                      {/* Detected Facts */}
+                      {msg.analysis.knownFacts &&
+                        msg.analysis.knownFacts.length > 0 && (
+                          <div className="space-y-1 pt-1.5 border-t border-border/50">
+                            <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 flex items-center gap-1">
+                              <Check className="w-3 h-3 text-emerald-500" />{" "}
+                              Detected Profile Facts:
+                            </span>
+                            <ul className="space-y-0.5 pl-3.5 text-[11px] text-ink-soft">
+                              {msg.analysis.knownFacts.map((fact, fIdx) => (
+                                <li
+                                  key={fIdx}
+                                  className="list-disc leading-tight"
+                                >
+                                  {fact}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
+                      {/* Missing Information */}
+                      {msg.analysis.missingFacts &&
+                        msg.analysis.missingFacts.length > 0 && (
+                          <div className="space-y-1 pt-1.5 border-t border-border/50">
+                            <span className="text-[10px] font-bold text-amber-700 dark:text-amber-400 flex items-center gap-1">
+                              <AlertCircle className="w-3 h-3 text-amber-500" />{" "}
+                              Missing Information:
+                            </span>
+                            <ul className="space-y-0.5 pl-3.5 text-[11px] text-ink-soft">
+                              {msg.analysis.missingFacts.map((miss, mIdx) => (
+                                <li
+                                  key={mIdx}
+                                  className="list-disc leading-tight"
+                                >
+                                  {miss}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
+                      {/* Concise conclusion/reason */}
+                      {msg.analysis.reason && (
+                        <p className="text-[10px] text-ink-soft italic pt-1 border-t border-border/40">
+                          {msg.analysis.reason}
+                        </p>
                       )}
                     </div>
-
-                    {/* Detected Facts */}
-                    {msg.analysis.knownFacts && msg.analysis.knownFacts.length > 0 && (
-                      <div className="space-y-1 pt-1.5 border-t border-border/50">
-                        <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 flex items-center gap-1">
-                          <Check className="w-3 h-3 text-emerald-500" /> Detected Profile Facts:
-                        </span>
-                        <ul className="space-y-0.5 pl-3.5 text-[11px] text-ink-soft">
-                          {msg.analysis.knownFacts.map((fact, fIdx) => (
-                            <li key={fIdx} className="list-disc leading-tight">{fact}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-
-                    {/* Missing Information */}
-                    {msg.analysis.missingFacts && msg.analysis.missingFacts.length > 0 && (
-                      <div className="space-y-1 pt-1.5 border-t border-border/50">
-                        <span className="text-[10px] font-bold text-amber-700 dark:text-amber-400 flex items-center gap-1">
-                          <AlertCircle className="w-3 h-3 text-amber-500" /> Missing Information:
-                        </span>
-                        <ul className="space-y-0.5 pl-3.5 text-[11px] text-ink-soft">
-                          {msg.analysis.missingFacts.map((miss, mIdx) => (
-                            <li key={mIdx} className="list-disc leading-tight">{miss}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-
-                    {/* Concise conclusion/reason */}
-                    {msg.analysis.reason && (
-                      <p className="text-[10px] text-ink-soft italic pt-1 border-t border-border/40">
-                        {msg.analysis.reason}
-                      </p>
-                    )}
-                  </div>
-                )}
+                  )}
 
                 {/* Message Body */}
-                {msg.sender === 'user' ? (
-                  <p className="whitespace-pre-wrap leading-relaxed">{cleanUserText(msg.text)}</p>
+                {msg.sender === "user" ? (
+                  <p className="whitespace-pre-wrap leading-relaxed">
+                    {cleanUserText(msg.text)}
+                  </p>
                 ) : (
                   <MarkdownRenderer content={msg.text} />
                 )}
 
                 {/* Quick Reply Suggestion Chips */}
-                {msg.sender === 'ai' && msg.quickReplies && msg.quickReplies.length > 0 && (
-                  <div className="mt-3 pt-2 border-t border-border/60 flex flex-wrap gap-1.5">
-                    {msg.quickReplies.map((qr, qrIdx) => (
-                      <button
-                        key={qrIdx}
-                        type="button"
-                        onClick={() => sendMessage(qr)}
-                        className="text-[10px] font-semibold bg-surface-alt hover:bg-primary/15 text-ink border border-border hover:border-primary/40 px-2.5 py-1 rounded-lg transition-all flex items-center gap-1 cursor-pointer shadow-2xs"
-                      >
-                        <Sparkles className="w-2.5 h-2.5 text-primary-glow shrink-0" />
-                        <span>{qr}</span>
-                      </button>
-                    ))}
-                  </div>
-                )}
+                {msg.sender === "ai" &&
+                  msg.quickReplies &&
+                  msg.quickReplies.length > 0 && (
+                    <div className="mt-3 pt-2 border-t border-border/60 flex flex-wrap gap-1.5">
+                      {msg.quickReplies.map((qr, qrIdx) => (
+                        <button
+                          key={qrIdx}
+                          type="button"
+                          onClick={() => sendMessage(qr)}
+                          className="text-[10px] font-semibold bg-surface-alt hover:bg-primary/15 text-ink border border-border hover:border-primary/40 px-2.5 py-1 rounded-lg transition-all flex items-center gap-1 cursor-pointer shadow-2xs"
+                        >
+                          <Sparkles className="w-2.5 h-2.5 text-primary-glow shrink-0" />
+                          <span>{qr}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
 
                 {/* 1-Click Interactive Actions */}
                 {msg.suggestions && msg.suggestions.length > 0 && (
@@ -390,11 +425,16 @@ export const EmbeddedAiChat: React.FC<EmbeddedAiChatProps> = ({ onClose }) => {
                     </span>
                     <div className="flex flex-col gap-1.5">
                       {msg.suggestions.map((sug, sIdx) => {
-                        const isApplied = appliedActionIds.has(sug.id || `sug-${sIdx}`);
+                        const isApplied = appliedActionIds.has(
+                          sug.id || `sug-${sIdx}`,
+                        );
                         const isSkillChip = sug.label.startsWith('+ Add "');
-                        const skillNameMatch = sug.label.match(/\+ Add "(.*?)"/);
+                        const skillNameMatch =
+                          sug.label.match(/\+ Add "(.*?)"/);
                         const isAlreadyInSkills = skillNameMatch
-                          ? existingSkillsSet.has(skillNameMatch[1].trim().toLowerCase())
+                          ? existingSkillsSet.has(
+                              skillNameMatch[1].trim().toLowerCase(),
+                            )
                           : false;
 
                         if (isSkillChip) {
@@ -403,11 +443,16 @@ export const EmbeddedAiChat: React.FC<EmbeddedAiChatProps> = ({ onClose }) => {
                               key={sug.id || sIdx}
                               type="button"
                               disabled={isApplied || isAlreadyInSkills}
-                              onClick={() => handleActionClick(sug.id || `sug-${sIdx}`, sug.action)}
+                              onClick={() =>
+                                handleActionClick(
+                                  sug.id || `sug-${sIdx}`,
+                                  sug.action,
+                                )
+                              }
                               className={`text-xs text-left px-3 py-2 rounded-xl border flex items-center justify-between transition-all font-semibold cursor-pointer shadow-xs ${
                                 isApplied || isAlreadyInSkills
-                                  ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600 cursor-default opacity-85'
-                                  : 'bg-surface-alt hover:bg-primary/10 border-border hover:border-primary/40 text-ink'
+                                  ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-600 cursor-default opacity-85"
+                                  : "bg-surface-alt hover:bg-primary/10 border-border hover:border-primary/40 text-ink"
                               }`}
                             >
                               <span className="truncate pr-2">{sug.label}</span>
@@ -424,15 +469,22 @@ export const EmbeddedAiChat: React.FC<EmbeddedAiChatProps> = ({ onClose }) => {
                           <button
                             key={sug.id || sIdx}
                             type="button"
-                            onClick={() => handleActionClick(sug.id || `sug-${sIdx}`, sug.action)}
+                            onClick={() =>
+                              handleActionClick(
+                                sug.id || `sug-${sIdx}`,
+                                sug.action,
+                              )
+                            }
                             className={`w-full text-xs text-left p-2.5 rounded-xl border flex items-center justify-between transition-all font-bold cursor-pointer shadow-xs group ${
                               isApplied
-                                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600'
-                                : 'bg-primary/10 hover:bg-primary/20 text-ink border-primary/30'
+                                ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-600"
+                                : "bg-primary/10 hover:bg-primary/20 text-ink border-primary/30"
                             }`}
                           >
                             <span className="truncate pr-2 group-hover:text-primary-glow">
-                              {isApplied ? `✔ Applied: ${sug.label.replace(/^✔\s*/, '')}` : sug.label}
+                              {isApplied
+                                ? `✔ Applied: ${sug.label.replace(/^✔\s*/, "")}`
+                                : sug.label}
                             </span>
                             {isApplied ? (
                               <Check className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
@@ -446,7 +498,9 @@ export const EmbeddedAiChat: React.FC<EmbeddedAiChatProps> = ({ onClose }) => {
                   </div>
                 )}
               </div>
-              <span className="text-[9px] text-ink-soft mt-1 px-1">{msg.timestamp}</span>
+              <span className="text-[9px] text-ink-soft mt-1 px-1">
+                {msg.timestamp}
+              </span>
             </div>
           ))}
 
@@ -477,12 +531,16 @@ export const EmbeddedAiChat: React.FC<EmbeddedAiChatProps> = ({ onClose }) => {
             onClick={toggleListening}
             className={`p-2 rounded-xl border transition-all cursor-pointer ${
               isListening
-                ? 'bg-rose-500/20 border-rose-500 text-rose-500 animate-pulse'
-                : 'bg-surface-alt border-border text-ink-soft hover:text-ink'
+                ? "bg-rose-500/20 border-rose-500 text-rose-500 animate-pulse"
+                : "bg-surface-alt border-border text-ink-soft hover:text-ink"
             }`}
-            title={isListening ? 'Stop listening' : 'Start voice input'}
+            title={isListening ? "Stop listening" : "Start voice input"}
           >
-            {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+            {isListening ? (
+              <MicOff className="w-4 h-4" />
+            ) : (
+              <Mic className="w-4 h-4" />
+            )}
           </button>
 
           {/* Send Button */}
@@ -496,7 +554,8 @@ export const EmbeddedAiChat: React.FC<EmbeddedAiChatProps> = ({ onClose }) => {
         </form>
 
         <p className="text-[10px] text-center text-ink-soft">
-          LetGetIn AI Coach operates directly on your open resume data. Unlimited SaaS tokens enabled.
+          LetGetIn AI Coach operates directly on your open resume data.
+          Unlimited SaaS tokens enabled.
         </p>
       </div>
     </div>
