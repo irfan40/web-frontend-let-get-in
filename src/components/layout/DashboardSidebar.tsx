@@ -25,6 +25,7 @@ import {
   Network,
   Users,
   Store,
+  Rocket,
   type LucideIcon,
 } from "lucide-react";
 
@@ -107,6 +108,13 @@ export function DashboardSidebar({
   };
 
   const navItems: NavItem[] = [
+    {
+      name: "AI Apply",
+      shortName: "AI Apply",
+      href: "/ai-apply",
+      icon: Rocket,
+      description: "Configure preferences and auto-apply to matching jobs",
+    },
     // Show AI Onboarding only if user has 0 resumes (new user first time)
     ...(hasResumes === false
       ? [

@@ -12,6 +12,7 @@ import { JobDetailPanel } from "@/features/jobs/components/JobDetailPanel";
 import { JobApplyModal } from "@/features/jobs/components/JobApplyModal";
 import { JobFilters } from "@/features/jobs/components/JobFilters";
 import { ExploreHero } from "@/features/jobs/components/ExploreHero";
+import { AIChat } from "@/features/aiAssistant/components/AIChat";
 import {
   Sparkles,
   Globe,
@@ -534,6 +535,9 @@ export default function ExplorePage() {
         }}
         onSuccess={handleApplicationSuccess}
       />
+
+      {/* Contextual AI Assistant */}
+      <AIChat context="explore" contextPayload={{ selectedJobId: selectedJob?._id }} />
     </div>
   );
 }

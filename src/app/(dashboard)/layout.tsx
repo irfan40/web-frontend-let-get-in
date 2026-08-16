@@ -16,6 +16,7 @@ export default function DashboardLayout({
   const pathname = usePathname();
 
   const pageTitles: Record<string, string> = {
+    "/ai-apply": "AI Apply",
     "/resume": "Resume Workspace",
     "/builder": "Resume Builder",
     "/demo": "AI Career Onboarding",
