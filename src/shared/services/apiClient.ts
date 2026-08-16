@@ -4,9 +4,10 @@ const NEXT_PUBLIC_API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost
 
 export const apiClient: AxiosInstance = axios.create({
   baseURL: NEXT_PUBLIC_API_URL,
-  withCredentials: true, // Enables sending HTTP-only cookies (accessToken & refreshToken)
+  withCredentials: true, // Sends HTTP-only cookies (accessToken & refreshToken)
   headers: {
     'Content-Type': 'application/json',
+    'X-Requested-With': 'XMLHttpRequest',
   },
   timeout: 30000,
 });
@@ -15,24 +16,28 @@ interface CustomAxiosRequestConfig extends InternalAxiosRequestConfig {
   _retry?: boolean;
 }
 
-let isRefreshing = false;
-let failedQueue: Array<{
-  resolve: (value?: unknown) => void;
-  reject: (reason?: unknown) => void;
-}> = [];
+// Single active refresh promise to coordinate all concurrent 401s across tabs/requests
+let activeRefreshPromise: Promise<void> | null = null;
 
-const processQueue = (error: unknown = null) => {
-  failedQueue.forEach((prom) => {
-    if (error) {
-      prom.reject(error);
-    } else {
-      prom.resolve();
-    }
-  });
-  failedQueue = [];
+const isAuthEndpoint = (url?: string): boolean => {
+  if (!url) return false;
+  return (
+    url.includes('/auth/login') ||
+    url.includes('/auth/google') ||
+    url.includes('/auth/refresh') ||
+    url.includes('/auth/logout') ||
+    url.includes('/auth/logout-all') ||
+    url.includes('/auth/send-email-otp') ||
+    url.includes('/auth/verify-email-otp') ||
+    url.includes('/auth/send-whatsapp-otp') ||
+    url.includes('/auth/verify-whatsapp-otp') ||
+    url.includes('/auth/send-otp') ||
+    url.includes('/auth/verify-otp') ||
+    url.includes('/auth/signup')
+  );
 };
 
-// Response interceptor for unified response extraction & automatic token refresh on 401
+// Response interceptor for unified response extraction & concurrency-safe token refresh
 apiClient.interceptors.response.use(
   (response: AxiosResponse) => {
     return response.data;
@@ -45,53 +50,47 @@ apiClient.interceptors.response.use(
     }
 
     const status = error.response ? error.response.status : null;
+    const isNetworkError = !error.response || error.code === 'ERR_NETWORK' || error.code === 'ECONNABORTED';
 
-    // Check if error is 401 Unauthorized and not already retrying, and not an unauthenticated action endpoint
-    const isNonRefreshableEndpoint =
-      originalRequest.url?.includes('/auth/login') ||
-      originalRequest.url?.includes('/auth/google') ||
-      originalRequest.url?.includes('/auth/refresh') ||
-      originalRequest.url?.includes('/auth/logout') ||
-      originalRequest.url?.includes('/auth/send-email-otp') ||
-      originalRequest.url?.includes('/auth/verify-email-otp') ||
-      originalRequest.url?.includes('/auth/send-whatsapp-otp') ||
-      originalRequest.url?.includes('/auth/verify-whatsapp-otp') ||
-      originalRequest.url?.includes('/auth/send-otp') ||
-      originalRequest.url?.includes('/auth/verify-otp') ||
-      originalRequest.url?.includes('/auth/signup');
+    // 1. Handle Network / Connection Errors Gracefully without redirecting or destroying session
+    if (isNetworkError) {
+      return Promise.reject({
+        success: false,
+        error: {
+          code: 'NETWORK_ERROR',
+          message: 'Unable to connect to server. Please check your internet connection.',
+        },
+      });
+    }
 
-    if (status === 401 && !originalRequest._retry && !isNonRefreshableEndpoint) {
-      if (isRefreshing) {
-        return new Promise((resolve, reject) => {
-          failedQueue.push({ resolve, reject });
-        })
-          .then(() => {
-            return apiClient(originalRequest);
-          })
-          .catch((err) => {
-            return Promise.reject(err);
-          });
-      }
-
+    // 2. Handle 401 Unauthorized for refreshable endpoints
+    if (status === 401 && !originalRequest._retry && !isAuthEndpoint(originalRequest.url)) {
       originalRequest._retry = true;
-      isRefreshing = true;
 
       try {
-        // Request token refresh from backend (which uses HTTPOnly refreshToken cookie)
-        await axios.post(
-          `${NEXT_PUBLIC_API_URL}/auth/refresh`,
-          {},
-          { withCredentials: true }
-        );
+        if (!activeRefreshPromise) {
+          // Initiate unified refresh request
+          activeRefreshPromise = axios
+            .post(
+              `${NEXT_PUBLIC_API_URL}/auth/refresh`,
+              {},
+              { withCredentials: true }
+            )
+            .then(() => {
+              // Refresh completed successfully
+            })
+            .finally(() => {
+              activeRefreshPromise = null;
+            });
+        }
 
-        isRefreshing = false;
-        processQueue(null);
+        // Wait for active refresh promise (either current or shared one)
+        await activeRefreshPromise;
+
+        // Retry original request with newly set cookies
         return apiClient(originalRequest);
       } catch (refreshError) {
-        isRefreshing = false;
-        processQueue(refreshError);
-
-        // Only redirect to /auth if currently on a protected route and not already on /auth
+        // If refresh fails with 401 (e.g. session expired or revoked), notify caller
         const PROTECTED_PREFIXES = [
           '/resume',
           '/builder',
@@ -118,6 +117,7 @@ apiClient.interceptors.response.use(
         if (typeof window !== 'undefined' && isProtectedRoute && !window.location.pathname.startsWith('/auth')) {
           window.location.href = '/auth';
         }
+
         return Promise.reject(
           error.response?.data || {
             success: false,
@@ -134,8 +134,8 @@ apiClient.interceptors.response.use(
     return Promise.reject({
       success: false,
       error: {
-        code: 'NETWORK_ERROR',
-        message: error.message || 'Unable to connect to backend server',
+        code: 'API_ERROR',
+        message: error.message || 'An unexpected error occurred',
       },
     });
   }

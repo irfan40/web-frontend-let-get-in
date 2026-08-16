@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { AuthService, UserProfile } from '../services/authService';
+import { AuthService, UserProfile, ActiveSession } from '../services/authService';
 
 interface AuthState {
   user: UserProfile | null;
@@ -7,7 +7,9 @@ interface AuthState {
   loading: boolean;
   isLoading: boolean; // Alias for loading
   isInitialized: boolean;
+  isNetworkError: boolean;
   error: string | null;
+  sessions: ActiveSession[];
 
   login: (data: { email?: string; phone?: string; emailOrPhone?: string; password: string }) => Promise<UserProfile>;
   googleLogin: (credential: string) => Promise<UserProfile>;
@@ -20,14 +22,14 @@ interface AuthState {
     otp: string;
   }) => Promise<UserProfile>;
 
-  sendOtp: (email: string) => Promise<{ cooldown: number }>; // Alias for sendEmailOtp
+  sendOtp: (email: string) => Promise<{ cooldown: number }>;
   verifyOtp: (data: {
     email: string;
     username: string;
     password: string;
     confirmPassword: string;
     otp: string;
-  }) => Promise<UserProfile>; // Alias for verifyEmailOtp
+  }) => Promise<UserProfile>;
 
   sendWhatsAppOtp: (data: { countryCode: string; phone: string }) => Promise<{ cooldown: number }>;
   verifyWhatsAppOtp: (data: {
@@ -48,13 +50,30 @@ interface AuthState {
   }) => Promise<UserProfile>;
 
   logout: () => Promise<void>;
+  logoutAll: () => Promise<void>;
+  fetchSessions: () => Promise<ActiveSession[]>;
+  revokeSession: (sessionId: string) => Promise<void>;
   refresh: () => Promise<UserProfile | null>;
   fetchCurrentUser: (force?: boolean) => Promise<UserProfile | null>;
-  checkAuth: (force?: boolean) => Promise<UserProfile | null>; // Deduplicated session check
+  checkAuth: (force?: boolean) => Promise<UserProfile | null>;
+  retryAuth: () => Promise<UserProfile | null>;
   clearError: () => void;
 }
 
 let authCheckPromise: Promise<UserProfile | null> | null = null;
+let silentRefreshTimer: NodeJS.Timeout | null = null;
+
+const setupSilentRefresh = (refreshFn: () => void) => {
+  if (typeof window === 'undefined') return;
+  if (silentRefreshTimer) clearInterval(silentRefreshTimer);
+
+  // Proactively refresh access token every 10 minutes while user is active
+  silentRefreshTimer = setInterval(() => {
+    if (document.visibilityState === 'visible') {
+      refreshFn();
+    }
+  }, 10 * 60 * 1000);
+};
 
 export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
@@ -62,11 +81,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   loading: true,
   isLoading: true,
   isInitialized: false,
+  isNetworkError: false,
   error: null,
+  sessions: [],
 
   fetchCurrentUser: async (force: boolean = false) => {
-    // If already checked and not forced, return cached user without duplicate network call
-    if (!force && get().isInitialized) {
+    // If already checked and not forced, return cached user
+    if (!force && get().isInitialized && !get().isNetworkError) {
       return get().user;
     }
 
@@ -78,10 +99,44 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     authCheckPromise = (async () => {
       try {
         const user = await AuthService.fetchCurrentUser();
-        set({ user, isAuthenticated: true, loading: false, isLoading: false, isInitialized: true });
+        set({
+          user,
+          isAuthenticated: true,
+          loading: false,
+          isLoading: false,
+          isInitialized: true,
+          isNetworkError: false,
+        });
+
+        // Initialize background proactive silent refresh
+        setupSilentRefresh(() => {
+          get().refresh();
+        });
+
         return user;
-      } catch {
-        set({ user: null, isAuthenticated: false, loading: false, isLoading: false, isInitialized: true });
+      } catch (err: any) {
+        const isNetErr = err?.error?.code === 'NETWORK_ERROR' || err?.code === 'NETWORK_ERROR' || !err?.response;
+
+        if (isNetErr) {
+          // Do not destroy authenticated state on temporary network disconnection
+          set({
+            loading: false,
+            isLoading: false,
+            isInitialized: true,
+            isNetworkError: true,
+          });
+          return get().user;
+        }
+
+        // Definitively unauthenticated (401 Unauthorized / no session)
+        set({
+          user: null,
+          isAuthenticated: false,
+          loading: false,
+          isLoading: false,
+          isInitialized: true,
+          isNetworkError: false,
+        });
         return null;
       } finally {
         authCheckPromise = null;
@@ -95,11 +150,27 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     return get().fetchCurrentUser(force);
   },
 
+  retryAuth: async () => {
+    return get().fetchCurrentUser(true);
+  },
+
   login: async (credentials) => {
-    set({ loading: true, isLoading: true, error: null });
+    set({ loading: true, isLoading: true, error: null, isNetworkError: false });
     try {
       const user = await AuthService.login(credentials);
-      set({ user, isAuthenticated: true, loading: false, isLoading: false, isInitialized: true });
+      set({
+        user,
+        isAuthenticated: true,
+        loading: false,
+        isLoading: false,
+        isInitialized: true,
+        isNetworkError: false,
+      });
+
+      setupSilentRefresh(() => {
+        get().refresh();
+      });
+
       return user;
     } catch (err: unknown) {
       const errorMsg =
@@ -112,10 +183,22 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   googleLogin: async (credential: string) => {
-    set({ loading: true, isLoading: true, error: null });
+    set({ loading: true, isLoading: true, error: null, isNetworkError: false });
     try {
       const user = await AuthService.googleLogin(credential);
-      set({ user, isAuthenticated: true, loading: false, isLoading: false, isInitialized: true });
+      set({
+        user,
+        isAuthenticated: true,
+        loading: false,
+        isLoading: false,
+        isInitialized: true,
+        isNetworkError: false,
+      });
+
+      setupSilentRefresh(() => {
+        get().refresh();
+      });
+
       return user;
     } catch (err: unknown) {
       const errorMsg =
@@ -142,10 +225,22 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   verifyEmailOtp: async (data) => {
-    set({ loading: true, isLoading: true, error: null });
+    set({ loading: true, isLoading: true, error: null, isNetworkError: false });
     try {
       const user = await AuthService.verifyEmailOtp(data);
-      set({ user, isAuthenticated: true, loading: false, isLoading: false, isInitialized: true });
+      set({
+        user,
+        isAuthenticated: true,
+        loading: false,
+        isLoading: false,
+        isInitialized: true,
+        isNetworkError: false,
+      });
+
+      setupSilentRefresh(() => {
+        get().refresh();
+      });
+
       return user;
     } catch (err: unknown) {
       const errorMsg =
@@ -180,10 +275,22 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   verifyWhatsAppOtp: async (data) => {
-    set({ loading: true, isLoading: true, error: null });
+    set({ loading: true, isLoading: true, error: null, isNetworkError: false });
     try {
       const user = await AuthService.verifyWhatsAppOtp(data);
-      set({ user, isAuthenticated: true, loading: false, isLoading: false, isInitialized: true });
+      set({
+        user,
+        isAuthenticated: true,
+        loading: false,
+        isLoading: false,
+        isInitialized: true,
+        isNetworkError: false,
+      });
+
+      setupSilentRefresh(() => {
+        get().refresh();
+      });
+
       return user;
     } catch (err: unknown) {
       const errorMsg =
@@ -202,22 +309,80 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   refresh: async () => {
     try {
       const user = await AuthService.refresh();
-      set({ user, isAuthenticated: true, loading: false, isLoading: false, isInitialized: true });
+      set({
+        user,
+        isAuthenticated: true,
+        loading: false,
+        isLoading: false,
+        isInitialized: true,
+        isNetworkError: false,
+      });
       return user;
     } catch {
-      set({ user: null, isAuthenticated: false, loading: false, isLoading: false, isInitialized: true });
       return null;
     }
   },
 
+  fetchSessions: async () => {
+    try {
+      const sessions = await AuthService.listSessions();
+      set({ sessions });
+      return sessions;
+    } catch (err) {
+      console.error('Failed to fetch sessions:', err);
+      return [];
+    }
+  },
+
+  revokeSession: async (sessionId: string) => {
+    try {
+      await AuthService.revokeSession(sessionId);
+      set((state) => ({
+        sessions: state.sessions.filter((s) => s.sessionId !== sessionId),
+      }));
+    } catch (err) {
+      console.error('Failed to revoke session:', err);
+      throw err;
+    }
+  },
+
   logout: async () => {
+    if (silentRefreshTimer) clearInterval(silentRefreshTimer);
     set({ loading: true, isLoading: true });
     try {
       await AuthService.logout();
     } catch (err) {
       console.error('Logout error:', err);
     } finally {
-      set({ user: null, isAuthenticated: false, loading: false, isLoading: false, isInitialized: true });
+      set({
+        user: null,
+        isAuthenticated: false,
+        loading: false,
+        isLoading: false,
+        isInitialized: true,
+        isNetworkError: false,
+        sessions: [],
+      });
+    }
+  },
+
+  logoutAll: async () => {
+    if (silentRefreshTimer) clearInterval(silentRefreshTimer);
+    set({ loading: true, isLoading: true });
+    try {
+      await AuthService.logoutAll();
+    } catch (err) {
+      console.error('Logout-all error:', err);
+    } finally {
+      set({
+        user: null,
+        isAuthenticated: false,
+        loading: false,
+        isLoading: false,
+        isInitialized: true,
+        isNetworkError: false,
+        sessions: [],
+      });
     }
   },
 

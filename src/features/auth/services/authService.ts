@@ -18,6 +18,15 @@ export interface UserProfile {
   updatedAt?: string;
 }
 
+export interface ActiveSession {
+  sessionId: string;
+  userAgent: string;
+  ipAddress: string;
+  createdAt: string;
+  lastUsedAt: string;
+  isCurrent: boolean;
+}
+
 export interface AuthResponseData {
   user: UserProfile;
   accessToken?: string;
@@ -28,6 +37,13 @@ export interface AuthApiResponse {
   success: boolean;
   message?: string;
   data: AuthResponseData;
+}
+
+export interface SessionsApiResponse {
+  success: boolean;
+  data: {
+    sessions: ActiveSession[];
+  };
 }
 
 export interface SendOtpApiResponse {
@@ -114,6 +130,19 @@ export class AuthService {
 
   static async logout(): Promise<void> {
     await apiClient.post('/auth/logout');
+  }
+
+  static async logoutAll(): Promise<void> {
+    await apiClient.post('/auth/logout-all');
+  }
+
+  static async listSessions(): Promise<ActiveSession[]> {
+    const response = await apiClient.get<never, SessionsApiResponse>('/auth/sessions');
+    return response.data.sessions;
+  }
+
+  static async revokeSession(sessionId: string): Promise<void> {
+    await apiClient.delete(`/auth/sessions/${sessionId}`);
   }
 
   static async fetchCurrentUser(): Promise<UserProfile> {

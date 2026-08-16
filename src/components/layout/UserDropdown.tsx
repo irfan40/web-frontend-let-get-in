@@ -132,15 +132,28 @@ export function UserDropdown() {
           {/* Divider */}
           <div className="my-1 border-t border-border" />
 
-          {/* Logout Action */}
-          <div className="px-1.5 py-1">
+          {/* Logout Actions */}
+          <div className="px-1.5 py-1 space-y-0.5">
             <button
               type="button"
               onClick={handleLogout}
               className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-destructive hover:bg-destructive/10 rounded-xl transition text-left"
             >
               <LogOut className="w-4 h-4" />
-              <span>Log Out</span>
+              <span>Log Out (This Device)</span>
+            </button>
+            <button
+              type="button"
+              onClick={async () => {
+                setIsOpen(false);
+                const { logoutAll } = useAuthStore.getState();
+                await logoutAll();
+                router.push("/auth");
+              }}
+              className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-ink-soft hover:text-destructive hover:bg-destructive/10 rounded-xl transition text-left"
+            >
+              <ShieldCheck className="w-4 h-4" />
+              <span>Log Out All Devices</span>
             </button>
           </div>
         </div>
