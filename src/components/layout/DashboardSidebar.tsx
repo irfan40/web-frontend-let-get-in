@@ -7,7 +7,6 @@ import { Logo } from "@/components/landing/Logo";
 import { useAuthStore } from "@/features/auth/store/useAuthStore";
 import { StorageProviderFactory } from "@/features/resume/storage/factory";
 import {
-  FileText,
   Sparkles,
   LogOut,
   X,
@@ -143,11 +142,11 @@ export function DashboardSidebar({
       description: "Explore matched job opportunities",
     },
     {
-      name: "My Resumes",
-      shortName: "Resumes",
+      name: "My Jobs",
+      shortName: "Jobs",
       href: "/resume",
-      icon: FileText,
-      description: "Manage & view all resumes",
+      icon: Briefcase,
+      description: "Jobs, resumes, cover letters & video profile",
     },
     {
       name: "My Profile",
@@ -197,23 +196,6 @@ export function DashboardSidebar({
       href: "/edupie",
       icon: BookOpenCheck,
       description: "AI learning paths & certifications",
-      children: [
-        {
-          name: "Edupie",
-          shortName: "Edupie",
-          href: "/edupie",
-          icon: BookOpenCheck,
-          description: "Learning paths & course recommendations",
-          badge: "AI",
-        },
-        // {
-        //   name: "Certification Exams",
-        //   shortName: "Exams",
-        //   href: "/exams",
-        //   icon: GraduationCap,
-        //   description: "Proctored certification exams",
-        // },
-      ],
     },
     {
       name: "App Market",
