@@ -1,7 +1,11 @@
 import { create } from 'zustand';
 import { streamAiChat } from '@/shared/services/aiStream';
 import { aiAssistantService } from '../services/aiAssistantService';
-import { CONTEXT_GREETINGS } from '../config/suggestedQuestions.config';
+import {
+  CONTEXT_GREETINGS,
+  CONTEXT_STATUS_BADGES,
+  CONTEXT_THOUGHT_SUMMARIES,
+} from '../config/suggestedQuestions.config';
 import {
   AssistantContextType,
   AssistantMode,
@@ -13,9 +17,11 @@ import {
 const NEXT_PUBLIC_API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
 const CONTEXTS: AssistantContextType[] = ['explore', 'profile', 'resume', 'drive'];
 
-interface ContextState {
+export interface ContextState {
   isOpen: boolean;
   mode: AssistantMode;
+  isThinking: boolean;
+  isSearching: boolean;
   messages: AssistantChatMessage[];
   isLoading: boolean;
 }
@@ -28,6 +34,8 @@ function createInitialContextState(context: AssistantContextType): ContextState 
   return {
     isOpen: false,
     mode: 'instant',
+    isThinking: false,
+    isSearching: false,
     messages: [
       {
         id: `greeting-${context}`,
@@ -44,6 +52,10 @@ interface AIAssistantStoreState {
   byContext: Record<AssistantContextType, ContextState>;
   setOpen: (context: AssistantContextType, open: boolean) => void;
   setMode: (context: AssistantContextType, mode: AssistantMode) => void;
+  setThinking: (context: AssistantContextType, enabled: boolean) => void;
+  toggleThinking: (context: AssistantContextType) => void;
+  setSearching: (context: AssistantContextType, enabled: boolean) => void;
+  toggleSearching: (context: AssistantContextType) => void;
   clearConversation: (context: AssistantContextType) => void;
   sendMessage: (context: AssistantContextType, text: string, contextPayload?: AssistantContextPayload) => Promise<void>;
 }
@@ -71,11 +83,43 @@ export const useAIAssistantStore = create<AIAssistantStoreState>((set, get) => (
       byContext: { ...state.byContext, [context]: { ...state.byContext[context], mode } },
     })),
 
+  setThinking: (context, enabled) =>
+    set((state) => ({
+      byContext: { ...state.byContext, [context]: { ...state.byContext[context], isThinking: enabled } },
+    })),
+
+  toggleThinking: (context) =>
+    set((state) => ({
+      byContext: {
+        ...state.byContext,
+        [context]: { ...state.byContext[context], isThinking: !state.byContext[context].isThinking },
+      },
+    })),
+
+  setSearching: (context, enabled) =>
+    set((state) => ({
+      byContext: { ...state.byContext, [context]: { ...state.byContext[context], isSearching: enabled } },
+    })),
+
+  toggleSearching: (context) =>
+    set((state) => ({
+      byContext: {
+        ...state.byContext,
+        [context]: { ...state.byContext[context], isSearching: !state.byContext[context].isSearching },
+      },
+    })),
+
   clearConversation: (context) =>
     set((state) => ({
       byContext: {
         ...state.byContext,
-        [context]: { ...createInitialContextState(context), isOpen: state.byContext[context].isOpen, mode: state.byContext[context].mode },
+        [context]: {
+          ...createInitialContextState(context),
+          isOpen: state.byContext[context].isOpen,
+          mode: state.byContext[context].mode,
+          isThinking: state.byContext[context].isThinking,
+          isSearching: state.byContext[context].isSearching,
+        },
       },
     })),
 
@@ -84,10 +128,32 @@ export const useAIAssistantStore = create<AIAssistantStoreState>((set, get) => (
     if (!trimmed) return;
     if (get().byContext[context].isLoading) return;
 
+    const currentContextState = get().byContext[context];
+    const mode = currentContextState.mode;
+    const isThinking = currentContextState.isThinking || mode === 'expert';
+    const isSearching = currentContextState.isSearching;
+
     const timestamp = getTimestamp();
     const userMsg: AssistantChatMessage = { id: `user-${Date.now()}`, sender: 'user', text: trimmed, timestamp };
     const aiMsgId = `ai-${Date.now()}`;
-    const placeholderMsg: AssistantChatMessage = { id: aiMsgId, sender: 'ai', text: 'Thinking…', timestamp };
+
+    let loadingPlaceholder = 'Thinking…';
+    if (isThinking && isSearching) {
+      loadingPlaceholder = 'Thinking & Searching…';
+    } else if (isSearching) {
+      loadingPlaceholder = 'Searching…';
+    } else if (isThinking) {
+      loadingPlaceholder = 'Thinking…';
+    }
+
+    const placeholderMsg: AssistantChatMessage = {
+      id: aiMsgId,
+      sender: 'ai',
+      text: loadingPlaceholder,
+      timestamp,
+      isThinking,
+      isSearching,
+    };
 
     set((state) => ({
       byContext: {
@@ -100,11 +166,16 @@ export const useAIAssistantStore = create<AIAssistantStoreState>((set, get) => (
       },
     }));
 
-    const mode = get().byContext[context].mode;
     const historyPayload = get()
       .byContext[context].messages.filter((m) => m.id !== aiMsgId)
       .slice(-20)
       .map((m) => ({ sender: m.sender, text: m.text }));
+
+    const mergedPayload: AssistantContextPayload = {
+      ...(contextPayload || {}),
+      enableThinking: isThinking,
+      enableDeepSearch: isSearching,
+    };
 
     const applyPartial = (partialText: string) => {
       set((state) => ({
@@ -126,7 +197,15 @@ export const useAIAssistantStore = create<AIAssistantStoreState>((set, get) => (
             ...state.byContext[context],
             messages: state.byContext[context].messages.map((m) =>
               m.id === aiMsgId
-                ? { ...m, text: data.reply, suggestions: data.suggestions, relevant: data.relevant, timestamp: getTimestamp() }
+                ? {
+                    ...m,
+                    text: data.reply,
+                    suggestions: data.suggestions,
+                    relevant: data.relevant,
+                    isThinking,
+                    isSearching,
+                    timestamp: getTimestamp(),
+                  }
                 : m
             ),
             isLoading: false,
@@ -143,7 +222,15 @@ export const useAIAssistantStore = create<AIAssistantStoreState>((set, get) => (
           ...state.byContext,
           [context]: {
             ...state.byContext[context],
-            messages: state.byContext[context].messages.map((m) => (m.id === aiMsgId ? { ...m, text: fallbackText } : m)),
+            messages: state.byContext[context].messages.map((m) =>
+              m.id === aiMsgId
+                ? {
+                    ...m,
+                    text: fallbackText,
+                    isLoading: false,
+                  }
+                : m
+            ),
             isLoading: false,
           },
         },
@@ -153,14 +240,26 @@ export const useAIAssistantStore = create<AIAssistantStoreState>((set, get) => (
     try {
       const data = await streamAiChat<AssistantResponseData>({
         url: `${NEXT_PUBLIC_API_URL}/ai/assistant`,
-        body: { message: trimmed, context, mode, contextPayload, conversationHistory: historyPayload },
+        body: {
+          message: trimmed,
+          context,
+          mode,
+          contextPayload: mergedPayload,
+          conversationHistory: historyPayload,
+        },
         onPartialReply: applyPartial,
       });
       applyFinal(data);
     } catch (streamError) {
       console.warn('[useAIAssistantStore] Streaming fetch fallback to standard API client:', streamError);
       try {
-        const data = await aiAssistantService.chat({ message: trimmed, context, mode, contextPayload, conversationHistory: historyPayload });
+        const data = await aiAssistantService.chat({
+          message: trimmed,
+          context,
+          mode,
+          contextPayload: mergedPayload,
+          conversationHistory: historyPayload,
+        });
         applyFinal(data);
       } catch (err) {
         applyFallback(err);
@@ -168,3 +267,4 @@ export const useAIAssistantStore = create<AIAssistantStoreState>((set, get) => (
     }
   },
 }));
+
