@@ -39,6 +39,16 @@ import {
   Lock,
   Send,
   KeyRound,
+  BrainCircuit,
+  Languages,
+  Lightbulb,
+  UserPlus,
+  FolderKanban,
+  Wallet,
+  Link2,
+  Building2,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { AuthService } from "@/features/auth/services/authService";
 import {
@@ -59,6 +69,9 @@ import {
 import { VerificationBadge } from "@/features/profile/components/VerificationBadge";
 import { SectionVerificationModal } from "@/features/profile/components/SectionVerificationModal";
 import { DocumentViewerModal } from "@/features/profile/components/DocumentViewerModal";
+import { ComingSoon } from "@/components/common/ComingSoon";
+import { NeuroCareer360 } from "@/features/profile/components/NeuroCareer360";
+import { TalentPulse360 } from "@/features/profile/components/TalentPulse360";
 import { toast } from "sonner";
 
 export type { Track, Mode, EducationItem, ExperienceItem, ProfileData };
@@ -70,7 +83,17 @@ export type SectionId =
   | "education"
   | "experience"
   | "skills"
-  | "generate";
+  | "generate"
+  | "talentPulse360"
+  | "neuroCareer360"
+  | "languagePlus"
+  | "careerSolutionsPlus"
+  | "referrals"
+  | "projects"
+  | "earnings"
+  | "credentials"
+  | "connections"
+  | "myHr";
 
 const DEFAULT_PROFILE: ProfileData = {
   track: "experienced",
@@ -2691,6 +2714,7 @@ export default function ProfilePage() {
   const [isSaving, setIsSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState<"idle" | "unsaved" | "saving" | "saved" | "error">("idle");
   const [previewDoc, setPreviewDoc] = useState<VerificationDocument | null>(null);
+  const tabScrollRef = useRef<HTMLDivElement>(null);
 
   // References for debounced auto-save & concurrency safety
   const initialLoadedRef = React.useRef(false);
@@ -2886,14 +2910,81 @@ export default function ProfilePage() {
     }
   };
 
-  const PROFILE_SECTIONS = [
-    { id: "overview" as SectionId, label: "Overview", icon: Compass },
+  // "Overview" and the ten newly-requested top-level My Profile options - plain (non-grouped) tabs.
+  const OVERVIEW_SECTION = { id: "overview" as SectionId, label: "Overview", icon: Compass };
+  const NEW_TOP_LEVEL_SECTIONS = [
+    { id: "talentPulse360" as SectionId, label: "Talent Pulse 360", icon: TrendingUp },
+    { id: "neuroCareer360" as SectionId, label: "Neuro Career 360", icon: BrainCircuit },
+    { id: "languagePlus" as SectionId, label: "Language+", icon: Languages },
+    { id: "careerSolutionsPlus" as SectionId, label: "Career Solutions+", icon: Lightbulb },
+    { id: "referrals" as SectionId, label: "Referrals", icon: UserPlus },
+    { id: "projects" as SectionId, label: "Projects", icon: FolderKanban },
+    { id: "earnings" as SectionId, label: "Earnings", icon: Wallet },
+    { id: "credentials" as SectionId, label: "Credentials", icon: Award },
+    { id: "connections" as SectionId, label: "Connections", icon: Link2 },
+    { id: "myHr" as SectionId, label: "My HR", icon: Building2 },
+  ];
+
+  // All pre-existing My Profile options, now grouped under the "Personal Details" dropdown.
+  // Ids/labels are unchanged from before this reorganization.
+  const PERSONAL_DETAILS_CHILDREN = [
     { id: "personal" as SectionId, label: "Personal Details", icon: User },
     { id: "contacts" as SectionId, label: "Contact Details", icon: Mail },
     { id: "experience" as SectionId, label: "Work Experience", icon: Briefcase },
     { id: "education" as SectionId, label: "Education", icon: GraduationCap },
     { id: "skills" as SectionId, label: "Skills", icon: Zap },
   ];
+  const isPersonalDetailsActive = PERSONAL_DETAILS_CHILDREN.some((c) => c.id === activeSection);
+
+  const renderPlainTab = (sec: { id: SectionId; label: string; icon: typeof Compass }) => {
+    const Icon = sec.icon;
+    const isActive = activeSection === sec.id;
+    return (
+      <button
+        key={sec.id}
+        onClick={() => handleNavigate(sec.id)}
+        className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
+          isActive
+            ? "bg-gradient-brand text-white shadow-elegant"
+            : "text-ink-soft hover:text-ink hover:bg-secondary/60"
+        }`}
+      >
+        <Icon className={`w-4 h-4 ${isActive ? "text-white" : "text-primary-glow"}`} />
+        <span>{sec.label}</span>
+      </button>
+    );
+  };
+
+  const renderSubTab = (child: { id: SectionId; label: string; icon: typeof Compass }) => {
+    const ChildIcon = child.icon;
+    const isChildActive = activeSection === child.id;
+    const childStatus = getSectionStatus(child.id as SectionType);
+    return (
+      <button
+        key={child.id}
+        onClick={() => handleNavigate(child.id)}
+        className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-[11px] font-bold whitespace-nowrap transition-all cursor-pointer ${
+          isChildActive
+            ? "bg-primary/15 text-primary border border-primary/30"
+            : "text-ink-soft hover:text-ink hover:bg-surface border border-transparent"
+        }`}
+      >
+        <ChildIcon className={`w-3.5 h-3.5 ${isChildActive ? "text-primary" : "text-primary-glow"}`} />
+        <span>{child.label}</span>
+        {childStatus !== "unsubmitted" && (
+          <span
+            className={`w-1.5 h-1.5 rounded-full ${
+              childStatus === "verified" ? "bg-emerald-400" : childStatus === "pending" ? "bg-amber-400" : "bg-rose-400"
+            }`}
+          />
+        )}
+      </button>
+    );
+  };
+
+  const scrollTabsBy = (direction: 1 | -1) => {
+    tabScrollRef.current?.scrollBy({ left: direction * 220, behavior: "smooth" });
+  };
 
   const getSectionDocs = (sec: SectionType): VerificationDocument[] => {
     return (verificationData?.documents || []).filter((d) => d.section === sec);
@@ -2906,34 +2997,48 @@ export default function ProfilePage() {
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-6xl mx-auto space-y-6">
       {/* Top Header Navigation Tabs with Live Auto-Save Status */}
-      <div className="bg-surface border border-border rounded-2xl p-2 shadow-xs flex items-center justify-between gap-3 overflow-x-auto no-scrollbar select-none">
-        <div className="flex items-center gap-1.5 min-w-max">
-          {PROFILE_SECTIONS.map((sec) => {
-            const Icon = sec.icon;
-            const isActive = activeSection === sec.id;
-            const secStatus = sec.id !== "overview" && sec.id !== "generate" ? getSectionStatus(sec.id as SectionType) : undefined;
-            return (
-              <button
-                key={sec.id}
-                onClick={() => handleNavigate(sec.id)}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
-                  isActive
-                    ? "bg-gradient-brand text-white shadow-elegant"
-                    : "text-ink-soft hover:text-ink hover:bg-secondary/60"
-                }`}
-              >
-                <Icon className={`w-4 h-4 ${isActive ? "text-white" : "text-primary-glow"}`} />
-                <span>{sec.label}</span>
-                {secStatus && secStatus !== "unsubmitted" && (
-                  <span className={`w-2 h-2 rounded-full ${secStatus === "verified" ? "bg-emerald-400" : secStatus === "pending" ? "bg-amber-400" : "bg-rose-400"}`} />
-                )}
-              </button>
-            );
-          })}
+      <div className="bg-surface border border-border rounded-2xl p-2 shadow-xs flex items-center gap-2 select-none">
+        {/* Scroll Left */}
+        <button
+          type="button"
+          onClick={() => scrollTabsBy(-1)}
+          aria-label="Scroll navigation left"
+          className="hidden sm:flex shrink-0 p-1.5 rounded-lg text-ink-soft hover:text-ink hover:bg-surface-alt transition cursor-pointer"
+        >
+          <ChevronLeft className="w-4 h-4" />
+        </button>
+
+        <div ref={tabScrollRef} className="flex items-center gap-1.5 overflow-x-auto no-scrollbar scroll-smooth flex-1 min-w-0">
+          {renderPlainTab(OVERVIEW_SECTION)}
+
+          {/* Personal Details - plain tab; selecting it reveals a sub-nav row below with its options */}
+          <button
+            onClick={() => handleNavigate("personal")}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
+              isPersonalDetailsActive
+                ? "bg-gradient-brand text-white shadow-elegant"
+                : "text-ink-soft hover:text-ink hover:bg-secondary/60"
+            }`}
+          >
+            <User className={`w-4 h-4 ${isPersonalDetailsActive ? "text-white" : "text-primary-glow"}`} />
+            <span>Personal Details</span>
+          </button>
+
+          {NEW_TOP_LEVEL_SECTIONS.map((sec) => renderPlainTab(sec))}
         </div>
 
+        {/* Scroll Right */}
+        <button
+          type="button"
+          onClick={() => scrollTabsBy(1)}
+          aria-label="Scroll navigation right"
+          className="hidden sm:flex shrink-0 p-1.5 rounded-lg text-ink-soft hover:text-ink hover:bg-surface-alt transition cursor-pointer"
+        >
+          <ChevronRight className="w-4 h-4" />
+        </button>
+
         {/* Live Auto-Save Indicator */}
-        <div className="hidden sm:flex items-center pr-3 shrink-0">
+        <div className="hidden lg:flex items-center pl-3 ml-1 border-l border-border shrink-0">
           {saveStatus === "saving" && (
             <span className="inline-flex items-center gap-1.5 text-xs text-amber-500 font-medium">
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -2960,6 +3065,13 @@ export default function ProfilePage() {
           )}
         </div>
       </div>
+
+      {/* Personal Details Sub-Navigation - shown only while a Personal Details option is active */}
+      {isPersonalDetailsActive && (
+        <div className="bg-surface-alt/40 border border-border rounded-2xl p-1.5 flex items-center gap-1.5 overflow-x-auto no-scrollbar -mt-3">
+          {PERSONAL_DETAILS_CHILDREN.map((child) => renderSubTab(child))}
+        </div>
+      )}
 
       {/* Main Section Render Area */}
       <div>
@@ -3031,6 +3143,13 @@ export default function ProfilePage() {
             isSaving={isSaving}
             onRefreshVerifications={fetchVerifications}
           />
+        )}
+
+        {activeSection === "neuroCareer360" && <NeuroCareer360 />}
+        {activeSection === "talentPulse360" && <TalentPulse360 />}
+
+        {NEW_TOP_LEVEL_SECTIONS.filter((sec) => sec.id !== "neuroCareer360" && sec.id !== "talentPulse360").map((sec) =>
+          activeSection === sec.id ? <ComingSoon key={sec.id} title={sec.label} icon={sec.icon} /> : null
         )}
       </div>
 
