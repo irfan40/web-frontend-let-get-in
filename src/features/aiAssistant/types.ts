@@ -1,11 +1,13 @@
-export type AssistantContextType = 'explore' | 'resume' | 'drive';
+export type AssistantContextType = 'explore' | 'profile' | 'resume' | 'drive';
 export type AssistantMode = 'instant' | 'expert';
 
 export interface AssistantContextPayload {
   resumeId?: string;
-  activeResumeContext?: Record<string, unknown>;
+  activeResumeContext?: Record<string, any> | any;
   selectedJobId?: string;
   driveFileId?: string;
+  activeProfileContext?: Record<string, any> | any;
+  activeProfileSection?: string;
 }
 
 export interface AssistantChatMessage {

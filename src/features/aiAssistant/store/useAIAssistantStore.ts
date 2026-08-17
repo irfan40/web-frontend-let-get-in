@@ -11,7 +11,7 @@ import {
 } from '../types';
 
 const NEXT_PUBLIC_API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
-const CONTEXTS: AssistantContextType[] = ['explore', 'resume', 'drive'];
+const CONTEXTS: AssistantContextType[] = ['explore', 'profile', 'resume', 'drive'];
 
 interface ContextState {
   isOpen: boolean;

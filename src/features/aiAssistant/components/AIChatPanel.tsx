@@ -94,7 +94,7 @@ export function AIChatPanel({ context, contextPayload, onClose }: AIChatPanelPro
       </MessageScrollerProvider>
 
       {/* Input */}
-      <AIChatInput onSend={handleSend} disabled={isLoading} placeholder={`Ask about ${context}...`} />
+      <AIChatInput onSend={handleSend} disabled={isLoading} placeholder={`Ask about your ${context}...`} />
     </div>
   );
 }

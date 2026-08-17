@@ -59,6 +59,7 @@ import {
 import { VerificationBadge } from "@/features/profile/components/VerificationBadge";
 import { SectionVerificationModal } from "@/features/profile/components/SectionVerificationModal";
 import { DocumentViewerModal } from "@/features/profile/components/DocumentViewerModal";
+import { AIChat } from "@/features/aiAssistant/components/AIChat";
 import { toast } from "sonner";
 
 export type { Track, Mode, EducationItem, ExperienceItem, ProfileData };
@@ -3036,6 +3037,15 @@ export default function ProfilePage() {
 
       {/* Global Document Viewer Modal */}
       <DocumentViewerModal document={previewDoc} onClose={() => setPreviewDoc(null)} />
+
+      {/* Contextual AI Assistant */}
+      <AIChat
+        context="profile"
+        contextPayload={{
+          activeProfileSection: activeSection,
+          activeProfileContext: profile,
+        }}
+      />
     </div>
   );
 }
