@@ -54,6 +54,11 @@ export const STEPS: StepDefinition[] = [
     title: 'Communication Preference',
     isValid: (p) => p.contactChannels.length >= 1 && Boolean(p.contactTiming),
   },
+  {
+    key: 'matchedJobs',
+    title: 'Matched Jobs & Auto-Apply',
+    isValid: (p) => Boolean(p.resumeId && p.desiredJobTitles.length >= 1),
+  },
 ];
 
 export const TOTAL_STEPS = STEPS.length;

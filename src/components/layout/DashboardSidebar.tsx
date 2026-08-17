@@ -26,6 +26,7 @@ import {
   Users,
   Store,
   Rocket,
+  Briefcase,
   type LucideIcon,
 } from "lucide-react";
 
@@ -114,6 +115,13 @@ export function DashboardSidebar({
       href: "/ai-apply",
       icon: Rocket,
       description: "Configure preferences and auto-apply to matching jobs",
+    },
+    {
+      name: "Applied Jobs",
+      shortName: "Applications",
+      href: "/applications",
+      icon: Briefcase,
+      description: "Track your applied jobs & AI recruitment pipeline",
     },
     // Show AI Onboarding only if user has 0 resumes (new user first time)
     ...(hasResumes === false
