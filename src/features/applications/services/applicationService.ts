@@ -22,6 +22,19 @@ export const applicationService = {
     return res.data;
   },
 
+  async createApplication(payload: {
+    jobId: string;
+    resumeId?: string;
+    coverLetterId?: string;
+    notes?: string;
+    source?: 'ai_apply' | 'manual';
+    status?: ApplicationStatus;
+    matchScore?: number;
+  }): Promise<ApplicationItem> {
+    const res = await apiClient.post<never, ApiResponse<ApplicationItem>>('/applications', payload);
+    return res.data;
+  },
+
   async updateStatus(
     applicationId: string,
     status: ApplicationStatus,
