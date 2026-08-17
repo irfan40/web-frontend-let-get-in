@@ -1,11 +1,15 @@
-export type AssistantContextType = 'explore' | 'resume' | 'drive';
+export type AssistantContextType = 'explore' | 'profile' | 'resume' | 'drive';
 export type AssistantMode = 'instant' | 'expert';
 
 export interface AssistantContextPayload {
   resumeId?: string;
-  activeResumeContext?: Record<string, unknown>;
+  activeResumeContext?: Record<string, any> | any;
   selectedJobId?: string;
   driveFileId?: string;
+  activeProfileContext?: Record<string, any> | any;
+  activeProfileSection?: string;
+  enableThinking?: boolean;
+  enableDeepSearch?: boolean;
 }
 
 export interface AssistantChatMessage {
@@ -15,6 +19,10 @@ export interface AssistantChatMessage {
   suggestions?: string[];
   relevant?: boolean;
   timestamp: string;
+  thought?: string;
+  statusBadge?: string;
+  isThinking?: boolean;
+  isSearching?: boolean;
 }
 
 export interface AssistantResponseData {
@@ -23,4 +31,7 @@ export interface AssistantResponseData {
   suggestions: string[];
   mode: AssistantMode;
   intent: string;
+  thought?: string;
+  statusBadge?: string;
 }
+

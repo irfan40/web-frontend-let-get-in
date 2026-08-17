@@ -2,10 +2,11 @@
 
 import React from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, BrainCircuit, Search } from 'lucide-react';
 import { AIChatPanel } from './AIChatPanel';
 import { useAIAssistantStore } from '../store/useAIAssistantStore';
 import { AssistantContextType, AssistantContextPayload } from '../types';
+import { CONTEXT_LABELS } from '../config/suggestedQuestions.config';
 
 interface AIChatProps {
   context: AssistantContextType;
@@ -13,8 +14,9 @@ interface AIChatProps {
 }
 
 export function AIChat({ context, contextPayload }: AIChatProps) {
-  const isOpen = useAIAssistantStore((state) => state.byContext[context].isOpen);
+  const { isOpen, isThinking, isSearching } = useAIAssistantStore((state) => state.byContext[context]);
   const setOpen = useAIAssistantStore((state) => state.setOpen);
+  const assistantTitle = CONTEXT_LABELS[context] || 'AI Assistant';
 
   return (
     <>
@@ -22,13 +24,17 @@ export function AIChat({ context, contextPayload }: AIChatProps) {
         {isOpen && (
           <motion.div
             key="ai-chat-panel"
-            initial={{ opacity: 0, y: 16, scale: 0.96 }}
+            initial={{ opacity: 0, y: 20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 16, scale: 0.96 }}
-            transition={{ duration: 0.2, ease: [0.25, 1, 0.5, 1] }}
-            className="fixed bottom-24 right-6 z-40 w-[min(24rem,calc(100vw-3rem))] h-[min(32rem,calc(100vh-8rem))]"
+            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+            transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+            className="fixed bottom-20 sm:bottom-24 right-4 sm:right-6 z-40 w-[min(26rem,calc(100vw-2rem))] h-[min(38rem,calc(100vh-6.5rem))]"
           >
-            <AIChatPanel context={context} contextPayload={contextPayload} onClose={() => setOpen(context, false)} />
+            <AIChatPanel
+              context={context}
+              contextPayload={contextPayload}
+              onClose={() => setOpen(context, false)}
+            />
           </motion.div>
         )}
       </AnimatePresence>
@@ -38,13 +44,28 @@ export function AIChat({ context, contextPayload }: AIChatProps) {
           type="button"
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
           onClick={() => setOpen(context, true)}
-          className="fixed bottom-6 right-6 z-40 w-12 h-12 rounded-full bg-gradient-brand text-white shadow-elegant hover:shadow-glow transition-all flex items-center justify-center cursor-pointer"
-          title="Open AI Assistant"
+          className="fixed bottom-6 right-6 z-40 group flex items-center gap-2 pl-3.5 pr-4 py-2.5 rounded-full bg-gradient-brand text-white shadow-elegant hover:shadow-glow transition-all duration-200 cursor-pointer border border-white/20"
+          title={`Open ${assistantTitle}`}
         >
-          <Sparkles className="w-5 h-5" />
+          <div className="relative flex items-center justify-center">
+            <Sparkles className="w-4 h-4 transition-transform group-hover:rotate-12 duration-200" />
+            {(isThinking || isSearching) && (
+              <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-sky-400 animate-ping" />
+            )}
+          </div>
+          <span className="text-xs font-bold tracking-tight">{assistantTitle}</span>
+
+          {/* Quick Active Indicators in trigger badge */}
+          <div className="hidden sm:flex items-center gap-1 opacity-80 group-hover:opacity-100 transition-opacity">
+            {isThinking && <BrainCircuit className="w-3 h-3 text-indigo-200" />}
+            {isSearching && <Search className="w-3 h-3 text-sky-200" />}
+          </div>
         </motion.button>
       )}
     </>
   );
 }
+

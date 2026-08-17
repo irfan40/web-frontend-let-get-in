@@ -6,6 +6,7 @@ import { StorageProviderFactory } from "../../../features/resume/storage/factory
 import { IResume } from "../../../features/resume/types";
 import { ResumeCard } from "../../../features/dashboard/components/ResumeCard";
 import { CreateResumeModal } from "../../../features/dashboard/components/CreateResumeModal";
+import { AIChat } from "@/features/aiAssistant/components/AIChat";
 import { Plus, Search, FileText, Sparkles } from "lucide-react";
 
 export default function DashboardPage() {
@@ -144,6 +145,9 @@ export default function DashboardPage() {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
       />
+
+      {/* Contextual AI Assistant */}
+      <AIChat context="resume" />
     </div>
   );
 }

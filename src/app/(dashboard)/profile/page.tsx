@@ -69,6 +69,7 @@ import {
 import { VerificationBadge } from "@/features/profile/components/VerificationBadge";
 import { SectionVerificationModal } from "@/features/profile/components/SectionVerificationModal";
 import { DocumentViewerModal } from "@/features/profile/components/DocumentViewerModal";
+import { AIChat } from "@/features/aiAssistant/components/AIChat";
 import { ComingSoon } from "@/components/common/ComingSoon";
 import { NeuroCareer360 } from "@/features/profile/components/NeuroCareer360";
 import { TalentPulse360 } from "@/features/profile/components/TalentPulse360";
@@ -3155,6 +3156,15 @@ export default function ProfilePage() {
 
       {/* Global Document Viewer Modal */}
       <DocumentViewerModal document={previewDoc} onClose={() => setPreviewDoc(null)} />
+
+      {/* Contextual AI Assistant */}
+      <AIChat
+        context="profile"
+        contextPayload={{
+          activeProfileSection: activeSection,
+          activeProfileContext: profile,
+        }}
+      />
     </div>
   );
 }
