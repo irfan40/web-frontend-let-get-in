@@ -82,6 +82,97 @@ export interface AiApplyAssistResponse {
   aiUnavailable: boolean;
 }
 
+export interface MatchedJobItem {
+  _id: string;
+  title: string;
+  company: {
+    name: string;
+    logo?: string;
+    website?: string;
+  };
+  description?: string;
+  skills: string[];
+  experienceLevel?: string;
+  employmentType?: string;
+  workplaceType?: string;
+  location?: {
+    city?: string;
+    state?: string;
+    country?: string;
+    remote?: boolean;
+  };
+  salary?: {
+    min: number;
+    max: number;
+    currency: string;
+    period: string;
+  };
+  matchScore: number;
+  matchedSkills: string[];
+  missingSkills: string[];
+  matchReasons: string[];
+  isAlreadyApplied?: boolean;
+  vectorScore?: number;
+  publishedAt?: string;
+}
+
+export interface MatchedJobsResponse {
+  jobs: MatchedJobItem[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+  candidateProfile: {
+    headline?: string;
+    skillsCount: number;
+    skills: string[];
+    hasEmbedding: boolean;
+    embeddingStatus: string;
+  };
+  appliedJobIds: string[];
+}
+
+export interface AppliedJobDetail {
+  jobId: string;
+  title: string;
+  company: string;
+  companyLogo?: string;
+  location?: string;
+  salary?: string;
+  matchScore: number;
+  appliedAt: string;
+  status: 'applied' | 'skipped_duplicate' | 'failed';
+  error?: string;
+}
+
+export interface AiApplyBatchSession {
+  _id: string;
+  status: 'queued' | 'processing' | 'paused' | 'completed' | 'cancelled' | 'failed';
+  totalJobs: number;
+  totalBatches: number;
+  batchSize: number;
+  currentBatch: number;
+  appliedCount: number;
+  skippedDuplicates: number;
+  failedCount: number;
+  selectedJobIds?: string[];
+  appliedJobs: AppliedJobDetail[];
+  startedAt?: string;
+  completedAt?: string;
+  error?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface StartBatchApplyResponse {
+  sessionId: string;
+  totalJobs: number;
+  totalBatches: number;
+  batchSize: number;
+  status: string;
+  jobs: Array<{ jobId: string; title: string; company?: string; matchScore: number }>;
+}
+
 export interface ApplyForJobsResult {
   appliedCount: number;
   skippedDuplicates: number;
