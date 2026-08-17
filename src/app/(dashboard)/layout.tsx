@@ -17,7 +17,7 @@ export default function DashboardLayout({
 
   const pageTitles: Record<string, string> = {
     "/ai-apply": "AI Apply",
-    "/resume": "Resume Workspace",
+    "/resume": "My Jobs",
     "/builder": "Resume Builder",
     "/demo": "AI Career Onboarding",
     "/explore": "Explore Opportunities",
