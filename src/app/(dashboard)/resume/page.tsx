@@ -1,11 +1,13 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { useAuthStore } from "../../../features/auth/store/useAuthStore";
 import { StorageProviderFactory } from "../../../features/resume/storage/factory";
 import { IResume } from "../../../features/resume/types";
 import { ResumeCard } from "../../../features/dashboard/components/ResumeCard";
 import { CreateResumeModal } from "../../../features/dashboard/components/CreateResumeModal";
+import { CareerOverviewSection } from "../../../features/dashboard/components/CareerOverviewSection";
 import { AIChat } from "@/features/aiAssistant/components/AIChat";
 import { ComingSoon } from "@/components/common/ComingSoon";
 import { VideoProfileSection } from "@/features/videoProfile/components/VideoProfileSection";
@@ -14,7 +16,7 @@ import { Plus, Search, FileText, Sparkles, LayoutDashboard, Mail, Video } from "
 
 type MyJobsSection = "overview" | "jobs" | "resume" | "coverLetter" | "videoProfile";
 
-// Top navigation for the My Jobs area, matching the same in-page tab bar pattern used by My Profile.
+// Top navigation for the My Jobs area, matching the in-page tab bar pattern.
 const MY_JOBS_TABS: { id: MyJobsSection; label: string; icon: typeof FileText }[] = [
   { id: "overview", label: "Overview", icon: LayoutDashboard },
   { id: "jobs", label: "Jobs", icon: Search },
@@ -23,13 +25,38 @@ const MY_JOBS_TABS: { id: MyJobsSection; label: string; icon: typeof FileText }[
   { id: "videoProfile", label: "Video Profile", icon: Video },
 ];
 
-export default function DashboardPage() {
+function DashboardPageContent() {
+  const searchParams = useSearchParams();
+  const tabFromUrl = searchParams.get("tab") as MyJobsSection | null;
+
   const { isAuthenticated } = useAuthStore();
-  const [activeSection, setActiveSection] = useState<MyJobsSection>("resume");
+  const [activeSection, setActiveSection] = useState<MyJobsSection>(() => {
+    if (tabFromUrl && ["overview", "jobs", "resume", "coverLetter", "videoProfile"].includes(tabFromUrl)) {
+      return tabFromUrl;
+    }
+    return "overview";
+  });
+  const [selectedStage, setSelectedStage] = useState<string>("all");
+
+  const handleSwitchTab = (tab: MyJobsSection, stage?: string) => {
+    setActiveSection(tab);
+    if (stage) {
+      setSelectedStage(stage);
+    } else {
+      setSelectedStage("all");
+    }
+  };
+
   const [resumes, setResumes] = useState<IResume[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  useEffect(() => {
+    if (tabFromUrl && ["overview", "jobs", "resume", "coverLetter", "videoProfile"].includes(tabFromUrl)) {
+      setActiveSection(tabFromUrl);
+    }
+  }, [tabFromUrl]);
 
   useEffect(() => {
     let isMounted = true;
@@ -78,8 +105,8 @@ export default function DashboardPage() {
   );
 
   return (
-    <div className="min-h-screen bg-background text-white shadow-elegant flex flex-col">
-      <main className="flex-1 max-w-7xl w-full mx-auto p-6 sm:p-8 space-y-6">
+    <div className="min-h-screen bg-background text-foreground flex flex-col">
+      <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
         {/* Top Header Navigation Tabs - My Jobs */}
         <div className="bg-surface border border-border rounded-2xl p-2 shadow-xs flex items-center gap-1.5 overflow-x-auto no-scrollbar select-none">
           {MY_JOBS_TABS.map((tab) => {
@@ -102,16 +129,23 @@ export default function DashboardPage() {
           })}
         </div>
 
+        {/* 1. Overview Section */}
         {activeSection === "overview" && (
-          <ComingSoon
-            title="Overview"
-            description="Your My Jobs summary — job search progress, resume status, and application activity at a glance."
-            icon={LayoutDashboard}
+          <CareerOverviewSection
+            onSwitchTab={handleSwitchTab}
+            onOpenCreateResume={() => setIsModalOpen(true)}
           />
         )}
 
-        {activeSection === "jobs" && <JobsBoard />}
+        {/* 2. Jobs Board (Kanban & Job Activity) */}
+        {activeSection === "jobs" && (
+          <JobsBoard
+            onSwitchTab={handleSwitchTab}
+            initialStageFilter={selectedStage}
+          />
+        )}
 
+        {/* 3. Cover Letter Section */}
         {activeSection === "coverLetter" && (
           <ComingSoon
             title="Cover Letter"
@@ -120,10 +154,12 @@ export default function DashboardPage() {
           />
         )}
 
+        {/* 4. Video Profile Section */}
         {activeSection === "videoProfile" && <VideoProfileSection />}
 
+        {/* 5. Resume Builder & Storage Section */}
         {activeSection === "resume" && (
-          <div className="space-y-8">
+          <div className="space-y-8 animate-in fade-in duration-200">
             {/* Banner */}
             <div className="bg-gradient-brand rounded-3xl p-6 sm:p-8 border border-white/10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-elegant relative overflow-hidden">
               <div className="absolute top-0 right-0 w-1/2 h-full opacity-10 bg-[radial-gradient(ellipse_at_top_right,_var(--primary-glow)_0%,_transparent_70%)] pointer-events-none" />
@@ -135,11 +171,18 @@ export default function DashboardPage() {
                   Welcome back to{" "}
                   <span className="text-white shadow-elegant">LetGetIn AI</span>
                 </h1>
-                <p className="text-sm text-white/85 mt-1  max-w-xl leading-relaxed">
+                <p className="text-sm text-white/85 mt-1 max-w-xl leading-relaxed">
                   Build verified, ATS-optimized, high-converting professional
                   profiles and resumes in minutes.
                 </p>
               </div>
+
+              <button
+                onClick={() => setIsModalOpen(true)}
+                className="relative bg-white text-ink text-xs font-extrabold px-5 py-3 rounded-xl shadow-md hover:bg-white/90 transition-all inline-flex items-center gap-2 cursor-pointer shrink-0"
+              >
+                <Plus className="w-4 h-4 text-primary" /> Create Resume
+              </button>
             </div>
 
             {/* Filter Bar */}
@@ -182,7 +225,7 @@ export default function DashboardPage() {
                 </p>
                 <button
                   onClick={() => setIsModalOpen(true)}
-                  className="bg-gradient-brand text-primary-foreground text-xs font-semibold px-6 py-3 rounded-xl shadow-elegant hover:shadow-glow transition-all inline-flex items-center gap-2"
+                  className="bg-gradient-brand text-primary-foreground text-xs font-semibold px-6 py-3 rounded-xl shadow-elegant hover:shadow-glow transition-all inline-flex items-center gap-2 cursor-pointer"
                 >
                   <Plus className="w-4 h-4" /> Create Your First Resume
                 </button>
@@ -210,5 +253,13 @@ export default function DashboardPage() {
       {/* Contextual AI Assistant */}
       <AIChat context="resume" />
     </div>
+  );
+}
+
+export default function DashboardPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-background" />}>
+      <DashboardPageContent />
+    </Suspense>
   );
 }
