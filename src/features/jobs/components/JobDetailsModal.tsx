@@ -122,7 +122,7 @@ export const JobDetailsModal: React.FC<JobDetailsModalProps> = ({ job, onClose }
                 <Sparkles className="w-4 h-4 text-primary-glow" />
                 AI Resume Alignment Score: <span className="text-primary">{match}%</span>
               </div>
-              <span className="text-xs text-ink-soft">MongoDB Atlas Vector Matching</span>
+              <span className="text-xs text-ink-soft">Smart AI Profile Match</span>
             </div>
 
             {/* Matched Skills */}

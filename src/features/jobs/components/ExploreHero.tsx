@@ -36,7 +36,7 @@ export const ExploreHero: React.FC<ExploreHeroProps> = ({
 
             <span className="inline-flex items-center gap-1.5 text-xs font-semibold bg-emerald-500/20 border border-emerald-300/30 text-emerald-100 px-3 py-1 rounded-full">
               <Cpu className="w-3.5 h-3.5 text-emerald-300" />
-              Atlas Vector Search {hasEmbedding ? 'Active' : 'Syncing'}
+              AI Smart Match {hasEmbedding ? 'Active' : 'Syncing'}
             </span>
           </div>
 
@@ -46,7 +46,7 @@ export const ExploreHero: React.FC<ExploreHeroProps> = ({
           </h1>
 
           <p className="text-white/85 text-xs sm:text-sm leading-relaxed">
-            Ranked semantically by comparing your resume content, projects, and work history against verified production roles using Google Gemini embeddings.
+            Ranked intelligently by analyzing your resume content, skills, and experience against verified active career roles.
           </p>
 
           {/* Candidate Profile Highlight */}
@@ -78,7 +78,7 @@ export const ExploreHero: React.FC<ExploreHeroProps> = ({
             className="w-full md:w-auto inline-flex items-center justify-center gap-2 bg-white text-ink font-bold px-4 py-2 rounded-xl text-xs hover:bg-white/90 hover:shadow-lg transition-all active:scale-95 disabled:opacity-75 cursor-pointer"
           >
             <RefreshCw className={`w-3.5 h-3.5 text-primary ${isSyncing ? 'animate-spin' : ''}`} />
-            <span>{isSyncing ? 'Updating Vector...' : 'Re-sync Resume'}</span>
+            <span>{isSyncing ? 'Refreshing AI Match...' : 'Re-sync Profile'}</span>
           </button>
         </div>
       </div>

@@ -99,14 +99,14 @@ export function Step7MatchedJobsReview() {
             <div>
               <h2 className="text-lg font-black tracking-tight">AI Matching Engine & Auto-Apply</h2>
               <p className="text-xs text-white/80">
-                Vector embeddings matched your resume & preferences against active positions in the database.
+                Smart AI matched your resume, skills, and preferences with top open job opportunities.
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
             <Link
-              href="/applications"
+              href="/resume?tab=jobs"
               className="text-[11px] font-bold px-3 py-1.5 rounded-full bg-white/15 hover:bg-white/25 backdrop-blur-xs text-white transition flex items-center gap-1.5 cursor-pointer"
             >
               <Briefcase className="w-3 h-3" />
@@ -247,9 +247,9 @@ export function Step7MatchedJobsReview() {
           <div className="py-16 text-center space-y-3 bg-surface border border-border rounded-2xl">
             <Loader2 className="w-8 h-8 text-primary-glow animate-spin mx-auto" />
             <div className="space-y-1">
-              <p className="text-sm font-bold text-ink">Analyzing Job Embeddings & Resume Match...</p>
+              <p className="text-sm font-bold text-ink">Analyzing Job Matches & Profile Alignment...</p>
               <p className="text-xs text-ink-soft">
-                Executing vector similarity against jobs in the database.
+                Finding the best opportunities tailored to your career profile.
               </p>
             </div>
           </div>
@@ -460,7 +460,7 @@ export function Step7MatchedJobsReview() {
               AI Autonomous Application Permission
             </h3>
             <p className="text-xs text-ink-soft leading-relaxed">
-              Our intelligent BullMQ queue worker applies to jobs in optimized batches of 10 with realistic pacing
+              Our intelligent system applies to jobs in optimized batches with smart pacing
               to guarantee ATS deliverability and avoid portal spam filters.
             </p>
           </div>
@@ -470,7 +470,7 @@ export function Step7MatchedJobsReview() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
           <div className="p-2.5 rounded-xl bg-surface-alt/70 border border-border/80 flex items-center gap-2">
             <Layers className="w-4 h-4 text-primary shrink-0" />
-            <span className="font-semibold text-ink">10-by-10 Batch Queue</span>
+            <span className="font-semibold text-ink">Automated Smart Batches</span>
           </div>
           <div className="p-2.5 rounded-xl bg-surface-alt/70 border border-border/80 flex items-center gap-2">
             <Zap className="w-4 h-4 text-emerald-600 shrink-0" />
@@ -509,7 +509,7 @@ export function Step7MatchedJobsReview() {
           {batchActionLoading ? (
             <>
               <Loader2 className="w-4 h-4 animate-spin" />
-              <span>Enqueuing 10-by-10 Batches to BullMQ...</span>
+              <span>Launching Automated Batches...</span>
             </>
           ) : (
             <>
