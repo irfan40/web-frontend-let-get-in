@@ -183,7 +183,7 @@ export default function ExplorePage() {
     try {
       await jobService.syncProfile();
       await fetchJobs();
-      showToast("Candidate profile & embeddings re-synced!");
+      showToast("Candidate profile & AI match re-synced!");
     } catch (err: any) {
       console.warn("Sync profile warning:", err);
     } finally {

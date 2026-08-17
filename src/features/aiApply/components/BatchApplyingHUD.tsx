@@ -110,7 +110,7 @@ export function BatchApplyingHUD() {
                   ? 'Application dispatch is paused. You can resume anytime.'
                   : isCancelled
                   ? 'Batch session was stopped.'
-                  : 'BullMQ and Redis are executing applications in batches of 10 with smart pacing.'}
+                  : 'Smart AI is submitting applications in batches of 10 with paced delivery.'}
               </p>
             </div>
           </div>
@@ -229,7 +229,7 @@ export function BatchApplyingHUD() {
           <div className="py-8 text-center space-y-2">
             <Loader2 className="w-6 h-6 text-primary-glow animate-spin mx-auto" />
             <p className="text-xs text-ink-soft font-medium">
-              Initializing BullMQ queue worker... Dispatching Batch 1 (10 jobs)
+              Initializing smart delivery... Dispatching Batch 1 (10 jobs)
             </p>
           </div>
         ) : (

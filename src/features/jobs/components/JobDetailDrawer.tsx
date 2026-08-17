@@ -488,7 +488,7 @@ export const JobDetailDrawer: React.FC<JobDetailDrawerProps> = ({
                           Domain Skills Screening
                         </p>
                         <p className="text-ink-soft">
-                          Auto-evaluated via Gemini Vector Engine
+                          Auto-evaluated via Smart AI Skills Assessment
                         </p>
                       </div>
                       <Circle className="w-5 h-5 text-border shrink-0" />

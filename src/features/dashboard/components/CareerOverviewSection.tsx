@@ -396,7 +396,7 @@ export function CareerOverviewSection({ onSwitchTab, onOpenCreateResume }: Caree
             <Sparkles className="w-3.5 h-3.5 text-primary-glow" />
           </div>
           <div className="text-2xl font-black text-primary-glow">{aiAppliedCount}</div>
-          <div className="text-[11px] text-ink-soft font-medium">BullMQ 10-job automated batches</div>
+          <div className="text-[11px] text-ink-soft font-medium">Smart automated batches</div>
         </div>
 
         <div className="p-4 rounded-2xl bg-surface border border-border space-y-1 shadow-2xs">
@@ -405,7 +405,7 @@ export function CareerOverviewSection({ onSwitchTab, onOpenCreateResume }: Caree
             <Layers className="w-3.5 h-3.5 text-emerald-600" />
           </div>
           <div className="text-2xl font-black text-emerald-600 dark:text-emerald-400">{avgMatchScore}%</div>
-          <div className="text-[11px] text-ink-soft font-medium">Vector profile similarity</div>
+          <div className="text-[11px] text-ink-soft font-medium">Profile alignment match</div>
         </div>
 
         <div className="p-4 rounded-2xl bg-surface border border-border space-y-1 shadow-2xs">
@@ -542,7 +542,7 @@ export function CareerOverviewSection({ onSwitchTab, onOpenCreateResume }: Caree
                   </div>
                   <div>
                     <div className="text-xs font-bold text-ink group-hover:text-primary transition">Auto-Apply 10 Jobs</div>
-                    <div className="text-[10px] text-ink-soft">Automated BullMQ AI batches</div>
+                    <div className="text-[10px] text-ink-soft">Smart automated batches</div>
                   </div>
                 </div>
                 <ChevronRight className="w-4 h-4 text-ink-soft group-hover:text-primary transition" />
@@ -602,7 +602,7 @@ export function CareerOverviewSection({ onSwitchTab, onOpenCreateResume }: Caree
                 <Sparkles className="w-6 h-6 text-primary-glow mx-auto opacity-70" />
                 <p className="text-xs font-bold text-ink">No automated batches yet</p>
                 <p className="text-[10px] text-ink-soft leading-relaxed">
-                  Run AI Auto-Apply to dispatch 10 tailored applications automatically via BullMQ queues.
+                  Run AI Auto-Apply to dispatch tailored applications automatically with smart delivery.
                 </p>
               </div>
             ) : (

@@ -178,7 +178,7 @@ export function ApplicationsPage() {
             <Sparkles className="w-4 h-4 text-primary-glow" />
           </div>
           <div className="text-2xl font-black text-primary-glow">{stats?.aiApplied || 0}</div>
-          <div className="text-[11px] text-ink-soft">Via BullMQ 10-job batching</div>
+          <div className="text-[11px] text-ink-soft">Smart automated batches</div>
         </div>
 
         <div className="p-4 rounded-2xl bg-surface border border-border space-y-1 shadow-xs">
@@ -189,7 +189,7 @@ export function ApplicationsPage() {
           <div className="text-2xl font-black text-emerald-600">
             {stats?.avgMatchScore || 0}%
           </div>
-          <div className="text-[11px] text-ink-soft">Vector embedding alignment</div>
+          <div className="text-[11px] text-ink-soft">Profile alignment match</div>
         </div>
 
         <div className="p-4 rounded-2xl bg-surface border border-border space-y-1 shadow-xs">
