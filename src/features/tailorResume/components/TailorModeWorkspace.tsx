@@ -77,40 +77,7 @@ export function TailorModeWorkspace({ sessionId }: TailorModeWorkspaceProps) {
   }
 
   return (
-    <div className="flex-1 flex flex-col gap-3 p-3 min-h-0 overflow-hidden">
-      <div className="flex items-center gap-2.5 shrink-0 flex-wrap">
-        <button
-          type="button"
-          onClick={handleSaveAndExit}
-          disabled={isSaving}
-          className="inline-flex items-center gap-1.5 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl shadow-elegant transition disabled:opacity-60 cursor-pointer"
-        >
-          {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-          <span>Save Tailored Resume</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setShowChanges((v) => !v)}
-          className={`inline-flex items-center gap-1.5 text-xs font-bold px-4 py-2 rounded-xl shadow-elegant transition cursor-pointer ${
-            showChanges ? "bg-sky-600 hover:bg-sky-700 text-white" : "bg-surface-alt text-ink-soft border border-border"
-          }`}
-        >
-          {showChanges ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-          <span>{showChanges ? "Show Changes" : "Changes Hidden"}</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={handleDecline}
-          disabled={isSaving}
-          className="inline-flex items-center gap-1.5 text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white px-4 py-2 rounded-xl shadow-elegant transition disabled:opacity-60 cursor-pointer"
-        >
-          <XCircle className="w-3.5 h-3.5" />
-          <span>Discard &amp; Exit</span>
-        </button>
-      </div>
-
+    <div className="flex-1 flex flex-col p-3 min-h-0 overflow-hidden">
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-3 min-h-0 overflow-hidden">
         <div className="h-full min-h-0 overflow-hidden">
           <TailoringSuggestionsPanel />
@@ -119,7 +86,42 @@ export function TailorModeWorkspace({ sessionId }: TailorModeWorkspaceProps) {
           <TailorCenterColumn />
         </div>
         <div ref={previewContainerRef} className="h-full min-h-0 overflow-hidden bg-surface/30 border border-border rounded-2xl">
-          <LivePreviewCanvas />
+          <LivePreviewCanvas
+            headerActions={
+              <div className="flex items-center gap-2 flex-wrap justify-center">
+                <button
+                  type="button"
+                  onClick={handleSaveAndExit}
+                  disabled={isSaving}
+                  className="inline-flex items-center gap-1.5 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-1.5 rounded-xl shadow-elegant transition disabled:opacity-60 cursor-pointer"
+                >
+                  {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                  <span>Save Tailored Resume</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setShowChanges((v) => !v)}
+                  className={`inline-flex items-center gap-1.5 text-xs font-bold px-3.5 py-1.5 rounded-xl shadow-elegant transition cursor-pointer ${
+                    showChanges ? "bg-sky-600 hover:bg-sky-700 text-white" : "bg-surface-alt text-ink-soft border border-border"
+                  }`}
+                >
+                  {showChanges ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+                  <span>{showChanges ? "Show Changes" : "Changes Hidden"}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleDecline}
+                  disabled={isSaving}
+                  className="inline-flex items-center gap-1.5 text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white px-3.5 py-1.5 rounded-xl shadow-elegant transition disabled:opacity-60 cursor-pointer"
+                >
+                  <XCircle className="w-3.5 h-3.5" />
+                  <span>Discard &amp; Exit</span>
+                </button>
+              </div>
+            }
+          />
         </div>
       </div>
     </div>
