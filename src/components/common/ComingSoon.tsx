@@ -9,6 +9,8 @@ interface ComingSoonProps {
   description?: string;
   icon?: LucideIcon;
   badge?: string;
+  /** Use inside a nested section/panel instead of as full tab content - shorter height, no "Back to Dashboard" action. */
+  compact?: boolean;
 }
 
 export function ComingSoon({
@@ -16,9 +18,14 @@ export function ComingSoon({
   description = "This feature is currently under active development. Stay tuned for AI-powered career analytics, smart tools, and professional identity suite.",
   icon: Icon = Rocket,
   badge = "Pro Feature · Coming Soon",
+  compact = false,
 }: ComingSoonProps) {
   return (
-    <div className="p-6 sm:p-12 max-w-5xl mx-auto flex flex-col items-center justify-center text-center min-h-[calc(100vh-8rem)] animate-fade-up">
+    <div
+      className={`p-6 sm:p-12 max-w-5xl mx-auto flex flex-col items-center justify-center text-center animate-fade-up ${
+        compact ? "py-14" : "min-h-[calc(100vh-8rem)]"
+      }`}
+    >
       {/* Ambient Glow */}
       <div className="relative mb-6">
         <div className="absolute -inset-4 bg-primary-glow/20 rounded-full blur-2xl animate-pulse" />
@@ -50,15 +57,17 @@ export function ComingSoon({
       </div>
 
       {/* Action Buttons */}
-      <div className="mt-8 flex items-center gap-4">
-        <Link
-          href="/dashboard"
-          className="inline-flex items-center gap-2 text-xs font-semibold bg-gradient-brand text-primary-foreground px-6 py-3 rounded-xl shadow-elegant hover:shadow-glow transition-all hover:scale-[1.02] active:scale-95"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          <span>Back to Dashboard</span>
-        </Link>
-      </div>
+      {!compact && (
+        <div className="mt-8 flex items-center gap-4">
+          <Link
+            href="/dashboard"
+            className="inline-flex items-center gap-2 text-xs font-semibold bg-gradient-brand text-primary-foreground px-6 py-3 rounded-xl shadow-elegant hover:shadow-glow transition-all hover:scale-[1.02] active:scale-95"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>Back to Dashboard</span>
+          </Link>
+        </div>
+      )}
     </div>
   );
 }

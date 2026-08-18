@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useResumeStore } from "../../store/useResumeStore";
 import { useAuthStore } from "../../../auth/store/useAuthStore";
 import { Logo } from "@/components/landing/Logo";
@@ -14,10 +15,12 @@ import {
   User,
   UserCheck,
   Pencil,
+  Save,
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { TemplateModal } from "@/features/templates/components/TemplateModal";
+import { useTailorResumeStore } from "@/features/tailorResume/store/useTailorResumeStore";
 
 interface EditorHeaderProps {
   onToggleAi: () => void;
@@ -30,13 +33,38 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
   isAiOpen,
   onDownloadPdf,
 }) => {
-  const { resume, updateTitle, saveStatus, lastSavedAt, isDirty, syncFromProfile } =
+  const router = useRouter();
+  const { resume, updateTitle, saveStatus, lastSavedAt, isDirty, syncFromProfile, saveResume } =
     useResumeStore();
   const { isAuthenticated } = useAuthStore();
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [titleInput, setTitleInput] = useState(resume.title);
   const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
   const [isSyncingProfile, setIsSyncingProfile] = useState(false);
+
+  const handleSaveAndReturn = async () => {
+    // While a Tailor Resume session is active, this header is shared with that workspace's own
+    // "Save Tailored Resume" button. Route through the same finalize flow rather than a plain
+    // save - that's what actually applies accepted suggestions, handles the rename-creates-a-
+    // new-resume case, deletes the staging session, and re-enables autosave afterwards.
+    if (useResumeStore.getState().isTailorModeActive) {
+      const result = await useTailorResumeStore.getState().finalize();
+      if (result) {
+        toast.success(result.isNew ? "Saved as a new resume in My Resume!" : "Tailored resume saved!");
+        router.push("/resume");
+      } else {
+        toast.error(useTailorResumeStore.getState().error || "Failed to save resume. Please try again.");
+      }
+      return;
+    }
+
+    await saveResume();
+    if (useResumeStore.getState().saveStatus !== "error") {
+      router.push("/resume");
+    } else {
+      toast.error("Failed to save resume. Please try again.");
+    }
+  };
 
   const handleSyncProfile = async () => {
     setIsSyncingProfile(true);
@@ -164,6 +192,21 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
           >
             <Sparkles className="w-4 h-4 text-primary-glow" />
             <span className="hidden sm:inline">AI Assistant</span>
+          </button>
+
+          {/* Save & Return to My Resume */}
+          <button
+            onClick={handleSaveAndReturn}
+            disabled={saveStatus === "saving"}
+            className="flex items-center gap-2 text-xs font-semibold bg-surface-alt hover:bg-surface text-ink px-3.5 py-2 rounded-xl border border-border transition-all shadow-xs disabled:opacity-60"
+            title="Save and return to My Resume"
+          >
+            {saveStatus === "saving" ? (
+              <RefreshCw className="w-4 h-4 animate-spin" />
+            ) : (
+              <Save className="w-4 h-4 text-primary-glow" />
+            )}
+            <span className="hidden sm:inline">Save</span>
           </button>
 
           {/* Download PDF Button */}
