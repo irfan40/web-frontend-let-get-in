@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect } from 'react';
-import { ArrowLeft, ArrowRight, Loader2, CheckCircle2, PartyPopper } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Loader2, PartyPopper } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { useAiApplyStore } from '../store/useAiApplyStore';
 import { STEPS, TOTAL_STEPS } from '../config/steps.config';
@@ -12,6 +12,8 @@ import { Step3ResumeCoverLetter } from './Step3ResumeCoverLetter';
 import { Step4YourPriorities } from './Step4YourPriorities';
 import { Step5PersonalPriorities } from './Step5PersonalPriorities';
 import { Step6CommunicationPreference } from './Step6CommunicationPreference';
+import { Step7MatchedJobsReview } from './Step7MatchedJobsReview';
+import { BatchApplyingHUD } from './BatchApplyingHUD';
 
 const STEP_COMPONENTS = [
   Step1CurrentStatus,
@@ -20,6 +22,7 @@ const STEP_COMPONENTS = [
   Step4YourPriorities,
   Step5PersonalPriorities,
   Step6CommunicationPreference,
+  Step7MatchedJobsReview,
 ];
 
 export function WizardShell() {
@@ -29,12 +32,11 @@ export function WizardShell() {
   const hydrated = useAiApplyStore((s) => s.hydrated);
   const isHydrating = useAiApplyStore((s) => s.isHydrating);
   const isSaving = useAiApplyStore((s) => s.isSaving);
-  const isApplying = useAiApplyStore((s) => s.isApplying);
+  const activeBatchSession = useAiApplyStore((s) => s.activeBatchSession);
   const applyResult = useAiApplyStore((s) => s.applyResult);
   const error = useAiApplyStore((s) => s.error);
   const nextStep = useAiApplyStore((s) => s.nextStep);
   const prevStep = useAiApplyStore((s) => s.prevStep);
-  const submitApply = useAiApplyStore((s) => s.submitApply);
 
   useEffect(() => {
     if (!hydrated && !isHydrating) {
@@ -46,7 +48,16 @@ export function WizardShell() {
     return (
       <div className="flex flex-col items-center justify-center py-24 gap-3">
         <Loader2 className="w-8 h-8 text-primary-glow animate-spin" />
-        <p className="text-sm font-medium text-ink-soft">Loading your profile and documents...</p>
+        <p className="text-sm font-medium text-ink-soft">Loading your profile and matching models...</p>
+      </div>
+    );
+  }
+
+  // If there's an active BullMQ batch session running or completed
+  if (activeBatchSession) {
+    return (
+      <div className="max-w-3xl mx-auto space-y-6">
+        <BatchApplyingHUD />
       </div>
     );
   }
@@ -90,7 +101,7 @@ export function WizardShell() {
   const isValid = stepDef ? stepDef.isValid(preferences) : true;
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
+    <div className="max-w-3xl mx-auto space-y-6">
       {/* Progress */}
       <div className="space-y-1.5">
         <div className="flex items-center justify-between text-[11px] font-bold text-ink-soft">
@@ -111,30 +122,19 @@ export function WizardShell() {
         {StepComponent && <StepComponent />}
       </div>
 
-      {/* Footer */}
-      <div className="flex items-center justify-between gap-3">
-        <button
-          type="button"
-          onClick={() => prevStep()}
-          disabled={currentStep === 1}
-          className="inline-flex items-center gap-1.5 text-xs font-bold text-ink-soft hover:text-ink disabled:opacity-40 disabled:cursor-not-allowed px-3 py-2 rounded-xl transition cursor-pointer"
-        >
-          <ArrowLeft className="w-3.5 h-3.5" />
-          <span>Back</span>
-        </button>
-
-        {isLastStep ? (
+      {/* Footer Navigation (only for steps 1-6; Step 7 has its own dedicated permission & launch CTA) */}
+      {!isLastStep && (
+        <div className="flex items-center justify-between gap-3">
           <button
             type="button"
-            onClick={() => submitApply()}
-            disabled={!isValid || isApplying}
-            className="inline-flex items-center gap-2 bg-gradient-brand text-white font-bold text-sm px-6 py-2.5 rounded-xl shadow-elegant hover:shadow-glow transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            onClick={() => prevStep()}
+            disabled={currentStep === 1}
+            className="inline-flex items-center gap-1.5 text-xs font-bold text-ink-soft hover:text-ink disabled:opacity-40 disabled:cursor-not-allowed px-3 py-2 rounded-xl transition cursor-pointer"
           >
-            {isApplying ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
-            <span>{isApplying ? 'Applying...' : 'Apply for jobs'}</span>
-            {!isApplying && <ArrowRight className="w-4 h-4" />}
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span>Back</span>
           </button>
-        ) : (
+
           <button
             type="button"
             onClick={() => nextStep()}
@@ -144,8 +144,21 @@ export function WizardShell() {
             {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <span>Continue</span>}
             {!isSaving && <ArrowRight className="w-4 h-4" />}
           </button>
-        )}
-      </div>
+        </div>
+      )}
+
+      {isLastStep && (
+        <div className="flex items-center justify-start gap-3">
+          <button
+            type="button"
+            onClick={() => prevStep()}
+            className="inline-flex items-center gap-1.5 text-xs font-bold text-ink-soft hover:text-ink px-3 py-2 rounded-xl transition cursor-pointer"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span>Back to Preferences</span>
+          </button>
+        </div>
+      )}
     </div>
   );
 }
