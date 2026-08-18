@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, Save, Eye, EyeOff, XCircle, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
@@ -8,7 +8,6 @@ import { useResumeStore } from "@/features/resume/store/useResumeStore";
 import { LivePreviewCanvas } from "@/features/resume/components/preview/LivePreviewCanvas";
 import { useTailorResumeStore } from "../store/useTailorResumeStore";
 import { applyAcceptedSuggestions } from "../utils/applySuggestions";
-import { usePreviewHighlight } from "../hooks/usePreviewHighlight";
 import { TailoringSuggestionsPanel } from "./TailoringSuggestionsPanel";
 import { TailorCenterColumn } from "./TailorCenterColumn";
 
@@ -18,13 +17,19 @@ interface TailorModeWorkspaceProps {
 
 export function TailorModeWorkspace({ sessionId }: TailorModeWorkspaceProps) {
   const router = useRouter();
-  const { session, isLoading, error, loadExistingSession, finalize, discard, originalContent, isSaving } =
-    useTailorResumeStore();
-  // Visualization-only toggle - never swaps the underlying working Resume content, only
-  // whether the green change overlay is drawn on top of the (always up to date) preview.
-  const [showChanges, setShowChanges] = useState(true);
+  const {
+    session,
+    isLoading,
+    error,
+    loadExistingSession,
+    finalize,
+    discard,
+    originalContent,
+    isSaving,
+    showChanges,
+    setShowChanges,
+  } = useTailorResumeStore();
   const previewContainerRef = useRef<HTMLDivElement>(null);
-  const resume = useResumeStore((s) => s.resume);
 
   useEffect(() => {
     loadExistingSession(sessionId);
@@ -32,8 +37,7 @@ export function TailorModeWorkspace({ sessionId }: TailorModeWorkspaceProps) {
   }, [sessionId]);
 
   // The preview always shows the working Resume (original + currently accepted/edited
-  // suggestions) regardless of the Show Changes toggle - that toggle only controls the
-  // highlight overlay below, never the underlying data (see usePreviewHighlight).
+  // suggestions) regardless of the Show Changes toggle.
   useEffect(() => {
     if (!session || !originalContent) return;
     const { resume: currentResume, setResume } = useResumeStore.getState();
@@ -41,8 +45,6 @@ export function TailorModeWorkspace({ sessionId }: TailorModeWorkspaceProps) {
     setResume({ ...currentResume, content: nextContent });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session?.suggestions]);
-
-  usePreviewHighlight(previewContainerRef, session?.suggestions || [], showChanges, resume.content);
 
   const handleSaveAndExit = async () => {
     const result = await finalize();

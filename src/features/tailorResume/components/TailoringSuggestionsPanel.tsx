@@ -1,10 +1,9 @@
 "use client";
 
 import React, { useState } from "react";
-import { Check, X, Pencil, Info, Loader2, FileText, Briefcase, Wrench, FolderGit2 } from "lucide-react";
+import { Check, X, Pencil, Info, Loader2, FileText, Briefcase, Wrench, FolderGit2, Sparkles } from "lucide-react";
 import { useTailorResumeStore } from "../store/useTailorResumeStore";
 import { TailoringSection, TailoringSuggestion } from "../types";
-import { diffWords } from "../utils/diffWords";
 import { MissingInfoSection } from "./MissingInfoSection";
 import { ResumeFormContainer } from "@/features/resume/components/editor/ResumeFormContainer";
 
@@ -19,48 +18,13 @@ const SECTION_META: Record<TailoringSection, { label: string; icon: React.Elemen
   projects: { label: "Projects", icon: FolderGit2 },
 };
 
-/** Renders proposedText with only the changed/added words wrapped in a green highlight. */
-function DiffHighlightedText({
-  originalText,
-  proposedText,
-  applied,
-}: {
-  originalText: string;
-  proposedText: string;
-  applied: boolean;
-}) {
-  const segments = diffWords(originalText, proposedText);
-  return (
-    <>
-      {segments
-        .filter((s) => s.type !== "removed")
-        .map((seg, idx) =>
-          seg.type === "added" ? (
-            <mark
-              key={idx}
-              className={
-                applied
-                  ? "bg-emerald-400/70 dark:bg-emerald-400/40 text-emerald-950 dark:text-emerald-50 font-semibold rounded px-0.5"
-                  : "bg-emerald-200 dark:bg-emerald-500/30 text-emerald-950 dark:text-emerald-100 rounded px-0.5"
-              }
-            >
-              {seg.text}
-            </mark>
-          ) : (
-            <React.Fragment key={idx}>{seg.text}</React.Fragment>
-          )
-        )}
-    </>
-  );
-}
-
 function SuggestionCard({ suggestion }: { suggestion: TailoringSuggestion }) {
   const { setSuggestionStatus } = useTailorResumeStore();
   const [isEditing, setIsEditing] = useState(false);
   const [draftText, setDraftText] = useState(suggestion.proposedText);
   const [isBusy, setIsBusy] = useState(false);
 
-  const sectionLabel = SECTION_META[suggestion.section].label;
+  const sectionLabel = SECTION_META[suggestion.section]?.label || "Resume Section";
 
   const handleAccept = async () => {
     setIsBusy(true);
@@ -85,16 +49,18 @@ function SuggestionCard({ suggestion }: { suggestion: TailoringSuggestion }) {
 
   return (
     <div
-      className={`relative border rounded-2xl p-4 space-y-3 shadow-xs transition-colors duration-300 ${
+      className={`relative border rounded-2xl p-4 space-y-3.5 shadow-xs transition-colors duration-300 ${
         isApplied
-          ? "bg-emerald-50 dark:bg-emerald-500/10 border-emerald-300 dark:border-emerald-500/40"
+          ? "bg-emerald-50/50 dark:bg-emerald-500/10 border-emerald-300 dark:border-emerald-500/40"
           : "bg-surface border-border"
       }`}
     >
       <div className="flex items-start justify-between gap-2">
         <div>
           <p
-            className={`text-[10px] font-bold uppercase tracking-wider ${isApplied ? "text-emerald-700 dark:text-emerald-400" : "text-primary-glow"}`}
+            className={`text-[10px] font-bold uppercase tracking-wider ${
+              isApplied ? "text-emerald-700 dark:text-emerald-400" : "text-primary-glow"
+            }`}
           >
             {suggestion.changeType === "addition" ? "New Addition" : "Suggested Edit"}
           </p>
@@ -102,30 +68,32 @@ function SuggestionCard({ suggestion }: { suggestion: TailoringSuggestion }) {
           <p className="text-[10px] text-ink-soft mt-0.5">Placement: {sectionLabel}</p>
         </div>
         {suggestion.status === "accepted" && (
-          <span className="text-[10px] font-bold text-emerald-700 bg-emerald-500/20 border border-emerald-500/30 px-2 py-0.5 rounded-full shrink-0 inline-flex items-center gap-1">
+          <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-500/20 border border-emerald-500/30 px-2.5 py-0.5 rounded-full shrink-0 inline-flex items-center gap-1">
             <Check className="w-3 h-3" />
             Applied
           </span>
         )}
         {suggestion.status === "edited" && (
-          <span className="text-[10px] font-bold text-emerald-700 bg-emerald-500/20 border border-emerald-500/30 px-2 py-0.5 rounded-full shrink-0 inline-flex items-center gap-1">
+          <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-500/20 border border-emerald-500/30 px-2.5 py-0.5 rounded-full shrink-0 inline-flex items-center gap-1">
             <Check className="w-3 h-3" />
             Edited &amp; Applied
           </span>
         )}
         {suggestion.status === "declined" && (
-          <span className="text-[10px] font-bold text-ink-soft bg-surface-alt border border-border px-2 py-0.5 rounded-full shrink-0">
+          <span className="text-[10px] font-bold text-ink-soft bg-surface-alt border border-border px-2.5 py-0.5 rounded-full shrink-0">
             Rejected
           </span>
         )}
       </div>
 
       {suggestion.originalText && (
-        <div className="space-y-1">
-          <p className="text-[10px] font-bold text-ink-soft uppercase tracking-wide">Original</p>
+        <div className="space-y-1.5">
+          <p className="text-[10px] font-bold text-ink-soft uppercase tracking-wider">Current in Resume</p>
           <p
-            className={`text-xs rounded-xl p-2.5 leading-relaxed ${
-              isApplied ? "text-ink-soft/80 bg-white/60 dark:bg-black/10 line-through decoration-rose-400/60" : "text-ink-soft bg-surface-alt/60"
+            className={`text-xs rounded-xl p-3 leading-relaxed border transition-colors ${
+              isApplied
+                ? "text-ink-soft/70 bg-surface-alt/40 border-border/40 line-through decoration-slate-400"
+                : "text-ink-soft bg-surface-alt/80 border-border/80"
             }`}
           >
             {suggestion.originalText}
@@ -133,33 +101,34 @@ function SuggestionCard({ suggestion }: { suggestion: TailoringSuggestion }) {
         </div>
       )}
 
-      <div className="space-y-1">
-        <p
-          className={`text-[10px] font-bold uppercase tracking-wide ${isApplied ? "text-emerald-700 dark:text-emerald-400" : "text-primary-glow"}`}
-        >
-          {isApplied ? "Applied Bullet" : "Modified Bullet"}
+      <div className="space-y-1.5">
+        <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 flex items-center gap-1">
+          <Sparkles className="w-3 h-3" />
+          <span>{isApplied ? "Applied in Resume" : "AI Suggested Revision"}</span>
         </p>
         {isEditing ? (
           <textarea
             value={draftText}
             onChange={(e) => setDraftText(e.target.value)}
             rows={3}
-            className="w-full text-xs bg-primary/5 border border-primary-glow/40 rounded-xl p-2.5 leading-relaxed focus:outline-none focus:ring-1 focus:ring-primary-glow resize-none"
+            className="w-full text-xs bg-emerald-50/50 dark:bg-emerald-950/30 border-2 border-emerald-500 rounded-xl p-3 leading-relaxed text-ink focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none font-normal"
           />
         ) : (
-          <p
-            className={`text-xs rounded-xl p-2.5 leading-relaxed ${
-              isApplied ? "text-emerald-950 dark:text-emerald-50 bg-emerald-100/80 dark:bg-emerald-500/15" : "text-ink bg-primary/10"
+          <div
+            className={`text-xs rounded-xl p-3 leading-relaxed border transition-all ${
+              isApplied
+                ? "bg-emerald-100/90 dark:bg-emerald-500/20 border-emerald-400 dark:border-emerald-500/40 text-emerald-950 dark:text-emerald-50 font-medium ring-2 ring-emerald-500/30"
+                : "bg-emerald-50/90 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-700/60 text-emerald-950 dark:text-emerald-100 shadow-xs"
             }`}
           >
-            <DiffHighlightedText originalText={suggestion.originalText} proposedText={suggestion.proposedText} applied={isApplied} />
-          </p>
+            <p className="whitespace-pre-wrap">{suggestion.proposedText}</p>
+          </div>
         )}
       </div>
 
       {suggestion.reason && (
-        <div className="flex items-start gap-1.5 text-[11px] text-ink-soft">
-          <Info className={`w-3 h-3 mt-0.5 shrink-0 ${isApplied ? "text-emerald-600" : "text-primary-glow"}`} />
+        <div className="flex items-start gap-1.5 text-[11px] text-ink-soft pt-0.5">
+          <Info className="w-3.5 h-3.5 mt-0.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
           <p className="leading-relaxed">
             <span className="font-bold text-ink">Reasoning: </span>
             {suggestion.reason}
@@ -175,7 +144,7 @@ function SuggestionCard({ suggestion }: { suggestion: TailoringSuggestion }) {
                 type="button"
                 onClick={handleSaveEdit}
                 disabled={isBusy}
-                className="flex-1 inline-flex items-center justify-center gap-1.5 text-xs font-bold bg-gradient-brand text-white rounded-xl py-2 shadow-elegant disabled:opacity-50 cursor-pointer"
+                className="flex-1 inline-flex items-center justify-center gap-1.5 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl py-2 shadow-elegant disabled:opacity-50 cursor-pointer transition-all"
               >
                 {isBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
                 <span>Save &amp; Accept</span>
@@ -197,7 +166,7 @@ function SuggestionCard({ suggestion }: { suggestion: TailoringSuggestion }) {
                 type="button"
                 onClick={handleAccept}
                 disabled={isBusy}
-                className="flex-1 inline-flex items-center justify-center gap-1.5 text-xs font-bold bg-gradient-brand text-white rounded-xl py-2 shadow-elegant disabled:opacity-50 cursor-pointer"
+                className="flex-1 inline-flex items-center justify-center gap-1.5 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl py-2 shadow-elegant disabled:opacity-50 cursor-pointer transition-all"
               >
                 {isBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
                 <span>Accept Revision</span>
