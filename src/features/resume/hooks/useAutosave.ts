@@ -5,13 +5,16 @@ import { useAuthStore } from '../../auth/store/useAuthStore';
 const AUTOSAVE_DEBOUNCE_MS = 2000;
 
 export const useAutosave = () => {
-  const { resume, isDirty, saveResume } = useResumeStore();
+  const { resume, isDirty, saveResume, isTailorModeActive } = useResumeStore();
   const { isAuthenticated } = useAuthStore();
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     // Only trigger autosave if state is dirty (has changes)
     if (!isDirty) return;
+    // Skip persisting while a Tailor Resume review is in progress - the live preview may
+    // reflect staged/pending suggestions that haven't been explicitly saved yet.
+    if (isTailorModeActive) return;
 
     // Clear previous pending debounce timer
     if (timerRef.current) {
@@ -34,12 +37,12 @@ export const useAutosave = () => {
         clearTimeout(timerRef.current);
       }
     };
-  }, [resume, isDirty, isAuthenticated, saveResume]);
+  }, [resume, isDirty, isTailorModeActive, isAuthenticated, saveResume]);
 
   // Window unload listener to flush unsaved changes
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (isDirty) {
+      if (isDirty && !isTailorModeActive) {
         saveResume();
         e.preventDefault();
         e.returnValue = '';
@@ -48,5 +51,5 @@ export const useAutosave = () => {
 
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [isDirty, isAuthenticated, saveResume]);
+  }, [isDirty, isTailorModeActive, isAuthenticated, saveResume]);
 };

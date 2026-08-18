@@ -41,10 +41,14 @@ interface ResumeStoreState {
   lastSavedAt: string | null;
   activeSection: string;
   activeResumeContext: ActiveResumeContext | null;
-  
+  // While true, useAutosave skips persisting changes - set during an in-review Tailor Resume
+  // session so staged/pending suggestion previews never silently overwrite the saved resume.
+  isTailorModeActive: boolean;
+
   // Section Navigation & Focus
   setActiveSection: (section: string) => void;
   setActiveResumeContext: (ctx: ActiveResumeContext | null) => void;
+  setTailorModeActive: (active: boolean) => void;
 
   // Header & Title Actions
   updateTitle: (title: string) => void;
@@ -131,9 +135,11 @@ export const useResumeStore = create<ResumeStoreState>((set, get) => ({
   lastSavedAt: null,
   activeSection: 'personalInfo',
   activeResumeContext: null,
+  isTailorModeActive: false,
 
   setActiveSection: (section) => set({ activeSection: section }),
   setActiveResumeContext: (ctx) => set({ activeResumeContext: ctx }),
+  setTailorModeActive: (active) => set({ isTailorModeActive: active }),
 
   updateTitle: (title) =>
     set((state) => ({

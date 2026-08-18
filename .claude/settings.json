@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx tsx *)",
+      "PowerShell(Stop-Process -Id 30084 -Force -Confirm:$false)",
+      "Bash(cp \"C:\\\\Users\\\\Irfan\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Irfan-Code-Base-web-frontend-let-get-in\\\\20e4ec93-f7bb-4405-aedf-7404946cdc89\\\\scratchpad\\\\full-flow-verify.mjs\" \"c:/Irfan/Code Base/web-backend-let-get-in/full-flow-verify.mjs\")",
+      "Bash(node full-flow-verify.mjs)",
+      "PowerShell(Stop-Process -Id 29524 -Force -Confirm:$false)"
+    ]
+  }
+}
