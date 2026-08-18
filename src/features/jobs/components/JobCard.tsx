@@ -11,6 +11,7 @@ import {
   CheckCircle2,
   Zap,
   ArrowRight,
+  Send,
 } from "lucide-react";
 import { IJob } from "../types/job.types";
 
@@ -21,6 +22,7 @@ interface JobCardProps {
   onToggleSave?: (jobId: string) => void;
   isSelected?: boolean;
   isApplied?: boolean;
+  appliedSource?: "ai_apply" | "manual";
   layoutMode?: "grid" | "compact";
 }
 
@@ -31,6 +33,7 @@ export const JobCard: React.FC<JobCardProps> = ({
   onToggleSave,
   isSelected = false,
   isApplied = false,
+  appliedSource,
   layoutMode = "grid",
 }) => {
   const match = job.matchScore || 75;
@@ -140,6 +143,20 @@ export const JobCard: React.FC<JobCardProps> = ({
             </div>
 
             <div className="flex items-center gap-1.5 shrink-0">
+              {isApplied && (
+                appliedSource === "ai_apply" ? (
+                  <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 shadow-2xs">
+                    <Zap className="w-2.5 h-2.5 text-purple-600 dark:text-purple-400" />
+                    AI Applied
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 shadow-2xs">
+                    <Send className="w-2.5 h-2.5 text-blue-600 dark:text-blue-400" />
+                    Manual Applied
+                  </span>
+                )
+              )}
+
               <span
                 className={`inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full border shadow-2xs ${matchTone}`}
               >
@@ -248,10 +265,17 @@ export const JobCard: React.FC<JobCardProps> = ({
 
           <div className="flex items-center gap-1.5 shrink-0">
             {isApplied && (
-              <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
-                <CheckCircle2 className="w-3 h-3" />
-                Applied
-              </span>
+              appliedSource === "ai_apply" ? (
+                <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 shadow-xs">
+                  <Zap className="w-3 h-3 text-purple-600 dark:text-purple-400" />
+                  AI Applied
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 shadow-xs">
+                  <Send className="w-3 h-3 text-blue-600 dark:text-blue-400" />
+                  Manual Applied
+                </span>
+              )
             )}
 
             <span
@@ -339,10 +363,27 @@ export const JobCard: React.FC<JobCardProps> = ({
             e.stopPropagation();
             onSelect(job);
           }}
-          className="flex-1 bg-surface-alt hover:bg-primary hover:text-white text-ink font-semibold px-3 py-2 rounded-xl text-xs transition-all duration-200 flex items-center justify-center gap-1.5 border border-border hover:border-primary group/btn cursor-pointer"
+          className={`flex-1 font-semibold px-3 py-2 rounded-xl text-xs transition-all duration-200 flex items-center justify-center gap-1.5 border group/btn cursor-pointer ${
+            isApplied
+              ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30 hover:bg-emerald-500/20"
+              : "bg-surface-alt hover:bg-primary hover:text-white text-ink border-border hover:border-primary"
+          }`}
         >
-          <span>View Details & Apply</span>
-          <ArrowRight className="w-3.5 h-3.5 group-hover/btn:translate-x-0.5 transition-transform" />
+          {isApplied ? (
+            <>
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+              <span>
+                {appliedSource === "ai_apply"
+                  ? "AI Applied • View Status"
+                  : "Manual Applied • View Status"}
+              </span>
+            </>
+          ) : (
+            <>
+              <span>View Details & Apply</span>
+              <ArrowRight className="w-3.5 h-3.5 group-hover/btn:translate-x-0.5 transition-transform" />
+            </>
+          )}
         </button>
 
         {onToggleSave && (

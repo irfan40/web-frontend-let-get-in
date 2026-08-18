@@ -14,13 +14,14 @@ import {
 } from "lucide-react";
 import { IJob } from "../types/job.types";
 import { useAuthStore } from "@/features/auth/store/useAuthStore";
+import { applicationService } from "@/features/applications/services/applicationService";
 
 interface JobApplyModalProps {
   isOpen: boolean;
   job: IJob | null;
   allJobs?: IJob[];
   onClose: () => void;
-  onSuccess: (jobId: string) => void;
+  onSuccess: (jobId: string, appliedJob?: IJob | null, createdApp?: any) => void;
 }
 
 export const JobApplyModal: React.FC<JobApplyModalProps> = ({
@@ -102,13 +103,97 @@ export const JobApplyModal: React.FC<JobApplyModalProps> = ({
     setStep("recommendations");
   };
 
-  const handleFinalizeApplication = (targetJobId?: string) => {
+  const handleFinalizeApplication = async (targetJobId?: string) => {
+    const selectedJobId = targetJobId || job._id;
+    const targetJobObj =
+      allJobs.find((j) => j._id === selectedJobId) ||
+      (selectedJobId === job._id ? job : null);
+
     setIsSubmitting(true);
-    setTimeout(() => {
-      setIsSubmitting(false);
-      onSuccess(targetJobId || job._id);
+    setErrorMsg(null);
+
+    try {
+      let createdApp: any = null;
+
+      // 1. Try to record application on backend API
+      try {
+        const applicantNotes = fullName
+          ? `Direct Application • Candidate: ${fullName}${email ? ` (${email})` : ""}${
+              linkedinUrl ? ` • LinkedIn: ${linkedinUrl}` : ""
+            }`
+          : "Direct Manual Application";
+
+        createdApp = await applicationService.createApplication({
+          jobId: selectedJobId,
+          source: "manual",
+          status: "submitted",
+          matchScore: targetJobObj?.matchScore || 80,
+          notes: applicantNotes,
+        });
+      } catch (apiErr) {
+        console.warn("Backend application record warning (falling back to client cache):", apiErr);
+      }
+
+      // 2. Persist to localStorage for instant synchronization across all tabs and boards
+      if (typeof window !== "undefined") {
+        try {
+          // A. Update applied job IDs list
+          const savedStr = localStorage.getItem("resumebuildai_applied_jobs");
+          const savedIds: string[] = savedStr ? JSON.parse(savedStr) : [];
+          if (!savedIds.includes(selectedJobId)) {
+            savedIds.push(selectedJobId);
+            localStorage.setItem(
+              "resumebuildai_applied_jobs",
+              JSON.stringify(savedIds),
+            );
+          }
+
+          // B. Update full applied records list
+          const recordsStr = localStorage.getItem("resumebuildai_applied_records");
+          const records: any[] = recordsStr ? JSON.parse(recordsStr) : [];
+          const existingIdx = records.findIndex(
+            (r: any) => (r.job?._id || r.jobId) === selectedJobId,
+          );
+
+          const recordItem = {
+            _id: createdApp?._id || `local_app_${selectedJobId}_${Date.now()}`,
+            jobId: selectedJobId,
+            job: targetJobObj || createdApp?.job || job,
+            source: "manual",
+            status: "submitted",
+            matchScore: targetJobObj?.matchScore || createdApp?.matchScore || 80,
+            appliedAt: new Date().toISOString(),
+            notes: fullName ? `Applicant: ${fullName}` : "",
+            applicantDetails: {
+              fullName,
+              email,
+              linkedinUrl: noLinkedin ? "" : linkedinUrl,
+            },
+          };
+
+          if (existingIdx >= 0) {
+            records[existingIdx] = recordItem;
+          } else {
+            records.unshift(recordItem);
+          }
+          localStorage.setItem(
+            "resumebuildai_applied_records",
+            JSON.stringify(records),
+          );
+        } catch (storageErr) {
+          console.warn("LocalStorage save warning:", storageErr);
+        }
+      }
+
+      onSuccess(selectedJobId, targetJobObj, createdApp);
       onClose();
-    }, 600);
+    } catch (err: any) {
+      console.error("Failed to finalize application:", err);
+      onSuccess(selectedJobId, targetJobObj, null);
+      onClose();
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (

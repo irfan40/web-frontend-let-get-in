@@ -28,6 +28,7 @@ import {
   Tag,
   AlertCircle,
   X,
+  Send,
 } from 'lucide-react';
 import { applicationService } from '../services/applicationService';
 import { ApplicationItem, ApplicationStats, ApplicationStatus } from '../types';
@@ -347,13 +348,14 @@ export function ApplicationsPage() {
                           {app.job?.title || 'Job Position'}
                         </h3>
                         {app.source === 'ai_apply' ? (
-                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 flex items-center gap-1">
-                            <Sparkles className="w-2.5 h-2.5" />
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 flex items-center gap-1 shadow-2xs">
+                            <Zap className="w-2.5 h-2.5 text-purple-600 dark:text-purple-400" />
                             AI Auto-Apply
                           </span>
                         ) : (
-                          <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-surface-alt text-ink-soft border border-border">
-                            Manual
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 flex items-center gap-1 shadow-2xs">
+                            <Send className="w-2.5 h-2.5 text-blue-600 dark:text-blue-400" />
+                            Manual Apply
                           </span>
                         )}
                       </div>
@@ -536,8 +538,15 @@ export function ApplicationsPage() {
               <div className="p-3 rounded-2xl bg-surface-alt/70 border border-border/80 space-y-0.5">
                 <span className="text-[10px] uppercase font-bold text-ink-soft block">Application Source</span>
                 <span className="text-xs font-bold text-ink flex items-center gap-1">
-                  <Zap className="w-3.5 h-3.5 text-primary" />
-                  {selectedApp.source === 'ai_apply' ? 'AI Auto-Apply' : 'Manual'}
+                  {selectedApp.source === 'ai_apply' ? (
+                    <span className="inline-flex items-center gap-1 text-[11px] text-purple-600 dark:text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded-md border border-purple-500/20">
+                      <Zap className="w-3 h-3" /> AI Auto-Apply
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 text-[11px] text-blue-600 dark:text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded-md border border-blue-500/20">
+                      <Send className="w-3 h-3" /> Manual Apply
+                    </span>
+                  )}
                 </span>
               </div>
 

@@ -37,6 +37,7 @@ interface JobDetailPanelProps {
   onToggleSave?: (jobId: string) => void;
   onStartApplication: (job: IJob) => void;
   isApplied?: boolean;
+  appliedSource?: "ai_apply" | "manual";
   isPanelCollapsed?: boolean;
   onTogglePanel?: () => void;
   isExpanded?: boolean;
@@ -50,6 +51,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
   onToggleSave,
   onStartApplication,
   isApplied = false,
+  appliedSource,
   isPanelCollapsed = false,
   onTogglePanel,
   isExpanded = false,
@@ -164,6 +166,20 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                   <Sparkles className="w-3.5 h-3.5 fill-current" />
                   {match}% Match
                 </span>
+
+                {isApplied && (
+                  appliedSource === "ai_apply" ? (
+                    <span className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 shadow-2xs">
+                      <Zap className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+                      AI Auto-Applied
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 shadow-2xs">
+                      <Send className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                      Manual Applied
+                    </span>
+                  )
+                )}
 
                 {job.workplaceType === "remote" && (
                   <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20">
@@ -596,7 +612,11 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
           {isApplied ? (
             <>
               <CheckCircle2 className="w-4 h-4" />
-              <span>Application Submitted (In Review)</span>
+              <span>
+                {appliedSource === "ai_apply"
+                  ? "Applied via AI Auto-Apply (In Review)"
+                  : "Application Submitted via Manual Apply (In Review)"}
+              </span>
             </>
           ) : (
             <>

@@ -94,15 +94,19 @@ export function JobsBoard({
   const fetchBoardData = useCallback(async () => {
     setLoading(true);
     try {
-      // A. Fetch applications
-      const appRes = await applicationService.getApplications({
-        limit: 100,
-        sort: "recent",
-      });
-      const apps = appRes.applications || [];
-      setApplications(apps);
+      // A. Fetch applications from API
+      let loadedApps: ApplicationItem[] = [];
+      try {
+        const appRes = await applicationService.getApplications({
+          limit: 100,
+          sort: "recent",
+        });
+        loadedApps = appRes.applications || [];
+      } catch (apiErr) {
+        console.warn("Backend application fetch warning in JobsBoard:", apiErr);
+      }
 
-      // B. Fetch jobs catalog / recommendations to resolve saved jobs
+      // B. Fetch jobs catalog / recommendations to resolve saved jobs & missing local data
       let recJobs: IJob[] = [];
       try {
         const jobsRes = await jobService.getRecommendations({ limit: 50 });
@@ -112,8 +116,44 @@ export function JobsBoard({
         console.warn("Failed to load recommended jobs for saved list:", recErr);
       }
 
-      // C. Resolve saved jobs from localStorage
       if (typeof window !== "undefined") {
+        // C. Integrate local application records
+        try {
+          const recordsStr = localStorage.getItem("resumebuildai_applied_records");
+          const localRecords: any[] = recordsStr ? JSON.parse(recordsStr) : [];
+
+          localRecords.forEach((rec) => {
+            const recJobId = rec.job?._id || rec.jobId;
+            const alreadyInApps = loadedApps.some(
+              (a) => (a.job?._id || a._id) === recJobId || a._id === rec._id,
+            );
+
+            if (!alreadyInApps) {
+              const matchedJob =
+                rec.job || recJobs.find((j) => j._id === recJobId);
+              if (matchedJob) {
+                loadedApps.unshift({
+                  _id: rec._id || `local_${recJobId}`,
+                  job: matchedJob,
+                  resume: null,
+                  coverLetter: null,
+                  source: rec.source || "manual",
+                  status: rec.status || "submitted",
+                  matchScore: rec.matchScore || matchedJob.matchScore || 80,
+                  notes: rec.notes || "",
+                  appliedAt: rec.appliedAt || new Date().toISOString(),
+                  createdAt: rec.appliedAt || new Date().toISOString(),
+                });
+              }
+            }
+          });
+        } catch (storageErr) {
+          console.warn("LocalStorage applied records read error in JobsBoard:", storageErr);
+        }
+
+        setApplications(loadedApps);
+
+        // D. Resolve saved jobs from localStorage
         try {
           const savedStr = localStorage.getItem("resumebuildai_saved_jobs");
           const savedIds: string[] = savedStr ? JSON.parse(savedStr) : [];
@@ -153,6 +193,8 @@ export function JobsBoard({
         } catch {
           setSavedJobs([]);
         }
+      } else {
+        setApplications(loadedApps);
       }
     } catch (err) {
       console.warn("Failed to fetch board data:", err);
@@ -987,10 +1029,18 @@ export function JobsBoard({
                 <span className="text-[10px] uppercase font-bold text-ink-soft block">
                   Source
                 </span>
-                <span className="text-xs font-bold text-ink capitalize">
-                  {selectedJob.source === "ai_apply"
-                    ? "AI Auto-Apply"
-                    : selectedJob.source}
+                <span className="text-xs font-bold text-ink capitalize flex items-center gap-1">
+                  {selectedJob.source === "ai_apply" ? (
+                    <span className="inline-flex items-center gap-1 text-[11px] text-purple-600 dark:text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded-md border border-purple-500/20">
+                      <Zap className="w-3 h-3" /> AI Auto-Apply
+                    </span>
+                  ) : selectedJob.source === "manual" ? (
+                    <span className="inline-flex items-center gap-1 text-[11px] text-blue-600 dark:text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded-md border border-blue-500/20">
+                      <Send className="w-3 h-3" /> Manual Apply
+                    </span>
+                  ) : (
+                    <span>{selectedJob.source}</span>
+                  )}
                 </span>
               </div>
 
