@@ -3,9 +3,12 @@ import Logo from "./Logo";
 
 export function Footer() {
   const cols = [
-    { title: "Platform", links: ["Features", "Pricing", "Security", "Changelog"] },
+    {
+      title: "Platform",
+      links: ["Features", "Purpose", "Sequence", "Changelog"],
+    },
     { title: "Company", links: ["About", "Careers", "Blog", "Contact"] },
-    { title: "Legal", links: ["Privacy", "Terms", "Cookies", "GDPR"] },
+    { title: "Legal", links: ["Privacy", "Terms", "Policies", "GDPR"] },
   ];
   return (
     <footer className="bg-[oklch(0.14_0.04_260)] border-t border-white/5 px-4 sm:px-6 py-12">
@@ -14,7 +17,8 @@ export function Footer() {
           <div className="md:col-span-2">
             <Logo dark />
             <p className="text-white/50 text-sm mt-4 max-w-xs leading-relaxed">
-              The professional identity layer where verified skills, not CVs, get you hired.
+              The professional identity layer where verified skills, not CVs,
+              get you hired.
             </p>
             <div className="flex items-center gap-4 mt-4">
               {["Twitter", "LinkedIn", "YouTube"].map((s) => (
