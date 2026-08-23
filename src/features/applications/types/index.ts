@@ -1,6 +1,7 @@
 export type ApplicationStatus =
   | 'submitted'
   | 'reviewing'
+  | 'shortlisted'
   | 'interviewing'
   | 'offered'
   | 'rejected'
@@ -62,6 +63,7 @@ export interface ApplicationStats {
   total: number;
   submitted: number;
   reviewing: number;
+  shortlisted: number;
   interviewing: number;
   offered: number;
   rejected: number;

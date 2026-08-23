@@ -109,6 +109,7 @@ apiClient.interceptors.response.use(
           '/exams',
           '/edupie',
           '/mydive',
+          '/recruiter',
         ];
 
         const isProtectedRoute =

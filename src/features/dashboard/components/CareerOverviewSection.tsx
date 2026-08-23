@@ -59,6 +59,13 @@ const STATUS_CONFIG: Record<
     border: 'border-amber-500/20',
     icon: MessageSquare,
   },
+  shortlisted: {
+    label: 'Shortlisted',
+    color: 'text-blue-500 dark:text-blue-400',
+    bg: 'bg-blue-500/10',
+    border: 'border-blue-500/20',
+    icon: CheckCircle2,
+  },
   interviewing: {
     label: 'Interviewing',
     color: 'text-purple-500 dark:text-purple-400',

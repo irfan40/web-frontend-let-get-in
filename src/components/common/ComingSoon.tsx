@@ -11,6 +11,10 @@ interface ComingSoonProps {
   badge?: string;
   /** Use inside a nested section/panel instead of as full tab content - shorter height, no "Back to Dashboard" action. */
   compact?: boolean;
+  /** Where the "Back" action links to. */
+  backHref?: string;
+  /** Label for the back action link. */
+  backLabel?: string;
 }
 
 export function ComingSoon({
@@ -19,6 +23,8 @@ export function ComingSoon({
   icon: Icon = Rocket,
   badge = "Pro Feature · Coming Soon",
   compact = false,
+  backHref = "/dashboard",
+  backLabel = "Back to Dashboard",
 }: ComingSoonProps) {
   return (
     <div
@@ -60,11 +66,11 @@ export function ComingSoon({
       {!compact && (
         <div className="mt-8 flex items-center gap-4">
           <Link
-            href="/dashboard"
+            href={backHref}
             className="inline-flex items-center gap-2 text-xs font-semibold bg-gradient-brand text-primary-foreground px-6 py-3 rounded-xl shadow-elegant hover:shadow-glow transition-all hover:scale-[1.02] active:scale-95"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span>Back to Dashboard</span>
+            <span>{backLabel}</span>
           </Link>
         </div>
       )}

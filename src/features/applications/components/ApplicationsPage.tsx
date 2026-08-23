@@ -50,6 +50,13 @@ const STATUS_CONFIG: Record<
     border: 'border-amber-500/20',
     icon: MessageSquare,
   },
+  shortlisted: {
+    label: 'Shortlisted',
+    color: 'text-blue-700 dark:text-blue-300',
+    bg: 'bg-blue-500/10',
+    border: 'border-blue-500/20',
+    icon: CheckCircle2,
+  },
   interviewing: {
     label: 'Interviewing',
     color: 'text-purple-700 dark:text-purple-300',
@@ -255,6 +262,7 @@ export function ApplicationsPage() {
             { id: 'all', label: 'All Applications', count: stats?.total },
             { id: 'submitted', label: 'Submitted', count: stats?.submitted },
             { id: 'reviewing', label: 'Under Review', count: stats?.reviewing },
+            { id: 'shortlisted', label: 'Shortlisted', count: stats?.shortlisted },
             { id: 'interviewing', label: 'Interviewing', count: stats?.interviewing },
             { id: 'offered', label: 'Offered', count: stats?.offered },
             { id: 'rejected', label: 'Not Selected', count: stats?.rejected },

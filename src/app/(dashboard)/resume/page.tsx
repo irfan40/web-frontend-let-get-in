@@ -52,7 +52,6 @@ function DashboardPageContent() {
     }
   };
 
-  const [activeSection, setActiveSection] = useState<MyJobsSection>("resume");
   const [resumeInnerTab, setResumeInnerTab] = useState<ResumeInnerTab>("myResume");
   const [coverLetterInnerTab, setCoverLetterInnerTab] = useState<CoverLetterInnerTab>("myCoverLetter");
   const [resumes, setResumes] = useState<IResume[]>([]);
@@ -337,6 +336,7 @@ function DashboardPageContent() {
 
             {resumeInnerTab === "tailorResume" && <TailorResumeEntry />}
           </div>
+        </div>
         )}
       </main>
 

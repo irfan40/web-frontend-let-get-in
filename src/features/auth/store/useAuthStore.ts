@@ -18,6 +18,8 @@ interface AuthState {
     password: string;
     confirmPassword: string;
     otp: string;
+    role?: 'user' | 'recruiter';
+    entityType?: 'company' | 'institution' | 'startup';
   }) => Promise<UserProfile>;
 
   sendOtp: (email: string) => Promise<{ cooldown: number }>; // Alias for sendEmailOtp
@@ -27,6 +29,8 @@ interface AuthState {
     password: string;
     confirmPassword: string;
     otp: string;
+    role?: 'user' | 'recruiter';
+    entityType?: 'company' | 'institution' | 'startup';
   }) => Promise<UserProfile>; // Alias for verifyEmailOtp
 
   sendWhatsAppOtp: (data: { countryCode: string; phone: string }) => Promise<{ cooldown: number }>;
@@ -37,6 +41,8 @@ interface AuthState {
     password: string;
     confirmPassword: string;
     otp: string;
+    role?: 'user' | 'recruiter';
+    entityType?: 'company' | 'institution' | 'startup';
   }) => Promise<UserProfile>;
 
   emailSignup: (data: {
