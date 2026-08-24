@@ -1,10 +1,6 @@
 "use client";
 
-<<<<<<< HEAD
 import React, { useEffect, useRef, useState } from "react";
-=======
-import React, { useEffect, useRef } from "react";
->>>>>>> origin/main
 import { useRouter } from "next/navigation";
 import { Loader2, Save, Eye, EyeOff, XCircle, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
@@ -12,10 +8,7 @@ import { useResumeStore } from "@/features/resume/store/useResumeStore";
 import { LivePreviewCanvas } from "@/features/resume/components/preview/LivePreviewCanvas";
 import { useTailorResumeStore } from "../store/useTailorResumeStore";
 import { applyAcceptedSuggestions } from "../utils/applySuggestions";
-<<<<<<< HEAD
 import { usePreviewHighlight } from "../hooks/usePreviewHighlight";
-=======
->>>>>>> origin/main
 import { TailoringSuggestionsPanel } from "./TailoringSuggestionsPanel";
 import { TailorCenterColumn } from "./TailorCenterColumn";
 
@@ -25,7 +18,6 @@ interface TailorModeWorkspaceProps {
 
 export function TailorModeWorkspace({ sessionId }: TailorModeWorkspaceProps) {
   const router = useRouter();
-<<<<<<< HEAD
   const { session, isLoading, error, loadExistingSession, finalize, discard, originalContent, isSaving } =
     useTailorResumeStore();
   // Visualization-only toggle - never swaps the underlying working Resume content, only
@@ -33,21 +25,6 @@ export function TailorModeWorkspace({ sessionId }: TailorModeWorkspaceProps) {
   const [showChanges, setShowChanges] = useState(true);
   const previewContainerRef = useRef<HTMLDivElement>(null);
   const resume = useResumeStore((s) => s.resume);
-=======
-  const {
-    session,
-    isLoading,
-    error,
-    loadExistingSession,
-    finalize,
-    discard,
-    originalContent,
-    isSaving,
-    showChanges,
-    setShowChanges,
-  } = useTailorResumeStore();
-  const previewContainerRef = useRef<HTMLDivElement>(null);
->>>>>>> origin/main
 
   useEffect(() => {
     loadExistingSession(sessionId);
@@ -55,12 +32,8 @@ export function TailorModeWorkspace({ sessionId }: TailorModeWorkspaceProps) {
   }, [sessionId]);
 
   // The preview always shows the working Resume (original + currently accepted/edited
-<<<<<<< HEAD
   // suggestions) regardless of the Show Changes toggle - that toggle only controls the
   // highlight overlay below, never the underlying data (see usePreviewHighlight).
-=======
-  // suggestions) regardless of the Show Changes toggle.
->>>>>>> origin/main
   useEffect(() => {
     if (!session || !originalContent) return;
     const { resume: currentResume, setResume } = useResumeStore.getState();
@@ -69,11 +42,8 @@ export function TailorModeWorkspace({ sessionId }: TailorModeWorkspaceProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session?.suggestions]);
 
-<<<<<<< HEAD
   usePreviewHighlight(previewContainerRef, session?.suggestions || [], showChanges, resume.content);
 
-=======
->>>>>>> origin/main
   const handleSaveAndExit = async () => {
     const result = await finalize();
     if (result) {
@@ -107,7 +77,6 @@ export function TailorModeWorkspace({ sessionId }: TailorModeWorkspaceProps) {
   }
 
   return (
-<<<<<<< HEAD
     <div className="flex-1 flex flex-col gap-3 p-3 min-h-0 overflow-hidden">
       <div className="flex items-center gap-2.5 shrink-0 flex-wrap">
         <button
@@ -142,9 +111,6 @@ export function TailorModeWorkspace({ sessionId }: TailorModeWorkspaceProps) {
         </button>
       </div>
 
-=======
-    <div className="flex-1 flex flex-col p-3 min-h-0 overflow-hidden">
->>>>>>> origin/main
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-3 min-h-0 overflow-hidden">
         <div className="h-full min-h-0 overflow-hidden">
           <TailoringSuggestionsPanel />
@@ -153,46 +119,7 @@ export function TailorModeWorkspace({ sessionId }: TailorModeWorkspaceProps) {
           <TailorCenterColumn />
         </div>
         <div ref={previewContainerRef} className="h-full min-h-0 overflow-hidden bg-surface/30 border border-border rounded-2xl">
-<<<<<<< HEAD
           <LivePreviewCanvas />
-=======
-          <LivePreviewCanvas
-            headerActions={
-              <div className="flex items-center gap-2 flex-wrap justify-center">
-                <button
-                  type="button"
-                  onClick={handleSaveAndExit}
-                  disabled={isSaving}
-                  className="inline-flex items-center gap-1.5 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-1.5 rounded-xl shadow-elegant transition disabled:opacity-60 cursor-pointer"
-                >
-                  {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-                  <span>Save Tailored Resume</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setShowChanges((v) => !v)}
-                  className={`inline-flex items-center gap-1.5 text-xs font-bold px-3.5 py-1.5 rounded-xl shadow-elegant transition cursor-pointer ${
-                    showChanges ? "bg-sky-600 hover:bg-sky-700 text-white" : "bg-surface-alt text-ink-soft border border-border"
-                  }`}
-                >
-                  {showChanges ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-                  <span>{showChanges ? "Show Changes" : "Changes Hidden"}</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleDecline}
-                  disabled={isSaving}
-                  className="inline-flex items-center gap-1.5 text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white px-3.5 py-1.5 rounded-xl shadow-elegant transition disabled:opacity-60 cursor-pointer"
-                >
-                  <XCircle className="w-3.5 h-3.5" />
-                  <span>Discard &amp; Exit</span>
-                </button>
-              </div>
-            }
-          />
->>>>>>> origin/main
         </div>
       </div>
     </div>

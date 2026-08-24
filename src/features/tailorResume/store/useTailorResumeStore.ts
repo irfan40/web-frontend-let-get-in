@@ -11,6 +11,7 @@ interface TailorResumeState {
   isLoading: boolean;
   isSaving: boolean;
   error: string | null;
+  
   loadOrCreateSession: (resumeId: string, jobDescription: string) => Promise<void>;
   loadExistingSession: (sessionId: string) => Promise<void>;
   setSuggestionStatus: (suggestionId: string, status: TailoringSuggestionStatus, proposedText?: string) => Promise<void>;
