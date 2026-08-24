@@ -1,10 +1,18 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Building2, CheckCircle2, Loader2, Pencil } from "lucide-react";
 import { useRecruiterStore } from "@/features/recruiter/store/useRecruiterStore";
-import { OrgProfile } from "@/features/recruiter/types";
+import { EntityType, OrgProfile } from "@/features/recruiter/types";
+import { AIWritingAssistant } from "@/features/aiWriting/components/AIWritingAssistant";
+import { AIWritingContext } from "@/features/aiWriting/types";
+
+const ENTITY_TO_AI_CONTEXT: Record<EntityType, AIWritingContext> = {
+  company: "company-about",
+  startup: "startup-about",
+  institution: "institution-about",
+};
 
 export default function RecruiterProfilePage() {
   const { orgProfile, orgFormMeta, loadOrgProfile, loadOrgFormMeta, saveOrgProfile } = useRecruiterStore();
@@ -16,6 +24,7 @@ export default function RecruiterProfilePage() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const [form, setForm] = useState<Partial<OrgProfile>>({});
+  const bioRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     loadOrgProfile().finally(() => setLoaded(true));
@@ -256,11 +265,24 @@ export default function RecruiterProfilePage() {
 
             <Field label={`About ${entityLabel}`}>
               <textarea
+                ref={bioRef}
                 value={form.bio || ""}
                 onChange={(e) => updateField("bio", e.target.value)}
                 placeholder={`A short description of your ${entityLabel.toLowerCase()}`}
                 className="input-base min-h-[100px] resize-y"
               />
+              {(form.bio || "").trim().length > 0 && orgProfile?.entity && (
+                <div className="mt-2">
+                  <AIWritingAssistant
+                    value={form.bio || ""}
+                    context={ENTITY_TO_AI_CONTEXT[orgProfile.entity]}
+                    metadata={{ companyName: form.name || "", industry: form.industry || "" }}
+                    textareaRef={bioRef}
+                    onApply={(next) => updateField("bio", next)}
+                    label="AI Improve"
+                  />
+                </div>
+              )}
             </Field>
 
             {localError && (

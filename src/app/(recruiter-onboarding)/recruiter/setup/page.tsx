@@ -1,12 +1,20 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Building2, GraduationCap, Rocket, Loader2, Sparkles, type LucideIcon } from "lucide-react";
 import { useAuthStore } from "@/features/auth/store/useAuthStore";
 import { useRecruiterStore } from "@/features/recruiter/store/useRecruiterStore";
 import { recruiterService } from "@/features/recruiter/services/recruiterService";
 import { EntityType, OrgAutofillFields } from "@/features/recruiter/types";
+import { AIWritingAssistant } from "@/features/aiWriting/components/AIWritingAssistant";
+import { AIWritingContext } from "@/features/aiWriting/types";
+
+const ENTITY_TO_AI_CONTEXT: Record<EntityType, AIWritingContext> = {
+  company: "company-about",
+  startup: "startup-about",
+  institution: "institution-about",
+};
 
 const AUTOFILLABLE_FIELDS: (keyof OrgAutofillFields)[] = [
   "name",
@@ -44,6 +52,7 @@ export default function RecruiterSetupPage() {
   const [website, setWebsite] = useState("");
   const [registrationId, setRegistrationId] = useState("");
   const [bio, setBio] = useState("");
+  const bioRef = useRef<HTMLTextAreaElement>(null);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
@@ -397,11 +406,24 @@ export default function RecruiterSetupPage() {
 
             <Field label="Short bio">
               <textarea
+                ref={bioRef}
                 value={bio}
                 onChange={(e) => setBio(e.target.value)}
                 placeholder={`A short description of your ${meta?.label.toLowerCase() || "organization"}`}
                 className="input-base min-h-[96px] resize-y"
               />
+              {bio.trim().length > 0 && (
+                <div className="mt-2">
+                  <AIWritingAssistant
+                    value={bio}
+                    context={ENTITY_TO_AI_CONTEXT[entity]}
+                    metadata={{ companyName: name, industry: orgType }}
+                    textareaRef={bioRef}
+                    onApply={setBio}
+                    label="AI Improve"
+                  />
+                </div>
+              )}
             </Field>
 
             {displayError && (

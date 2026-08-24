@@ -1,10 +1,12 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Check, Loader2, RefreshCw, Sparkles, Zap } from "lucide-react";
 import { recruiterService } from "@/features/recruiter/services/recruiterService";
 import { BuyCreditsModal } from "@/features/recruiter/components/BuyCreditsModal";
+import { AIWritingAssistant } from "@/features/aiWriting/components/AIWritingAssistant";
+import { AISkillSuggestButton } from "@/features/aiWriting/components/AISkillSuggestButton";
 import {
   CreditPack,
   EmploymentType,
@@ -46,6 +48,7 @@ export default function CreateJobPage() {
   const [salaryText, setSalaryText] = useState("");
   const [skillsText, setSkillsText] = useState("");
   const [description, setDescription] = useState("");
+  const descriptionRef = useRef<HTMLTextAreaElement>(null);
 
   const [isGeneratingContent, setIsGeneratingContent] = useState(false);
   const [generationError, setGenerationError] = useState<string | null>(null);
@@ -396,7 +399,17 @@ export default function CreateJobPage() {
               </Field>
             </div>
 
-            <Field label="Required skills (comma separated)">
+            <div>
+              <div className="flex items-center justify-between gap-2 mb-1.5">
+                <span className="text-sm font-medium text-ink">Required skills (comma separated)</span>
+                <AISkillSuggestButton
+                  existingSkills={skillsText.split(",").map((s) => s.trim()).filter(Boolean)}
+                  metadata={{ jobTitle: title }}
+                  onAddSkill={(skill) =>
+                    setSkillsText((prev) => (prev.trim() ? `${prev.trim()}, ${skill}` : skill))
+                  }
+                />
+              </div>
               <input
                 type="text"
                 value={skillsText}
@@ -404,7 +417,7 @@ export default function CreateJobPage() {
                 placeholder="e.g. React, TypeScript, Node.js"
                 className="input-base"
               />
-            </Field>
+            </div>
 
             <label className="block">
               <span className="flex items-center gap-2 text-sm font-medium text-ink mb-1.5">
@@ -416,11 +429,24 @@ export default function CreateJobPage() {
                 )}
               </span>
               <textarea
+                ref={descriptionRef}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Role responsibilities, requirements, and what makes this opportunity great"
                 className="input-base min-h-[120px] resize-y"
               />
+              {description.trim().length > 0 && (
+                <div className="mt-2">
+                  <AIWritingAssistant
+                    value={description}
+                    context="job-description"
+                    metadata={{ jobTitle: title }}
+                    textareaRef={descriptionRef}
+                    onApply={setDescription}
+                    label="AI Improve"
+                  />
+                </div>
+              )}
             </label>
           </div>
 

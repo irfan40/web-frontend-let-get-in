@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { useResumeStore } from '../../store/useResumeStore';
 import { FileText, Sparkles } from 'lucide-react';
 import { AiSummaryModal } from '../ai/AiSummaryModal';
+import { AIWritingAssistant } from '@/features/aiWriting/components/AIWritingAssistant';
 
 export const SummaryForm: React.FC = () => {
   const { resume, updateSummary, setActiveResumeContext } = useResumeStore();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const summaryRef = useRef<HTMLTextAreaElement>(null);
 
   const headline = resume.content.personalInfo.headline || 'Software Professional';
   const summaryVal = resume.content.summary;
@@ -41,6 +43,7 @@ export const SummaryForm: React.FC = () => {
 
       <div>
         <textarea
+          ref={summaryRef}
           rows={6}
           value={summaryText}
           onFocus={() =>
@@ -65,6 +68,21 @@ export const SummaryForm: React.FC = () => {
           <span>Tip: Click &quot;Write Summary with AI&quot; to pick templates or generate tailored variations.</span>
           <span>{summaryText.length} characters</span>
         </div>
+        {summaryText.trim().length > 0 && (
+          <div className="mt-2">
+            <AIWritingAssistant
+              value={summaryText}
+              context="resume-summary"
+              metadata={{ targetRole: headline }}
+              textareaRef={summaryRef}
+              onApply={(next) => {
+                updateSummary(next);
+                setActiveResumeContext({ section: 'summary', field: 'summary', value: next });
+              }}
+              label="AI Improve"
+            />
+          </div>
+        )}
       </div>
 
       {/* AI Summary & Template Modal */}

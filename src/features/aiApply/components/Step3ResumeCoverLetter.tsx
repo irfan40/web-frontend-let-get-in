@@ -1,11 +1,12 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { CheckCircle2, Plus, Loader2, ExternalLink, FileText, Mail } from 'lucide-react';
 import { useAiApplyStore } from '../store/useAiApplyStore';
 import { quickCreateResumeFromProfile } from '../services/resumeQuickCreate';
 import { coverLetterService } from '../services/coverLetterService';
 import { AiSuggestionBadge } from './ui/AiSuggestionBadge';
+import { AIWritingAssistant } from '@/features/aiWriting/components/AIWritingAssistant';
 
 export function Step3ResumeCoverLetter() {
   const preferences = useAiApplyStore((s) => s.preferences);
@@ -22,6 +23,7 @@ export function Step3ResumeCoverLetter() {
   const [newTitle, setNewTitle] = useState('New Cover Letter');
   const [newContent, setNewContent] = useState('');
   const [isSavingCoverLetter, setIsSavingCoverLetter] = useState(false);
+  const newContentRef = useRef<HTMLTextAreaElement>(null);
 
   const handleCreateResume = async () => {
     if (!profile) return;
@@ -178,13 +180,22 @@ export function Step3ResumeCoverLetter() {
               className="w-full input-base text-xs px-3 py-2 bg-surface-alt/60 text-ink"
             />
             <textarea
+              ref={newContentRef}
               value={newContent}
               onChange={(e) => setNewContent(e.target.value)}
               placeholder="Write your cover letter..."
               rows={6}
               className="w-full input-base text-xs px-3 py-2 bg-surface-alt/60 text-ink resize-none"
             />
-            <div className="flex items-center gap-2 justify-end">
+            <div className="flex items-center justify-between gap-2">
+              <AIWritingAssistant
+                value={newContent}
+                context="cover-letter"
+                textareaRef={newContentRef}
+                onApply={setNewContent}
+                label={newContent.trim() ? 'AI Improve' : 'Generate with AI'}
+              />
+              <div className="flex items-center gap-2 justify-end">
               <button
                 type="button"
                 onClick={() => setShowNewCoverLetter(false)}
@@ -200,6 +211,7 @@ export function Step3ResumeCoverLetter() {
               >
                 {isSavingCoverLetter ? 'Saving...' : 'Save'}
               </button>
+              </div>
             </div>
           </div>
         )}
