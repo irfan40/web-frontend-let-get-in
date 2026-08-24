@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { jobService } from "@/features/jobs/services/jobService";
-import { applicationService } from "@/features/applications/services/applicationService";
+
 import {
   IJob,
   JobFilterParams,
@@ -62,11 +62,7 @@ export default function ExplorePage() {
   const [isApplyModalOpen, setIsApplyModalOpen] = useState(false);
   const [jobToApply, setJobToApply] = useState<IJob | null>(null);
 
-<<<<<<< HEAD
   // Applied Jobs Tracking (Synced with Database & local cache)
-=======
-  // Applied Jobs Tracking (localStorage + backend)
->>>>>>> origin/main
   const [appliedJobIds, setAppliedJobIds] = useState<string[]>(() => {
     if (typeof window !== "undefined") {
       try {
@@ -85,7 +81,9 @@ export default function ExplorePage() {
   >(() => {
     if (typeof window !== "undefined") {
       try {
-        const recordsStr = localStorage.getItem("resumebuildai_applied_records");
+        const recordsStr = localStorage.getItem(
+          "resumebuildai_applied_records",
+        );
         const records: any[] = recordsStr ? JSON.parse(recordsStr) : [];
         const map: Record<string, "ai_apply" | "manual"> = {};
         records.forEach((r) => {
@@ -227,23 +225,14 @@ export default function ExplorePage() {
     setAppliedJobIds((prev) => {
       const next = prev.includes(jobId) ? prev : [...prev, jobId];
       if (typeof window !== "undefined") {
-        localStorage.setItem("resumebuildai_applied_jobs", JSON.stringify(next));
+        localStorage.setItem(
+          "resumebuildai_applied_jobs",
+          JSON.stringify(next),
+        );
       }
       return next;
     });
-<<<<<<< HEAD
     showToast("Application submitted successfully and saved to database!");
-=======
-
-    setAppliedSourceMap((prev) => ({
-      ...prev,
-      [jobId]: "manual",
-    }));
-
-    showToast(
-      "Application submitted successfully via Manual Apply! You can view and manage it on your Resume & Jobs page.",
-    );
->>>>>>> origin/main
   };
 
   // Fetch jobs based on current tab and filters
@@ -502,7 +491,9 @@ export default function ExplorePage() {
                 {totalPages > 1 && (
                   <div className="flex items-center justify-between border-t border-border pt-3 mt-3">
                     <p className="text-[11px] text-ink-soft">
-                      Page <span className="font-bold text-ink">{filters.page}</span> of{" "}
+                      Page{" "}
+                      <span className="font-bold text-ink">{filters.page}</span>{" "}
+                      of{" "}
                       <span className="font-bold text-ink">{totalPages}</span>
                     </p>
 
@@ -604,8 +595,10 @@ export default function ExplorePage() {
             {totalPages > 1 && (
               <div className="flex items-center justify-between border-t border-border pt-4 mt-6">
                 <p className="text-xs text-ink-soft">
-                  Showing page <span className="font-bold text-ink">{filters.page}</span> of{" "}
-                  <span className="font-bold text-ink">{totalPages}</span> ({total} total roles)
+                  Showing page{" "}
+                  <span className="font-bold text-ink">{filters.page}</span> of{" "}
+                  <span className="font-bold text-ink">{totalPages}</span> (
+                  {total} total roles)
                 </p>
 
                 <div className="flex items-center gap-2">
@@ -684,7 +677,10 @@ export default function ExplorePage() {
       />
 
       {/* Contextual AI Assistant */}
-      <AIChat context="explore" contextPayload={{ selectedJobId: selectedJob?._id }} />
+      <AIChat
+        context="explore"
+        contextPayload={{ selectedJobId: selectedJob?._id }}
+      />
     </div>
   );
 }

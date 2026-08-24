@@ -94,7 +94,6 @@ export function JobsBoard({
   const fetchBoardData = useCallback(async () => {
     setLoading(true);
     try {
-<<<<<<< HEAD
       // A. Fetch applications
       const appRes = await applicationService.getApplications({
         limit: 100,
@@ -104,21 +103,6 @@ export function JobsBoard({
       setApplications(apps);
 
       // B. Fetch jobs catalog / recommendations to resolve saved jobs
-=======
-      // A. Fetch applications from API
-      let loadedApps: ApplicationItem[] = [];
-      try {
-        const appRes = await applicationService.getApplications({
-          limit: 100,
-          sort: "recent",
-        });
-        loadedApps = appRes.applications || [];
-      } catch (apiErr) {
-        console.warn("Backend application fetch warning in JobsBoard:", apiErr);
-      }
-
-      // B. Fetch jobs catalog / recommendations to resolve saved jobs & missing local data
->>>>>>> origin/main
       let recJobs: IJob[] = [];
       try {
         const jobsRes = await jobService.getRecommendations({ limit: 50 });
@@ -128,49 +112,8 @@ export function JobsBoard({
         console.warn("Failed to load recommended jobs for saved list:", recErr);
       }
 
-<<<<<<< HEAD
       // C. Resolve saved jobs from localStorage
       if (typeof window !== "undefined") {
-=======
-      if (typeof window !== "undefined") {
-        // C. Integrate local application records
-        try {
-          const recordsStr = localStorage.getItem("resumebuildai_applied_records");
-          const localRecords: any[] = recordsStr ? JSON.parse(recordsStr) : [];
-
-          localRecords.forEach((rec) => {
-            const recJobId = rec.job?._id || rec.jobId;
-            const alreadyInApps = loadedApps.some(
-              (a) => (a.job?._id || a._id) === recJobId || a._id === rec._id,
-            );
-
-            if (!alreadyInApps) {
-              const matchedJob =
-                rec.job || recJobs.find((j) => j._id === recJobId);
-              if (matchedJob) {
-                loadedApps.unshift({
-                  _id: rec._id || `local_${recJobId}`,
-                  job: matchedJob,
-                  resume: null,
-                  coverLetter: null,
-                  source: rec.source || "manual",
-                  status: rec.status || "submitted",
-                  matchScore: rec.matchScore || matchedJob.matchScore || 80,
-                  notes: rec.notes || "",
-                  appliedAt: rec.appliedAt || new Date().toISOString(),
-                  createdAt: rec.appliedAt || new Date().toISOString(),
-                });
-              }
-            }
-          });
-        } catch (storageErr) {
-          console.warn("LocalStorage applied records read error in JobsBoard:", storageErr);
-        }
-
-        setApplications(loadedApps);
-
-        // D. Resolve saved jobs from localStorage
->>>>>>> origin/main
         try {
           const savedStr = localStorage.getItem("resumebuildai_saved_jobs");
           const savedIds: string[] = savedStr ? JSON.parse(savedStr) : [];
@@ -210,11 +153,6 @@ export function JobsBoard({
         } catch {
           setSavedJobs([]);
         }
-<<<<<<< HEAD
-=======
-      } else {
-        setApplications(loadedApps);
->>>>>>> origin/main
       }
     } catch (err) {
       console.warn("Failed to fetch board data:", err);
