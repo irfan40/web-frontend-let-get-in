@@ -25,6 +25,8 @@ import {
   CheckCircle2,
 } from "lucide-react";
 
+import { applicationService } from "@/features/applications/services/applicationService";
+
 type TabMode = "recommendations" | "all" | "saved";
 
 export default function ExplorePage() {
@@ -60,7 +62,11 @@ export default function ExplorePage() {
   const [isApplyModalOpen, setIsApplyModalOpen] = useState(false);
   const [jobToApply, setJobToApply] = useState<IJob | null>(null);
 
+<<<<<<< HEAD
   // Applied Jobs Tracking (Synced with Database & local cache)
+=======
+  // Applied Jobs Tracking (localStorage + backend)
+>>>>>>> origin/main
   const [appliedJobIds, setAppliedJobIds] = useState<string[]>(() => {
     if (typeof window !== "undefined") {
       try {
@@ -71,6 +77,29 @@ export default function ExplorePage() {
       }
     }
     return [];
+  });
+
+  // Applied Source Map (AI Apply vs Manual Apply)
+  const [appliedSourceMap, setAppliedSourceMap] = useState<
+    Record<string, "ai_apply" | "manual">
+  >(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const recordsStr = localStorage.getItem("resumebuildai_applied_records");
+        const records: any[] = recordsStr ? JSON.parse(recordsStr) : [];
+        const map: Record<string, "ai_apply" | "manual"> = {};
+        records.forEach((r) => {
+          const id = r.job?._id || r.jobId;
+          if (id) {
+            map[id] = r.source === "ai_apply" ? "ai_apply" : "manual";
+          }
+        });
+        return map;
+      } catch {
+        return {};
+      }
+    }
+    return {};
   });
 
   // Saved Jobs in localStorage
@@ -132,6 +161,52 @@ export default function ExplorePage() {
     setTimeout(() => setToastMessage(null), 3500);
   };
 
+  // Sync applied jobs from backend API on mount
+  useEffect(() => {
+    let isCancelled = false;
+    const fetchAppliedHistory = async () => {
+      try {
+        const appRes = await applicationService.getApplications({ limit: 100 });
+        const apps = appRes.applications || [];
+        if (!isCancelled && apps.length > 0) {
+          const backendIds: string[] = [];
+          const sourceMap: Record<string, "ai_apply" | "manual"> = {};
+
+          apps.forEach((a) => {
+            const id = a.job?._id || a._id;
+            if (id) {
+              backendIds.push(id);
+              sourceMap[id] = a.source === "ai_apply" ? "ai_apply" : "manual";
+            }
+          });
+
+          setAppliedJobIds((prev) => {
+            const combined = Array.from(new Set([...prev, ...backendIds]));
+            if (typeof window !== "undefined") {
+              localStorage.setItem(
+                "resumebuildai_applied_jobs",
+                JSON.stringify(combined),
+              );
+            }
+            return combined;
+          });
+
+          setAppliedSourceMap((prev) => ({
+            ...prev,
+            ...sourceMap,
+          }));
+        }
+      } catch (err) {
+        console.warn("Could not fetch applied history from API:", err);
+      }
+    };
+
+    fetchAppliedHistory();
+    return () => {
+      isCancelled = true;
+    };
+  }, []);
+
   const handleToggleSave = (jobId: string) => {
     setSavedJobIds((prev) => {
       const next = prev.includes(jobId)
@@ -144,7 +219,11 @@ export default function ExplorePage() {
     });
   };
 
-  const handleApplicationSuccess = (jobId: string) => {
+  const handleApplicationSuccess = (
+    jobId: string,
+    appliedJob?: IJob | null,
+    createdApp?: any,
+  ) => {
     setAppliedJobIds((prev) => {
       const next = prev.includes(jobId) ? prev : [...prev, jobId];
       if (typeof window !== "undefined") {
@@ -152,7 +231,19 @@ export default function ExplorePage() {
       }
       return next;
     });
+<<<<<<< HEAD
     showToast("Application submitted successfully and saved to database!");
+=======
+
+    setAppliedSourceMap((prev) => ({
+      ...prev,
+      [jobId]: "manual",
+    }));
+
+    showToast(
+      "Application submitted successfully via Manual Apply! You can view and manage it on your Resume & Jobs page.",
+    );
+>>>>>>> origin/main
   };
 
   // Fetch jobs based on current tab and filters
@@ -398,6 +489,10 @@ export default function ExplorePage() {
                       isSaved={isSaved}
                       onToggleSave={handleToggleSave}
                       isApplied={isApplied}
+                      appliedSource={
+                        appliedSourceMap[job._id] ||
+                        (isApplied ? "manual" : undefined)
+                      }
                       layoutMode="compact"
                     />
                   );
@@ -464,6 +559,12 @@ export default function ExplorePage() {
                 onToggleSave={handleToggleSave}
                 onStartApplication={handleOpenApplyModal}
                 isApplied={appliedJobIds.includes(selectedJob._id)}
+                appliedSource={
+                  appliedSourceMap[selectedJob._id] ||
+                  (appliedJobIds.includes(selectedJob._id)
+                    ? "manual"
+                    : undefined)
+                }
                 onTogglePanel={() => setSelectedJob(null)}
                 isExpanded={isExpanded}
                 onToggleExpand={() => setIsExpanded(!isExpanded)}
@@ -489,6 +590,10 @@ export default function ExplorePage() {
                     isSaved={isSaved}
                     onToggleSave={handleToggleSave}
                     isApplied={isApplied}
+                    appliedSource={
+                      appliedSourceMap[job._id] ||
+                      (isApplied ? "manual" : undefined)
+                    }
                     layoutMode="grid"
                   />
                 );

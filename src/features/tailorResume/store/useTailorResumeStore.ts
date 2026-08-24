@@ -11,7 +11,13 @@ interface TailorResumeState {
   isLoading: boolean;
   isSaving: boolean;
   error: string | null;
+<<<<<<< HEAD
 
+=======
+  showChanges: boolean;
+
+  setShowChanges: (show: boolean | ((prev: boolean) => boolean)) => void;
+>>>>>>> origin/main
   loadOrCreateSession: (resumeId: string, jobDescription: string) => Promise<void>;
   loadExistingSession: (sessionId: string) => Promise<void>;
   setSuggestionStatus: (suggestionId: string, status: TailoringSuggestionStatus, proposedText?: string) => Promise<void>;
@@ -33,6 +39,15 @@ export const useTailorResumeStore = create<TailorResumeState>((set, get) => ({
   isLoading: false,
   isSaving: false,
   error: null,
+<<<<<<< HEAD
+=======
+  showChanges: true,
+
+  setShowChanges: (show) =>
+    set((state) => ({
+      showChanges: typeof show === "function" ? show(state.showChanges) : show,
+    })),
+>>>>>>> origin/main
 
   loadOrCreateSession: async (resumeId: string, jobDescription: string) => {
     // Every fresh entry into the Tailor Resume flow (JD -> resume selection -> analysis)
@@ -162,5 +177,9 @@ export const useTailorResumeStore = create<TailorResumeState>((set, get) => ({
     set({ session: null, originalContent: null, error: null });
   },
 
+<<<<<<< HEAD
   reset: () => set({ session: null, originalContent: null, isLoading: false, isSaving: false, error: null }),
+=======
+  reset: () => set({ session: null, originalContent: null, isLoading: false, isSaving: false, error: null, showChanges: true }),
+>>>>>>> origin/main
 }));

@@ -59,6 +59,7 @@ const STATUS_CONFIG: Record<
     border: 'border-amber-500/20',
     icon: MessageSquare,
   },
+<<<<<<< HEAD
   shortlisted: {
     label: 'Shortlisted',
     color: 'text-blue-500 dark:text-blue-400',
@@ -66,6 +67,8 @@ const STATUS_CONFIG: Record<
     border: 'border-blue-500/20',
     icon: CheckCircle2,
   },
+=======
+>>>>>>> origin/main
   interviewing: {
     label: 'Interviewing',
     color: 'text-purple-500 dark:text-purple-400',
@@ -111,12 +114,32 @@ export function CareerOverviewSection({ onSwitchTab, onOpenCreateResume }: Caree
     setLoading(true);
     try {
       // 1. Fetch applications & backend stats
+<<<<<<< HEAD
       const appRes = await applicationService.getApplications({ limit: 100, sort: 'recent' });
       setApplications(appRes.applications || []);
       setStats(appRes.stats || null);
       setRecentBatches(appRes.recentBatches || []);
 
       // 2. Fetch saved jobs list from localStorage + job recommendations
+=======
+      let loadedApps: ApplicationItem[] = [];
+      try {
+        const appRes = await applicationService.getApplications({ limit: 100, sort: 'recent' });
+        loadedApps = appRes.applications || [];
+        setStats(appRes.stats || null);
+        setRecentBatches(appRes.recentBatches || []);
+      } catch (apiErr) {
+        console.warn('Backend application fetch warning:', apiErr);
+      }
+
+      // 2. Fetch saved jobs list from localStorage + job recommendations
+      let recJobs: IJob[] = [];
+      try {
+        const recRes = await jobService.getRecommendations({ limit: 50 });
+        recJobs = recRes.jobs || [];
+      } catch {}
+
+>>>>>>> origin/main
       if (typeof window !== 'undefined') {
         try {
           const savedStr = localStorage.getItem('resumebuildai_saved_jobs');
@@ -124,17 +147,62 @@ export function CareerOverviewSection({ onSwitchTab, onOpenCreateResume }: Caree
           setSavedJobsCount(savedIds.length);
 
           if (savedIds.length > 0) {
+<<<<<<< HEAD
             try {
               const recRes = await jobService.getRecommendations({ limit: 50 });
               const matched = (recRes.jobs || []).filter((j) => savedIds.includes(j._id));
               setSavedJobsList(matched);
             } catch {}
+=======
+            const matched = recJobs.filter((j) => savedIds.includes(j._id));
+            setSavedJobsList(matched);
+>>>>>>> origin/main
           }
         } catch {
           setSavedJobsCount(0);
         }
+<<<<<<< HEAD
       }
 
+=======
+
+        // 3. Integrate local application records (e.g. applied from /explore)
+        try {
+          const recordsStr = localStorage.getItem('resumebuildai_applied_records');
+          const localRecords: any[] = recordsStr ? JSON.parse(recordsStr) : [];
+
+          localRecords.forEach((rec) => {
+            const recJobId = rec.job?._id || rec.jobId;
+            const alreadyInApps = loadedApps.some(
+              (a) => (a.job?._id || a._id) === recJobId || a._id === rec._id
+            );
+
+            if (!alreadyInApps) {
+              const matchedJob = rec.job || recJobs.find((j) => j._id === recJobId);
+              if (matchedJob) {
+                loadedApps.unshift({
+                  _id: rec._id || `local_${recJobId}`,
+                  job: matchedJob,
+                  resume: null,
+                  coverLetter: null,
+                  source: rec.source || 'manual',
+                  status: rec.status || 'submitted',
+                  matchScore: rec.matchScore || matchedJob.matchScore || 80,
+                  notes: rec.notes || '',
+                  appliedAt: rec.appliedAt || new Date().toISOString(),
+                  createdAt: rec.appliedAt || new Date().toISOString(),
+                });
+              }
+            }
+          });
+        } catch (storageErr) {
+          console.warn('LocalStorage records read error:', storageErr);
+        }
+      }
+
+      setApplications(loadedApps);
+
+>>>>>>> origin/main
       // 3. Fetch resumes list
       try {
         const provider = StorageProviderFactory.getProvider();
@@ -491,12 +559,23 @@ export function CareerOverviewSection({ onSwitchTab, onOpenCreateResume }: Caree
                             {app.job?.title || 'Job Position'}
                           </h4>
                           {app.source === 'ai_apply' ? (
+<<<<<<< HEAD
                             <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-md bg-primary/10 text-primary border border-primary/20">
                               🤖 AI
                             </span>
                           ) : (
                             <span className="text-[9px] font-medium px-1.5 py-0.2 rounded-md bg-surface-alt text-ink-soft border border-border">
                               Direct
+=======
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 flex items-center gap-1 shadow-2xs">
+                              <Zap className="w-2.5 h-2.5 text-purple-600 dark:text-purple-400" />
+                              AI Apply
+                            </span>
+                          ) : (
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 flex items-center gap-1 shadow-2xs">
+                              <Send className="w-2.5 h-2.5 text-blue-600 dark:text-blue-400" />
+                              Manual Apply
+>>>>>>> origin/main
                             </span>
                           )}
                         </div>

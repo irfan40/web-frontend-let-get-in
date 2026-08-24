@@ -5,6 +5,7 @@
       "PowerShell(Stop-Process -Id 30084 -Force -Confirm:$false)",
       "Bash(cp \"C:\\\\Users\\\\Irfan\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Irfan-Code-Base-web-frontend-let-get-in\\\\20e4ec93-f7bb-4405-aedf-7404946cdc89\\\\scratchpad\\\\full-flow-verify.mjs\" \"c:/Irfan/Code Base/web-backend-let-get-in/full-flow-verify.mjs\")",
       "Bash(node full-flow-verify.mjs)",
+<<<<<<< HEAD
       "PowerShell(Stop-Process -Id 29524 -Force -Confirm:$false)",
       "Read(//c/Users/Irfan/Downloads/letgetin-codebase/mock-server/src/data/**)",
       "Bash(grep -A 15 \"app.\\(recruiter\\).recruiter.candidates.page.tsx$\")",
@@ -30,6 +31,9 @@
       "Bash(echo \"EXIT:$?\")",
       "Bash(node -e ' *)",
       "Bash(node _e2e_db_verify_tmp.mjs)"
+=======
+      "PowerShell(Stop-Process -Id 29524 -Force -Confirm:$false)"
+>>>>>>> origin/main
     ]
   }
 }

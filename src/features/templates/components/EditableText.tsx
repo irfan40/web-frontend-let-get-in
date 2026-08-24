@@ -1,4 +1,6 @@
 import React, { useRef, useEffect } from 'react';
+import { useResumeStore } from '../../resume/store/useResumeStore';
+import { useTailorResumeStore } from '../../tailorResume/store/useTailorResumeStore';
 
 interface EditableTextProps {
   value: string;
@@ -18,6 +20,9 @@ export const EditableText: React.FC<EditableTextProps> = ({
   tagName: Tag = 'span',
 }) => {
   const elementRef = useRef<HTMLElement>(null);
+  const isTailorModeActive = useResumeStore((s) => s.isTailorModeActive);
+  const session = useTailorResumeStore((s) => s.session);
+  const showChanges = useTailorResumeStore((s) => s.showChanges);
 
   const safeValue = typeof value === 'string'
     ? value
@@ -50,6 +55,25 @@ export const EditableText: React.FC<EditableTextProps> = ({
     }
   };
 
+  // Determine if this text matches an accepted/edited tailored suggestion
+  const trimmedValue = safeValue.trim();
+  const isTailored = Boolean(
+    isTailorModeActive &&
+    showChanges &&
+    session?.suggestions &&
+    trimmedValue.length > 0 &&
+    session.suggestions
+      .filter((s) => s.status === 'accepted' || s.status === 'edited')
+      .some((s) => {
+        const proposed = (s.proposedText || '').trim();
+        return proposed.length > 0 && (trimmedValue === proposed || trimmedValue.includes(proposed) || proposed.includes(trimmedValue));
+      })
+  );
+
+  const tailoredHighlightClass = isTailored
+    ? 'bg-emerald-100/90 text-emerald-950 ring-2 ring-emerald-500/60 rounded px-1.5 py-0.5 shadow-xs transition-all duration-300 print:bg-transparent print:ring-0 print:text-inherit print:p-0'
+    : '';
+
   return (
     <Tag
       ref={elementRef as any}
@@ -59,7 +83,7 @@ export const EditableText: React.FC<EditableTextProps> = ({
       onKeyDown={handleKeyDown}
       style={style}
       data-placeholder={placeholder}
-      className={`outline-none hover:ring-1 hover:ring-indigo-400/60 focus:ring-2 focus:ring-indigo-500 focus:bg-indigo-50/80 rounded transition-all cursor-text inline-block min-w-[20px] ${className}`}
+      className={`outline-none hover:ring-1 hover:ring-indigo-400/60 focus:ring-2 focus:ring-indigo-500 focus:bg-indigo-50/80 rounded transition-all cursor-text inline-block min-w-[20px] ${tailoredHighlightClass} ${className}`}
     />
   );
 };

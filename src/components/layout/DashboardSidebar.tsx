@@ -26,10 +26,13 @@ import {
   Store,
   Rocket,
   Briefcase,
+<<<<<<< HEAD
   ChevronsUpDown,
   ShieldCheck,
   UserCheck,
   Building2,
+=======
+>>>>>>> origin/main
   type LucideIcon,
 } from "lucide-react";
 

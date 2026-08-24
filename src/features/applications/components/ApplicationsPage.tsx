@@ -28,6 +28,10 @@ import {
   Tag,
   AlertCircle,
   X,
+<<<<<<< HEAD
+=======
+  Send,
+>>>>>>> origin/main
 } from 'lucide-react';
 import { applicationService } from '../services/applicationService';
 import { ApplicationItem, ApplicationStats, ApplicationStatus } from '../types';
@@ -50,6 +54,7 @@ const STATUS_CONFIG: Record<
     border: 'border-amber-500/20',
     icon: MessageSquare,
   },
+<<<<<<< HEAD
   shortlisted: {
     label: 'Shortlisted',
     color: 'text-blue-700 dark:text-blue-300',
@@ -57,6 +62,8 @@ const STATUS_CONFIG: Record<
     border: 'border-blue-500/20',
     icon: CheckCircle2,
   },
+=======
+>>>>>>> origin/main
   interviewing: {
     label: 'Interviewing',
     color: 'text-purple-700 dark:text-purple-300',
@@ -262,7 +269,10 @@ export function ApplicationsPage() {
             { id: 'all', label: 'All Applications', count: stats?.total },
             { id: 'submitted', label: 'Submitted', count: stats?.submitted },
             { id: 'reviewing', label: 'Under Review', count: stats?.reviewing },
+<<<<<<< HEAD
             { id: 'shortlisted', label: 'Shortlisted', count: stats?.shortlisted },
+=======
+>>>>>>> origin/main
             { id: 'interviewing', label: 'Interviewing', count: stats?.interviewing },
             { id: 'offered', label: 'Offered', count: stats?.offered },
             { id: 'rejected', label: 'Not Selected', count: stats?.rejected },
@@ -355,6 +365,7 @@ export function ApplicationsPage() {
                           {app.job?.title || 'Job Position'}
                         </h3>
                         {app.source === 'ai_apply' ? (
+<<<<<<< HEAD
                           <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 flex items-center gap-1">
                             <Sparkles className="w-2.5 h-2.5" />
                             AI Auto-Apply
@@ -362,6 +373,16 @@ export function ApplicationsPage() {
                         ) : (
                           <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-surface-alt text-ink-soft border border-border">
                             Manual
+=======
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 flex items-center gap-1 shadow-2xs">
+                            <Zap className="w-2.5 h-2.5 text-purple-600 dark:text-purple-400" />
+                            AI Auto-Apply
+                          </span>
+                        ) : (
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 flex items-center gap-1 shadow-2xs">
+                            <Send className="w-2.5 h-2.5 text-blue-600 dark:text-blue-400" />
+                            Manual Apply
+>>>>>>> origin/main
                           </span>
                         )}
                       </div>
@@ -544,8 +565,20 @@ export function ApplicationsPage() {
               <div className="p-3 rounded-2xl bg-surface-alt/70 border border-border/80 space-y-0.5">
                 <span className="text-[10px] uppercase font-bold text-ink-soft block">Application Source</span>
                 <span className="text-xs font-bold text-ink flex items-center gap-1">
+<<<<<<< HEAD
                   <Zap className="w-3.5 h-3.5 text-primary" />
                   {selectedApp.source === 'ai_apply' ? 'AI Auto-Apply' : 'Manual'}
+=======
+                  {selectedApp.source === 'ai_apply' ? (
+                    <span className="inline-flex items-center gap-1 text-[11px] text-purple-600 dark:text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded-md border border-purple-500/20">
+                      <Zap className="w-3 h-3" /> AI Auto-Apply
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 text-[11px] text-blue-600 dark:text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded-md border border-blue-500/20">
+                      <Send className="w-3 h-3" /> Manual Apply
+                    </span>
+                  )}
+>>>>>>> origin/main
                 </span>
               </div>
 
