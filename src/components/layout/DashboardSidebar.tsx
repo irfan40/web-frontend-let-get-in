@@ -75,7 +75,10 @@ export function DashboardSidebar({
   // Close profile menu on click outside or escape
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
+      if (
+        profileRef.current &&
+        !profileRef.current.contains(event.target as Node)
+      ) {
         setIsProfileOpen(false);
       }
     }
@@ -632,12 +635,16 @@ export function DashboardSidebar({
                 <div className="text-xs font-bold text-ink truncate group-hover/profile:text-primary-glow transition-colors">
                   {displayName}
                 </div>
-                <div className="text-[10px] text-ink-soft truncate">{email}</div>
+                <div className="text-[10px] text-ink-soft truncate">
+                  {email}
+                </div>
               </div>
             </div>
             <ChevronsUpDown
               className={`w-4 h-4 text-ink-soft transition-transform duration-200 shrink-0 ${
-                isProfileOpen ? "rotate-180 text-primary-glow" : "group-hover/profile:text-ink"
+                isProfileOpen
+                  ? "rotate-180 text-primary-glow"
+                  : "group-hover/profile:text-ink"
               }`}
             />
           </button>
@@ -674,14 +681,18 @@ export function DashboardSidebar({
               </div>
 
               <div className="flex-1 min-w-0">
-                <h4 className="text-xs font-extrabold text-ink truncate">{displayName}</h4>
+                <h4 className="text-xs font-extrabold text-ink truncate">
+                  {displayName}
+                </h4>
                 <p className="text-[11px] text-ink-soft truncate">{email}</p>
                 <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
                   <span className="inline-flex items-center gap-1 text-[9.5px] font-bold text-primary-glow bg-primary/10 border border-primary/20 px-2 py-0.5 rounded-full">
-                    <Sparkles className="w-2.5 h-2.5 text-primary-glow" /> Pro Career
+                    <Sparkles className="w-2.5 h-2.5 text-primary-glow" /> Pro
+                    Career
                   </span>
                   <span className="inline-flex items-center gap-1 text-[9.5px] font-semibold text-emerald-500 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
-                    <ShieldCheck className="w-2.5 h-2.5 text-emerald-500" /> Active
+                    <ShieldCheck className="w-2.5 h-2.5 text-emerald-500" />{" "}
+                    Active
                   </span>
                 </div>
               </div>
@@ -732,23 +743,6 @@ export function DashboardSidebar({
                   <span>Cloud Asset Storage</span>
                 </div>
                 <ChevronRight className="w-3.5 h-3.5 text-ink-soft opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
-              </Link>
-
-              <Link
-                href="/recruiter/dashboard"
-                onClick={() => {
-                  setIsProfileOpen(false);
-                  if (onClose) onClose();
-                }}
-                className="flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-ink-soft hover:text-ink hover:bg-surface-alt transition-colors group"
-              >
-                <div className="flex items-center gap-2.5">
-                  <Building2 className="w-4 h-4 text-ink-soft group-hover:text-ink" />
-                  <span>Recruiter Dashboard</span>
-                </div>
-                <span className="text-[9px] font-semibold text-ink-soft bg-surface-alt px-1.5 py-0.5 rounded-md">
-                  Recruiter
-                </span>
               </Link>
             </div>
 

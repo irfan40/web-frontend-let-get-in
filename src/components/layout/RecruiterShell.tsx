@@ -271,10 +271,14 @@ interface RecruiterShellProps {
   onClose?: () => void;
 }
 
-function resolveActiveHref(pathname: string, allItems: NavItem[]): string | null {
+function resolveActiveHref(
+  pathname: string,
+  allItems: NavItem[],
+): string | null {
   let best: string | null = null;
   for (const item of allItems) {
-    const matches = pathname === item.href || pathname.startsWith(item.href + "/");
+    const matches =
+      pathname === item.href || pathname.startsWith(item.href + "/");
     if (matches && (!best || item.href.length > best.length)) {
       best = item.href;
     }
@@ -282,7 +286,10 @@ function resolveActiveHref(pathname: string, allItems: NavItem[]): string | null
   return best;
 }
 
-export function RecruiterShell({ isOpen = false, onClose }: RecruiterShellProps) {
+export function RecruiterShell({
+  isOpen = false,
+  onClose,
+}: RecruiterShellProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { user, logout } = useAuthStore();
@@ -307,7 +314,10 @@ export function RecruiterShell({ isOpen = false, onClose }: RecruiterShellProps)
   // Click outside to close profile popover
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
+      if (
+        profileRef.current &&
+        !profileRef.current.contains(event.target as Node)
+      ) {
         setIsProfileOpen(false);
       }
     }
@@ -352,12 +362,16 @@ export function RecruiterShell({ isOpen = false, onClose }: RecruiterShellProps)
   const email = user?.email || "";
   const firstLetter = (displayName || email || "R").charAt(0).toUpperCase();
   const avatarUrl = user?.avatarUrl || user?.avatar;
-  const EntityIcon = orgProfile ? ENTITY_ICON[orgProfile.entity] || Building2 : Building2;
+  const EntityIcon = orgProfile
+    ? ENTITY_ICON[orgProfile.entity] || Building2
+    : Building2;
   const isInstitution = orgProfile?.entity === "institution";
 
   const allItems = [
     ...TOP_ITEMS,
-    ...(isInstitution ? INSTITUTION_ITEMS : [...HIRING_ITEMS, ...WORKFORCE_ITEMS]),
+    ...(isInstitution
+      ? INSTITUTION_ITEMS
+      : [...HIRING_ITEMS, ...WORKFORCE_ITEMS]),
   ];
   const activeHref = resolveActiveHref(pathname, allItems);
 
@@ -370,7 +384,10 @@ export function RecruiterShell({ isOpen = false, onClose }: RecruiterShellProps)
             const Icon = item.icon;
             const isActive = item.href === activeHref;
             return (
-              <div key={item.href} className="relative group flex justify-center w-full">
+              <div
+                key={item.href}
+                className="relative group flex justify-center w-full"
+              >
                 <Link
                   href={item.href}
                   onClick={onClose}
@@ -384,7 +401,9 @@ export function RecruiterShell({ isOpen = false, onClose }: RecruiterShellProps)
                   <div className="relative">
                     <Icon
                       className={`w-5 h-5 shrink-0 transition-transform group-hover/item:scale-110 ${
-                        isActive ? "text-primary-foreground" : "text-primary-glow"
+                        isActive
+                          ? "text-primary-foreground"
+                          : "text-primary-glow"
                       }`}
                     />
                     {item.soon && !isActive && (
@@ -466,7 +485,9 @@ export function RecruiterShell({ isOpen = false, onClose }: RecruiterShellProps)
                     Soon
                   </span>
                 )}
-                {isActive && <ChevronRight className="w-3.5 h-3.5 shrink-0 opacity-80" />}
+                {isActive && (
+                  <ChevronRight className="w-3.5 h-3.5 shrink-0 opacity-80" />
+                )}
               </Link>
             );
           })}
@@ -484,7 +505,9 @@ export function RecruiterShell({ isOpen = false, onClose }: RecruiterShellProps)
       {/* Sidebar Header with Brand Logo & Minimize Toggle Button */}
       <div
         className={`p-4 border-b border-border flex items-center ${
-          isCollapsed ? "justify-center flex-col gap-2.5 py-4" : "justify-between"
+          isCollapsed
+            ? "justify-center flex-col gap-2.5 py-4"
+            : "justify-between"
         }`}
       >
         {isCollapsed ? (
@@ -552,9 +575,12 @@ export function RecruiterShell({ isOpen = false, onClose }: RecruiterShellProps)
               <EntityIcon className="w-4 h-4" />
             </Link>
             <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 px-3 py-2 bg-slate-900 dark:bg-slate-800 text-white text-xs font-bold rounded-xl shadow-2xl whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity z-50 border border-slate-700">
-              <div className="font-bold">{orgProfile?.name || "Organization Profile"}</div>
+              <div className="font-bold">
+                {orgProfile?.name || "Organization Profile"}
+              </div>
               <div className="text-[10px] text-slate-300 capitalize">
-                {orgProfile?.entity || user?.entityType || "Recruiter"} Workspace
+                {orgProfile?.entity || user?.entityType || "Recruiter"}{" "}
+                Workspace
               </div>
             </div>
           </div>
@@ -574,7 +600,9 @@ export function RecruiterShell({ isOpen = false, onClose }: RecruiterShellProps)
                 {orgProfile?.name || "Setup Organization"}
               </div>
               <div className="text-[10px] text-ink-soft capitalize flex items-center gap-1">
-                <span>{orgProfile?.entity || user?.entityType || "Recruiter"}</span>
+                <span>
+                  {orgProfile?.entity || user?.entityType || "Recruiter"}
+                </span>
                 <span className="w-1 h-1 rounded-full bg-emerald-500 inline-block" />
                 <span className="text-emerald-500 font-medium">Pro</span>
               </div>
@@ -666,12 +694,16 @@ export function RecruiterShell({ isOpen = false, onClose }: RecruiterShellProps)
                 <div className="text-xs font-bold text-ink truncate group-hover/profile:text-primary-glow transition-colors">
                   {displayName}
                 </div>
-                <div className="text-[10px] text-ink-soft truncate">{email}</div>
+                <div className="text-[10px] text-ink-soft truncate">
+                  {email}
+                </div>
               </div>
             </div>
             <ChevronsUpDown
               className={`w-4 h-4 text-ink-soft transition-transform duration-200 shrink-0 ${
-                isProfileOpen ? "rotate-180 text-primary-glow" : "group-hover/profile:text-ink"
+                isProfileOpen
+                  ? "rotate-180 text-primary-glow"
+                  : "group-hover/profile:text-ink"
               }`}
             />
           </button>
@@ -708,7 +740,9 @@ export function RecruiterShell({ isOpen = false, onClose }: RecruiterShellProps)
               </div>
 
               <div className="flex-1 min-w-0">
-                <h4 className="text-xs font-extrabold text-ink truncate">{displayName}</h4>
+                <h4 className="text-xs font-extrabold text-ink truncate">
+                  {displayName}
+                </h4>
                 <p className="text-[11px] text-ink-soft truncate">{email}</p>
                 <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
                   <span className="inline-flex items-center gap-1 text-[9.5px] font-bold text-primary-glow bg-primary/10 border border-primary/20 px-2 py-0.5 rounded-full">
@@ -734,7 +768,8 @@ export function RecruiterShell({ isOpen = false, onClose }: RecruiterShellProps)
                     {orgProfile?.name || "Organization Hub"}
                   </div>
                   <div className="text-[9.5px] text-ink-soft capitalize">
-                    {orgProfile?.entity || user?.entityType || "Recruiter"} Workspace
+                    {orgProfile?.entity || user?.entityType || "Recruiter"}{" "}
+                    Workspace
                   </div>
                 </div>
               </div>
@@ -781,23 +816,6 @@ export function RecruiterShell({ isOpen = false, onClose }: RecruiterShellProps)
                 </div>
                 <span className="text-[9px] font-bold text-primary-glow bg-primary/10 px-1.5 py-0.5 rounded-full">
                   AI
-                </span>
-              </Link>
-
-              <Link
-                href="/explore"
-                onClick={() => {
-                  setIsProfileOpen(false);
-                  if (onClose) onClose();
-                }}
-                className="flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-ink-soft hover:text-ink hover:bg-surface-alt transition-colors group"
-              >
-                <div className="flex items-center gap-2.5">
-                  <ArrowLeftRight className="w-4 h-4 text-ink-soft group-hover:text-ink" />
-                  <span>Switch to Candidate Hub</span>
-                </div>
-                <span className="text-[9px] font-semibold text-ink-soft bg-surface-alt px-1.5 py-0.5 rounded-md">
-                  View
                 </span>
               </Link>
             </div>

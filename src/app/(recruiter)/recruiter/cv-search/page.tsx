@@ -118,9 +118,9 @@ export default function CvSearchPage() {
         </div>
       ) : (
         <div className="space-y-2.5">
-          {results.map((c) => (
+          {results.map((c, index) => (
             <div
-              key={c.candidateUserId}
+              key={c.candidateUserId || `candidate-${index}`}
               className="flex items-center justify-between gap-3 p-4 rounded-2xl border border-border bg-surface hover:shadow-elegant transition flex-wrap"
             >
               <div className="min-w-0">
@@ -128,9 +128,9 @@ export default function CvSearchPage() {
                 {c.headline && <div className="text-xs text-ink-soft mt-0.5">{c.headline}</div>}
                 {c.skills && c.skills.length > 0 && (
                   <div className="flex flex-wrap gap-1 mt-1.5">
-                    {c.skills.slice(0, 6).map((s) => (
+                    {c.skills.slice(0, 6).map((s, sIdx) => (
                       <span
-                        key={s}
+                        key={`${s}-${sIdx}`}
                         className="text-[10px] font-semibold text-primary-glow bg-primary/10 px-1.5 py-0.5 rounded-full"
                       >
                         {s}
