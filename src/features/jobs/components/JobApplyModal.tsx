@@ -16,7 +16,6 @@ import { IJob } from "../types/job.types";
 import { useAuthStore } from "@/features/auth/store/useAuthStore";
 import { applicationService } from "@/features/applications/services/applicationService";
 import { ProfileService } from "@/features/profile/services/profileService";
-import { applicationService } from "@/features/applications/services/applicationService";
 
 interface JobApplyModalProps {
   isOpen: boolean;
@@ -142,7 +141,21 @@ export const JobApplyModal: React.FC<JobApplyModalProps> = ({
     }
 
     setIsSubmitting(true);
-    setTimeout(() => {
+    try {
+      await applicationService.createApplication({
+        jobId: targetId,
+        source: "manual",
+        status: "submitted",
+      });
+      onSuccess(targetId);
+      onClose();
+    } catch (err: any) {
+      setErrorMsg(
+        err?.response?.data?.message ||
+        err?.message ||
+        "Failed to submit application. Please try again."
+      );
+    } finally {
       setIsSubmitting(false);
     }
   };
