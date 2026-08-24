@@ -11,6 +11,8 @@ interface TailorResumeState {
   isLoading: boolean;
   isSaving: boolean;
   error: string | null;
+    showChanges: boolean;
+  setShowChanges: (value: boolean) => void;
   
   loadOrCreateSession: (resumeId: string, jobDescription: string) => Promise<void>;
   loadExistingSession: (sessionId: string) => Promise<void>;
@@ -33,6 +35,10 @@ export const useTailorResumeStore = create<TailorResumeState>((set, get) => ({
   isLoading: false,
   isSaving: false,
   error: null,
+
+    showChanges: false,
+
+  setShowChanges: (value) => set({ showChanges: value }),
 
   loadOrCreateSession: async (resumeId: string, jobDescription: string) => {
     // Every fresh entry into the Tailor Resume flow (JD -> resume selection -> analysis)
@@ -162,5 +168,12 @@ export const useTailorResumeStore = create<TailorResumeState>((set, get) => ({
     set({ session: null, originalContent: null, error: null });
   },
 
-  reset: () => set({ session: null, originalContent: null, isLoading: false, isSaving: false, error: null }),
+  reset: () => set({ 
+       session: null,
+    originalContent: null,
+    isLoading: false,
+    isSaving: false,
+    error: null,
+    showChanges: false,
+   }),
 }));
