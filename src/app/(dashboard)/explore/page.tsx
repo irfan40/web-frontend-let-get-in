@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { jobService } from "@/features/jobs/services/jobService";
+import { applicationService } from "@/features/applications/services/applicationService";
 import {
   IJob,
   JobFilterParams,
@@ -59,7 +60,7 @@ export default function ExplorePage() {
   const [isApplyModalOpen, setIsApplyModalOpen] = useState(false);
   const [jobToApply, setJobToApply] = useState<IJob | null>(null);
 
-  // Applied Jobs Tracking (localStorage)
+  // Applied Jobs Tracking (Synced with Database & local cache)
   const [appliedJobIds, setAppliedJobIds] = useState<string[]>(() => {
     if (typeof window !== "undefined") {
       try {
@@ -84,6 +85,47 @@ export default function ExplorePage() {
     }
     return [];
   });
+
+  // Sync applied jobs from database on mount
+  useEffect(() => {
+    let isCancelled = false;
+    const syncAppliedJobsFromDb = async () => {
+      try {
+        const res = await applicationService.getApplications({ limit: 100 });
+        if (!isCancelled && res?.applications) {
+          const dbAppliedIds = res.applications
+            .map((app) => {
+              if (typeof app.job === "object" && app.job?._id) {
+                return String(app.job._id);
+              }
+              return (app as any).jobId ? String((app as any).jobId) : null;
+            })
+            .filter(Boolean) as string[];
+
+          if (dbAppliedIds.length > 0) {
+            setAppliedJobIds((prev) => {
+              const merged = Array.from(new Set([...prev, ...dbAppliedIds]));
+              if (typeof window !== "undefined") {
+                localStorage.setItem(
+                  "resumebuildai_applied_jobs",
+                  JSON.stringify(merged),
+                );
+              }
+              return merged;
+            });
+          }
+        }
+      } catch (err) {
+        console.warn("Could not sync applied jobs from database:", err);
+      }
+    };
+
+    syncAppliedJobsFromDb();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, []);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -110,7 +152,7 @@ export default function ExplorePage() {
       }
       return next;
     });
-    showToast("Application submitted successfully! Our team will review your profile.");
+    showToast("Application submitted successfully and saved to database!");
   };
 
   // Fetch jobs based on current tab and filters
