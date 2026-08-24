@@ -9,7 +9,7 @@ export const apiClient: AxiosInstance = axios.create({
     'Content-Type': 'application/json',
     'X-Requested-With': 'XMLHttpRequest',
   },
-  timeout: 30000,
+  timeout: 90000,
 });
 
 interface CustomAxiosRequestConfig extends InternalAxiosRequestConfig {
@@ -108,6 +108,7 @@ apiClient.interceptors.response.use(
           '/exams',
           '/edupie',
           '/mydive',
+          '/recruiter',
         ];
 
         const isProtectedRoute =

@@ -33,6 +33,7 @@ import { DriveFilePreviewModal } from "@/features/drive/components/DriveFilePrev
 import { DriveFileCard } from "@/features/drive/components/DriveFileCard";
 import { DriveFileTable } from "@/features/drive/components/DriveFileTable";
 import { DriveFileEditModal } from "@/features/drive/components/DriveFileEditModal";
+import { AIChat } from "@/features/aiAssistant/components/AIChat";
 
 export default function DrivePage() {
   const [files, setFiles] = useState<DriveFile[]>([]);
@@ -340,6 +341,9 @@ export default function DrivePage() {
           showToast("File details updated");
         }}
       />
+
+      {/* Contextual AI Assistant */}
+      <AIChat context="drive" contextPayload={{ driveFileId: previewFile?._id }} />
     </div>
   );
 }

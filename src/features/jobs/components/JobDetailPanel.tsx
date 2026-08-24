@@ -27,6 +27,7 @@ import {
   Maximize2,
   Minimize2,
   X,
+  Percent,
 } from "lucide-react";
 import { IJob } from "../types/job.types";
 
@@ -37,6 +38,7 @@ interface JobDetailPanelProps {
   onToggleSave?: (jobId: string) => void;
   onStartApplication: (job: IJob) => void;
   isApplied?: boolean;
+  appliedSource?: "ai_apply" | "manual";
   isPanelCollapsed?: boolean;
   onTogglePanel?: () => void;
   isExpanded?: boolean;
@@ -50,6 +52,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
   onToggleSave,
   onStartApplication,
   isApplied = false,
+  appliedSource,
   isPanelCollapsed = false,
   onTogglePanel,
   isExpanded = false,
@@ -123,6 +126,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
   const rate = formatRate();
 
   const companyInitial = (job.company.name || "C").charAt(0).toUpperCase();
+  const isDeadlinePassed = !!job.expiresAt && new Date(job.expiresAt).getTime() < Date.now();
   const stepsCompleted = isApplied ? 1 : 0;
   const progressPercent = isApplied ? 20 : 0;
 
@@ -164,6 +168,20 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                   <Sparkles className="w-3.5 h-3.5 fill-current" />
                   {match}% Match
                 </span>
+
+                {isApplied && (
+                  appliedSource === "ai_apply" ? (
+                    <span className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 shadow-2xs">
+                      <Zap className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+                      AI Auto-Applied
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 shadow-2xs">
+                      <Send className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                      Manual Applied
+                    </span>
+                  )
+                )}
 
                 {job.workplaceType === "remote" && (
                   <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20">
@@ -257,6 +275,37 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
               </p>
               <p className="text-[10px] text-ink-soft">or equivalent</p>
             </div>
+
+            {job.eligibilityMinPercent != null && (
+              <div>
+                <span className="text-[11px] text-ink-soft font-semibold uppercase tracking-wider flex items-center gap-1">
+                  <Percent className="w-3.5 h-3.5 text-rose-600" />
+                  Eligibility
+                </span>
+                <p className="font-bold text-sm sm:text-base text-ink mt-1">{job.eligibilityMinPercent}%+</p>
+                <p className="text-[10px] text-ink-soft">minimum required</p>
+              </div>
+            )}
+
+            {job.expiresAt && (
+              <div>
+                <span className="text-[11px] text-ink-soft font-semibold uppercase tracking-wider flex items-center gap-1">
+                  <Calendar className="w-3.5 h-3.5 text-orange-600" />
+                  Deadline
+                </span>
+                <p className="font-bold text-sm sm:text-base text-ink mt-1">
+                  {(() => {
+                    const d = new Date(job.expiresAt);
+                    const dd = String(d.getDate()).padStart(2, "0");
+                    const mm = String(d.getMonth() + 1).padStart(2, "0");
+                    return `${dd}-${mm}-${d.getFullYear()}`;
+                  })()}
+                </p>
+                <p className="text-[10px] text-ink-soft">
+                  {new Date(job.expiresAt).getTime() < Date.now() ? "Applications closed" : "apply before this date"}
+                </p>
+              </div>
+            )}
           </div>
         </div>
 
@@ -586,17 +635,27 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
       <div className="p-4 sm:p-5 border-t border-border bg-card/95 backdrop-blur-xs sticky bottom-0 z-10 shrink-0 flex items-center gap-3">
         <button
           type="button"
-          onClick={() => onStartApplication(job)}
-          className={`flex-1 py-3.5 px-6 rounded-2xl font-bold text-sm text-white shadow-lg transition-all active:scale-[0.99] cursor-pointer flex items-center justify-center gap-2 ${
-            isApplied
-              ? "bg-emerald-600 hover:bg-emerald-700"
-              : "bg-gradient-brand hover:bg-[#4335dc]"
+          onClick={() => !isDeadlinePassed && onStartApplication(job)}
+          disabled={isDeadlinePassed}
+          title={isDeadlinePassed ? "The application deadline for this job has passed." : undefined}
+          className={`flex-1 py-3.5 px-6 rounded-2xl font-bold text-sm text-white shadow-lg transition-all active:scale-[0.99] flex items-center justify-center gap-2 ${
+            isDeadlinePassed
+              ? "bg-ink-soft/40 cursor-not-allowed"
+              : isApplied
+                ? "bg-emerald-600 hover:bg-emerald-700 cursor-pointer"
+                : "bg-gradient-brand hover:bg-[#4335dc] cursor-pointer"
           }`}
         >
-          {isApplied ? (
+          {isDeadlinePassed ? (
+            <span>Applications Closed</span>
+          ) : isApplied ? (
             <>
               <CheckCircle2 className="w-4 h-4" />
-              <span>Application Submitted (In Review)</span>
+              <span>
+                {appliedSource === "ai_apply"
+                  ? "Applied via AI Auto-Apply (In Review)"
+                  : "Application Submitted via Manual Apply (In Review)"}
+              </span>
             </>
           ) : (
             <>

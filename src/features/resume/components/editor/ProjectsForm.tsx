@@ -1,20 +1,29 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { useResumeStore } from "../../store/useResumeStore";
 import { useAiCoachStore } from "../../store/useAiCoachStore";
 import { FolderGit2, Plus, Trash2, ChevronUp, ChevronDown, Sparkles, SlidersHorizontal } from "lucide-react";
 import { IProject } from "../../types";
 import { AiBulletRerankModal } from "../ai/AiBulletRerankModal";
+import { AIWritingAssistant } from "@/features/aiWriting/components/AIWritingAssistant";
 
 export const ProjectsForm: React.FC = () => {
   const { resume, addProject, updateProject, removeProject, reorderProjects, setActiveResumeContext } =
     useResumeStore();
-  const { triggerProjectDescriptionAi, triggerProjectBulletsAi, triggerImproveBulletAi } = useAiCoachStore();
+  const { triggerProjectDescriptionAi, triggerProjectBulletsAi } = useAiCoachStore();
   const projects = resume.content.projects;
 
   // Track bullet count selection per project (default: 3)
   const [bulletCounts, setBulletCounts] = useState<Record<string, number>>({});
   // Track modal open state for reranking bullet count
   const [modalProjId, setModalProjId] = useState<string | null>(null);
+  const descriptionRefs = useRef<Record<string, HTMLTextAreaElement | null>>({});
+  const bulletRefs = useRef<Record<string, HTMLTextAreaElement | null>>({});
+  const getDescriptionRefObject = (key: string): React.RefObject<HTMLTextAreaElement | null> => ({
+    current: descriptionRefs.current[key] || null,
+  });
+  const getBulletRefObject = (key: string): React.RefObject<HTMLTextAreaElement | null> => ({
+    current: bulletRefs.current[key] || null,
+  });
 
   const getBulletCount = (projId: string) => bulletCounts[projId] || 3;
 
@@ -277,6 +286,9 @@ export const ProjectsForm: React.FC = () => {
                   </button>
                 </div>
                 <textarea
+                  ref={(el) => {
+                    descriptionRefs.current[proj.id] = el;
+                  }}
                   rows={2}
                   value={proj.description || ""}
                   onChange={(e) =>
@@ -293,6 +305,18 @@ export const ProjectsForm: React.FC = () => {
                   placeholder="Brief summary of what this project does, user scale, and the problem it solves..."
                   className="input-base text-xs leading-relaxed resize-y overflow-hidden transition-all min-h-[48px]"
                 />
+                {(proj.description || "").trim().length > 0 && (
+                  <div className="mt-1.5">
+                    <AIWritingAssistant
+                      value={proj.description || ""}
+                      context="resume-project"
+                      metadata={{ projectName: proj.title }}
+                      textareaRef={getDescriptionRefObject(proj.id)}
+                      onApply={(next) => updateProject(proj.id, { description: next })}
+                      label="AI Improve"
+                    />
+                  </div>
+                )}
               </div>
 
               {/* Highlights Bullet Points with Count Modal & Per-Bullet AI Improve */}
@@ -347,6 +371,9 @@ export const ProjectsForm: React.FC = () => {
 
                       {/* Expandable / Auto-Growing Bullet Textarea */}
                       <textarea
+                        ref={(el) => {
+                          bulletRefs.current[`${proj.id}-${hIdx}`] = el;
+                        }}
                         rows={1}
                         value={bulletStr}
                         onChange={(e) => {
@@ -380,23 +407,18 @@ export const ProjectsForm: React.FC = () => {
                         className="flex-1 input-base text-xs leading-relaxed resize-y overflow-hidden transition-all focus:ring-1 focus:ring-primary-glow min-h-[38px] py-2"
                       />
 
-                      {/* Per-Bullet AI Improve Button */}
-                      <button
-                        type="button"
-                        onClick={() =>
-                          triggerImproveBulletAi({
-                            section: 'project',
-                            id: proj.id,
-                            bulletIndex: hIdx,
-                            currentBulletText: bullet,
-                            roleOrProjectTitle: proj.title || 'Project',
-                          })
-                        }
-                        className="p-1.5 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary-glow border border-primary/20 transition-all cursor-pointer mt-1 shrink-0 shadow-xs"
-                        title="Improve this bullet point with LetGetIn AI Coach"
-                      >
-                        <Sparkles className="w-3.5 h-3.5" />
-                      </button>
+                      {/* Per-Bullet AI Writing Assistant */}
+                      <div className="mt-1 shrink-0">
+                        <AIWritingAssistant
+                          value={bulletStr}
+                          context="resume-project"
+                          metadata={{ projectName: proj.title }}
+                          textareaRef={getBulletRefObject(`${proj.id}-${hIdx}`)}
+                          onApply={(next) => handleHighlightChange(proj.id, hIdx, next)}
+                          iconOnly
+                          title="Improve this bullet point with AI"
+                        />
+                      </div>
 
                       {/* Delete Bullet Button */}
                       <button

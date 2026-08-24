@@ -1,9 +1,10 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { useResumeStore } from "../../store/useResumeStore";
 import { useAiCoachStore } from "../../store/useAiCoachStore";
 import { Briefcase, Plus, Trash2, ChevronUp, ChevronDown, Sparkles, SlidersHorizontal } from "lucide-react";
 import { IExperience } from "../../types";
 import { AiBulletRerankModal } from "../ai/AiBulletRerankModal";
+import { AIWritingAssistant } from "@/features/aiWriting/components/AIWritingAssistant";
 
 export const ExperienceForm: React.FC = () => {
   const {
@@ -14,13 +15,17 @@ export const ExperienceForm: React.FC = () => {
     reorderExperiences,
     setActiveResumeContext,
   } = useResumeStore();
-  const { triggerExperienceAi, triggerImproveBulletAi } = useAiCoachStore();
+  const { triggerExperienceAi } = useAiCoachStore();
   const experiences = resume.content.experiences;
 
   // Track bullet count selection per experience (default: 3)
   const [bulletCounts, setBulletCounts] = useState<Record<string, number>>({});
   // Track modal open state for reranking bullet count
   const [modalExpId, setModalExpId] = useState<string | null>(null);
+  const bulletRefs = useRef<Record<string, HTMLTextAreaElement | null>>({});
+  const getBulletRefObject = (key: string): React.RefObject<HTMLTextAreaElement | null> => ({
+    current: bulletRefs.current[key] || null,
+  });
 
   const getBulletCount = (expId: string) => bulletCounts[expId] || 3;
 
@@ -259,6 +264,9 @@ export const ExperienceForm: React.FC = () => {
 
                       {/* Expandable / Auto-Growing Bullet Textarea */}
                       <textarea
+                        ref={(el) => {
+                          bulletRefs.current[`${exp.id}-${hIdx}`] = el;
+                        }}
                         rows={1}
                         value={bulletStr}
                         onChange={(e) => {
@@ -294,23 +302,18 @@ export const ExperienceForm: React.FC = () => {
                         className="flex-1 input-base text-xs leading-relaxed resize-y overflow-hidden transition-all focus:ring-1 focus:ring-primary-glow min-h-[38px] py-2"
                       />
 
-                      {/* Per-Bullet AI Improve Button */}
-                      <button
-                        type="button"
-                        onClick={() =>
-                          triggerImproveBulletAi({
-                            section: 'experience',
-                            id: exp.id,
-                            bulletIndex: hIdx,
-                            currentBulletText: bullet,
-                            roleOrProjectTitle: `${exp.position || 'Role'} at ${exp.company || 'Company'}`,
-                          })
-                        }
-                        className="p-1.5 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary-glow border border-primary/20 transition-all cursor-pointer mt-1 shrink-0 shadow-xs"
-                        title="Improve this bullet point with LetGetIn AI Coach"
-                      >
-                        <Sparkles className="w-3.5 h-3.5" />
-                      </button>
+                      {/* Per-Bullet AI Writing Assistant */}
+                      <div className="mt-1 shrink-0">
+                        <AIWritingAssistant
+                          value={bulletStr}
+                          context="resume-experience"
+                          metadata={{ position: exp.position, company: exp.company }}
+                          textareaRef={getBulletRefObject(`${exp.id}-${hIdx}`)}
+                          onApply={(next) => handleHighlightChange(exp.id, hIdx, next)}
+                          iconOnly
+                          title="Improve this bullet point with AI"
+                        />
+                      </div>
 
                       {/* Delete Bullet Button */}
                       <button

@@ -16,6 +16,7 @@ import {
   MessageSquare,
   Phone,
   Globe,
+  Briefcase,
 } from "lucide-react";
 import { useAuthStore } from "@/features/auth/store/useAuthStore";
 import { StorageProviderFactory } from "@/features/resume/storage/factory";
@@ -23,6 +24,7 @@ import { StorageProviderFactory } from "@/features/resume/storage/factory";
 type Mode = "signin" | "signup";
 type Step = "form" | "verify" | "done";
 type VerificationMethod = "email" | "whatsapp";
+type AccountRole = "user" | "recruiter";
 
 const COUNTRY_CODES = [
   { code: "+1", country: "US/CA" },
@@ -51,13 +53,27 @@ export default function AuthPage() {
     clearError,
     isAuthenticated,
     isLoading,
+    user,
+    completeOnboarding,
   } = useAuthStore();
 
   const routeUserAfterAuth = async () => {
+    if (user?.role === "recruiter") {
+      router.replace("/recruiter");
+      return;
+    }
+
+    // 1. If user already has hasBuiltResume set to true in MongoDB, redirect to workspace
+    if (user?.hasBuiltResume) {
+      router.replace("/resume");
+      return;
+    }
+
     try {
       const provider = StorageProviderFactory.getProvider();
       const list = await provider.list();
       if (Array.isArray(list) && list.length > 0) {
+        completeOnboarding().catch(() => {});
         router.replace("/resume");
       } else {
         router.replace("/demo");
@@ -79,6 +95,7 @@ export default function AuthPage() {
   const [step, setStep] = useState<Step>("form");
 
   // Form fields
+  const [accountRole, setAccountRole] = useState<AccountRole>("user");
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [countryCode, setCountryCode] = useState("+1");
@@ -130,6 +147,24 @@ export default function AuthPage() {
     setLocalError("Google sign-in popup was closed or failed to initialize.");
   };
 
+  // Validates the username/password fields that are already visible on this same form step.
+  // Checked before the OTP is even dispatched (in handleSendOtp) so a bad value is caught
+  // immediately, instead of only surfacing after the user has entered the OTP code and
+  // submitted (handleVerifyOtp) — which wastes a real OTP send for nothing.
+  const validateAccountFields = (): string | null => {
+    const trimmedUsername = username.trim();
+    if (!trimmedUsername) return "Username is required.";
+    if (trimmedUsername.length < 3 || trimmedUsername.length > 30) {
+      return "Username must be between 3 and 30 characters long.";
+    }
+    if (!/^[a-zA-Z0-9_-]+$/.test(trimmedUsername)) {
+      return "Username can only contain letters, numbers, underscores, and hyphens (no spaces).";
+    }
+    if (password.length < 8) return "Password must be at least 8 characters long.";
+    if (password !== confirmPassword) return "Passwords do not match.";
+    return null;
+  };
+
   // Step 1: Send OTP for Email or WhatsApp Signup
   const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -148,6 +183,14 @@ export default function AuthPage() {
         setLocalError(
           "A valid phone number is required for WhatsApp verification.",
         );
+        return;
+      }
+    }
+
+    if (mode === "signup") {
+      const accountFieldError = validateAccountFields();
+      if (accountFieldError) {
+        setLocalError(accountFieldError);
         return;
       }
     }
@@ -182,20 +225,12 @@ export default function AuthPage() {
       return;
     }
 
-    if (!username.trim()) {
-      setLocalError("Full name is required.");
+    const accountFieldError = validateAccountFields();
+    if (accountFieldError) {
+      setLocalError(accountFieldError);
       return;
     }
-
-    if (password.length < 6) {
-      setLocalError("Password must be at least 6 characters long.");
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      setLocalError("Passwords do not match.");
-      return;
-    }
+    const trimmedUsername = username.trim();
 
     setIsSubmitting(true);
 
@@ -203,19 +238,21 @@ export default function AuthPage() {
       if (verificationMethod === "email") {
         await verifyEmailOtp({
           email: email.trim(),
-          username: username.trim(),
+          username: trimmedUsername,
           password,
           confirmPassword,
           otp: otpCode,
+          role: accountRole,
         });
       } else {
         await verifyWhatsAppOtp({
-          username: username.trim(),
+          username: trimmedUsername,
           countryCode,
           phone: phone.trim(),
           password,
           confirmPassword,
           otp: otpCode,
+          role: accountRole,
         });
       }
       setStep("done");
@@ -340,32 +377,67 @@ export default function AuthPage() {
                 </button>
               </div>
 
-              {/* Official Google OAuth Component */}
-              <div className="w-full mb-6">
-                <div className="flex p-1 bg-surface rounded-xl border border-border justify-center">
-                  <GoogleLogin
-                    onSuccess={handleGoogleSuccess}
-                    onError={handleGoogleError}
-                    theme="outline"
-                    shape="pill"
-                    size="large"
-                    text={mode === "signup" ? "signup_with" : "signin_with"}
-                    width="500"
-                  />
-                </div>
-              </div>
+              {/* Official Google OAuth Component — hidden for Recruiter signup (OTP-only account creation) */}
+              {!(mode === "signup" && accountRole === "recruiter") && (
+                <>
+                  <div className="w-full mb-6">
+                    <div className="flex p-1 bg-surface rounded-xl border border-border justify-center">
+                      <GoogleLogin
+                        onSuccess={handleGoogleSuccess}
+                        onError={handleGoogleError}
+                        theme="outline"
+                        shape="pill"
+                        size="large"
+                        text={mode === "signup" ? "signup_with" : "signin_with"}
+                        width="500"
+                      />
+                    </div>
+                  </div>
 
-              <Divider
-                label={
-                  mode === "signup"
-                    ? "OR WITH OTP VERIFICATION"
-                    : "OR WITH CREDENTIALS"
-                }
-              />
+                  <Divider
+                    label={
+                      mode === "signup"
+                        ? "OR WITH OTP VERIFICATION"
+                        : "OR WITH CREDENTIALS"
+                    }
+                  />
+                </>
+              )}
 
               {/* Sign Up Form */}
               {mode === "signup" ? (
                 <form onSubmit={handleSendOtp} className="space-y-4">
+                  {/* I am a — Candidate / Recruiter Selector */}
+                  <div className="mb-4">
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-ink-soft mb-2">
+                      I am a
+                    </label>
+                    <div className="grid grid-cols-2 gap-2 p-1 bg-surface rounded-xl border border-border">
+                      <button
+                        type="button"
+                        onClick={() => setAccountRole("user")}
+                        className={`py-2 text-xs font-semibold rounded-lg transition flex items-center justify-center gap-1.5 ${
+                          accountRole === "user"
+                            ? "bg-white text-ink shadow-sm border border-border font-bold"
+                            : "text-ink-soft hover:text-ink"
+                        }`}
+                      >
+                        <User className="w-3.5 h-3.5" /> Candidate
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setAccountRole("recruiter")}
+                        className={`py-2 text-xs font-semibold rounded-lg transition flex items-center justify-center gap-1.5 ${
+                          accountRole === "recruiter"
+                            ? "bg-white text-ink shadow-sm border border-border font-bold"
+                            : "text-ink-soft hover:text-ink"
+                        }`}
+                      >
+                        <Briefcase className="w-3.5 h-3.5" /> Recruiter
+                      </button>
+                    </div>
+                  </div>
+
                   {/* Verify With Selector */}
                   <div className="mb-4">
                     <label className="block text-xs font-semibold uppercase tracking-wider text-ink-soft mb-2">
@@ -657,7 +729,7 @@ export default function AuthPage() {
                 </button>
 
                 <p className="text-sm text-ink-soft text-center">
-                  Didn't receive the code?{" "}
+                  Didn&apos;t receive the code?{" "}
                   <button
                     type="button"
                     onClick={() => setStep("form")}
@@ -684,10 +756,10 @@ export default function AuthPage() {
               </p>
               <button
                 type="button"
-                onClick={() => router.push("/demo")}
+                onClick={() => routeUserAfterAuth()}
                 className="inline-flex mt-8 bg-gradient-brand text-primary-foreground font-semibold px-8 py-3.5 rounded-xl shadow-elegant hover:shadow-glow transition"
               >
-                Continue to Resume Onboarding
+                {accountRole === "recruiter" ? "Continue to Recruiter Dashboard" : "Continue to Resume Onboarding"}
               </button>
             </div>
           )}

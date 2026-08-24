@@ -12,16 +12,19 @@ import { SectionNav } from "@/features/resume/components/editor/SectionNav";
 import { FormAtsHeader } from "@/features/resume/components/editor/FormAtsHeader";
 import { ResumeFormContainer } from "@/features/resume/components/editor/ResumeFormContainer";
 import { EmbeddedAiChat } from "@/features/resume/components/ai/EmbeddedAiChat";
+import { AIChat } from "@/features/aiAssistant/components/AIChat";
 import { LivePreviewCanvas } from "@/features/resume/components/preview/LivePreviewCanvas";
 import { triggerPdfDownload } from "@/features/resume/utils/downloadPdf";
 import { AuthGuard } from "@/components/auth/AuthGuard";
+import { TailorModeWorkspace } from "@/features/tailorResume/components/TailorModeWorkspace";
 import { Loader2, FileText, MessageSquare, Eye, Sparkles } from "lucide-react";
 
 function BuilderContent() {
   const searchParams = useSearchParams();
   const resumeId = searchParams.get("id");
-  const { loadResume, syncFromProfile } = useResumeStore();
-  const { isAuthenticated } = useAuthStore();
+  const tailorSessionId = searchParams.get("tailor");
+  const { loadResume, syncFromProfile, resume, activeResumeContext } = useResumeStore();
+  const { isAuthenticated, user, completeOnboarding } = useAuthStore();
   const {
     isOpen: isChatOpen,
     setIsOpen: setIsChatOpen,
@@ -29,8 +32,14 @@ function BuilderContent() {
     setActiveMobileTab,
   } = useAiCoachStore();
 
-  // Initialize Autosave Hook
+  // Initialize Autosave Hook (self-suppresses while a Tailor Resume session is active)
   useAutosave();
+
+  useEffect(() => {
+    if (isAuthenticated && user && !user.hasBuiltResume) {
+      completeOnboarding().catch(() => {});
+    }
+  }, [isAuthenticated, user, completeOnboarding]);
 
   useEffect(() => {
     if (resumeId) {
@@ -40,6 +49,19 @@ function BuilderContent() {
       syncFromProfile();
     }
   }, [resumeId, isAuthenticated, loadResume, syncFromProfile]);
+
+  if (tailorSessionId) {
+    return (
+      <div className="h-screen flex flex-col bg-background text-foreground overflow-hidden">
+        <EditorHeader
+          onToggleAi={() => setIsChatOpen(!isChatOpen)}
+          isAiOpen={isChatOpen}
+          onDownloadPdf={triggerPdfDownload}
+        />
+        <TailorModeWorkspace sessionId={tailorSessionId} />
+      </div>
+    );
+  }
 
   return (
     <div className="h-screen flex flex-col bg-background text-foreground overflow-hidden">
@@ -155,6 +177,12 @@ function BuilderContent() {
           </motion.section>
         </div>
       </main>
+
+      {/* Contextual AI Assistant (separate from the resume-editing co-pilot above) */}
+      <AIChat
+        context="resume"
+        contextPayload={{ resumeId: resume.id, activeResumeContext: activeResumeContext ?? undefined }}
+      />
     </div>
   );
 }

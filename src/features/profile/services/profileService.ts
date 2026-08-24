@@ -64,6 +64,7 @@ export interface ProfileData {
   };
   experiencesList: ExperienceItem[];
   skills: string[];
+  academicPercentage?: number;
   videoName: string | null;
 }
 

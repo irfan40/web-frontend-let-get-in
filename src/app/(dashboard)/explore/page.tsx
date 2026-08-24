@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { jobService } from "@/features/jobs/services/jobService";
+import { applicationService } from "@/features/applications/services/applicationService";
 import {
   IJob,
   JobFilterParams,
@@ -12,6 +13,7 @@ import { JobDetailPanel } from "@/features/jobs/components/JobDetailPanel";
 import { JobApplyModal } from "@/features/jobs/components/JobApplyModal";
 import { JobFilters } from "@/features/jobs/components/JobFilters";
 import { ExploreHero } from "@/features/jobs/components/ExploreHero";
+import { AIChat } from "@/features/aiAssistant/components/AIChat";
 import {
   Sparkles,
   Globe,
@@ -22,6 +24,8 @@ import {
   Layers,
   CheckCircle2,
 } from "lucide-react";
+
+import { applicationService } from "@/features/applications/services/applicationService";
 
 type TabMode = "recommendations" | "all" | "saved";
 
@@ -58,7 +62,11 @@ export default function ExplorePage() {
   const [isApplyModalOpen, setIsApplyModalOpen] = useState(false);
   const [jobToApply, setJobToApply] = useState<IJob | null>(null);
 
-  // Applied Jobs Tracking (localStorage)
+<<<<<<< HEAD
+  // Applied Jobs Tracking (Synced with Database & local cache)
+=======
+  // Applied Jobs Tracking (localStorage + backend)
+>>>>>>> origin/main
   const [appliedJobIds, setAppliedJobIds] = useState<string[]>(() => {
     if (typeof window !== "undefined") {
       try {
@@ -69,6 +77,29 @@ export default function ExplorePage() {
       }
     }
     return [];
+  });
+
+  // Applied Source Map (AI Apply vs Manual Apply)
+  const [appliedSourceMap, setAppliedSourceMap] = useState<
+    Record<string, "ai_apply" | "manual">
+  >(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const recordsStr = localStorage.getItem("resumebuildai_applied_records");
+        const records: any[] = recordsStr ? JSON.parse(recordsStr) : [];
+        const map: Record<string, "ai_apply" | "manual"> = {};
+        records.forEach((r) => {
+          const id = r.job?._id || r.jobId;
+          if (id) {
+            map[id] = r.source === "ai_apply" ? "ai_apply" : "manual";
+          }
+        });
+        return map;
+      } catch {
+        return {};
+      }
+    }
+    return {};
   });
 
   // Saved Jobs in localStorage
@@ -84,10 +115,97 @@ export default function ExplorePage() {
     return [];
   });
 
+  // Sync applied jobs from database on mount
+  useEffect(() => {
+    let isCancelled = false;
+    const syncAppliedJobsFromDb = async () => {
+      try {
+        const res = await applicationService.getApplications({ limit: 100 });
+        if (!isCancelled && res?.applications) {
+          const dbAppliedIds = res.applications
+            .map((app) => {
+              if (typeof app.job === "object" && app.job?._id) {
+                return String(app.job._id);
+              }
+              return (app as any).jobId ? String((app as any).jobId) : null;
+            })
+            .filter(Boolean) as string[];
+
+          if (dbAppliedIds.length > 0) {
+            setAppliedJobIds((prev) => {
+              const merged = Array.from(new Set([...prev, ...dbAppliedIds]));
+              if (typeof window !== "undefined") {
+                localStorage.setItem(
+                  "resumebuildai_applied_jobs",
+                  JSON.stringify(merged),
+                );
+              }
+              return merged;
+            });
+          }
+        }
+      } catch (err) {
+        console.warn("Could not sync applied jobs from database:", err);
+      }
+    };
+
+    syncAppliedJobsFromDb();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, []);
+
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3500);
   };
+
+  // Sync applied jobs from backend API on mount
+  useEffect(() => {
+    let isCancelled = false;
+    const fetchAppliedHistory = async () => {
+      try {
+        const appRes = await applicationService.getApplications({ limit: 100 });
+        const apps = appRes.applications || [];
+        if (!isCancelled && apps.length > 0) {
+          const backendIds: string[] = [];
+          const sourceMap: Record<string, "ai_apply" | "manual"> = {};
+
+          apps.forEach((a) => {
+            const id = a.job?._id || a._id;
+            if (id) {
+              backendIds.push(id);
+              sourceMap[id] = a.source === "ai_apply" ? "ai_apply" : "manual";
+            }
+          });
+
+          setAppliedJobIds((prev) => {
+            const combined = Array.from(new Set([...prev, ...backendIds]));
+            if (typeof window !== "undefined") {
+              localStorage.setItem(
+                "resumebuildai_applied_jobs",
+                JSON.stringify(combined),
+              );
+            }
+            return combined;
+          });
+
+          setAppliedSourceMap((prev) => ({
+            ...prev,
+            ...sourceMap,
+          }));
+        }
+      } catch (err) {
+        console.warn("Could not fetch applied history from API:", err);
+      }
+    };
+
+    fetchAppliedHistory();
+    return () => {
+      isCancelled = true;
+    };
+  }, []);
 
   const handleToggleSave = (jobId: string) => {
     setSavedJobIds((prev) => {
@@ -101,7 +219,11 @@ export default function ExplorePage() {
     });
   };
 
-  const handleApplicationSuccess = (jobId: string) => {
+  const handleApplicationSuccess = (
+    jobId: string,
+    appliedJob?: IJob | null,
+    createdApp?: any,
+  ) => {
     setAppliedJobIds((prev) => {
       const next = prev.includes(jobId) ? prev : [...prev, jobId];
       if (typeof window !== "undefined") {
@@ -109,7 +231,19 @@ export default function ExplorePage() {
       }
       return next;
     });
-    showToast("Application submitted successfully! Our team will review your profile.");
+<<<<<<< HEAD
+    showToast("Application submitted successfully and saved to database!");
+=======
+
+    setAppliedSourceMap((prev) => ({
+      ...prev,
+      [jobId]: "manual",
+    }));
+
+    showToast(
+      "Application submitted successfully via Manual Apply! You can view and manage it on your Resume & Jobs page.",
+    );
+>>>>>>> origin/main
   };
 
   // Fetch jobs based on current tab and filters
@@ -182,7 +316,7 @@ export default function ExplorePage() {
     try {
       await jobService.syncProfile();
       await fetchJobs();
-      showToast("Candidate profile & embeddings re-synced!");
+      showToast("Candidate profile & AI match re-synced!");
     } catch (err: any) {
       console.warn("Sync profile warning:", err);
     } finally {
@@ -355,6 +489,10 @@ export default function ExplorePage() {
                       isSaved={isSaved}
                       onToggleSave={handleToggleSave}
                       isApplied={isApplied}
+                      appliedSource={
+                        appliedSourceMap[job._id] ||
+                        (isApplied ? "manual" : undefined)
+                      }
                       layoutMode="compact"
                     />
                   );
@@ -421,6 +559,12 @@ export default function ExplorePage() {
                 onToggleSave={handleToggleSave}
                 onStartApplication={handleOpenApplyModal}
                 isApplied={appliedJobIds.includes(selectedJob._id)}
+                appliedSource={
+                  appliedSourceMap[selectedJob._id] ||
+                  (appliedJobIds.includes(selectedJob._id)
+                    ? "manual"
+                    : undefined)
+                }
                 onTogglePanel={() => setSelectedJob(null)}
                 isExpanded={isExpanded}
                 onToggleExpand={() => setIsExpanded(!isExpanded)}
@@ -446,6 +590,10 @@ export default function ExplorePage() {
                     isSaved={isSaved}
                     onToggleSave={handleToggleSave}
                     isApplied={isApplied}
+                    appliedSource={
+                      appliedSourceMap[job._id] ||
+                      (isApplied ? "manual" : undefined)
+                    }
                     layoutMode="grid"
                   />
                 );
@@ -534,6 +682,9 @@ export default function ExplorePage() {
         }}
         onSuccess={handleApplicationSuccess}
       />
+
+      {/* Contextual AI Assistant */}
+      <AIChat context="explore" contextPayload={{ selectedJobId: selectedJob?._id }} />
     </div>
   );
 }

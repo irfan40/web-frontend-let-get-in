@@ -1,5 +1,7 @@
 import { apiClient } from '../../../shared/services/apiClient';
 
+export type EntityType = 'company' | 'institution' | 'startup';
+
 export interface UserProfile {
   id?: string;
   _id?: string;
@@ -7,13 +9,15 @@ export interface UserProfile {
   email?: string;
   phone?: string;
   fullName?: string;
-  role: 'user' | 'admin';
+  role: 'user' | 'admin' | 'recruiter';
+  entityType?: EntityType;
   avatar?: string;
   avatarUrl?: string;
   provider?: 'email' | 'google' | 'local' | 'whatsapp';
   emailVerified?: boolean;
   isEmailVerified?: boolean;
   phoneVerified?: boolean;
+  hasBuiltResume?: boolean;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -66,6 +70,8 @@ export class AuthService {
     password: string;
     confirmPassword: string;
     otp: string;
+    role?: 'user' | 'recruiter';
+    entityType?: EntityType;
   }): Promise<UserProfile> {
     const response = await apiClient.post<never, AuthApiResponse>('/auth/verify-email-otp', data);
     return response.data.user;
@@ -98,6 +104,8 @@ export class AuthService {
     password: string;
     confirmPassword: string;
     otp: string;
+    role?: 'user' | 'recruiter';
+    entityType?: EntityType;
   }): Promise<UserProfile> {
     const response = await apiClient.post<never, AuthApiResponse>('/auth/verify-whatsapp-otp', data);
     return response.data.user;
@@ -197,5 +205,10 @@ export class AuthService {
       }
     );
     return { success: response.success };
+  }
+
+  static async completeOnboarding(): Promise<UserProfile> {
+    const response = await apiClient.post<never, AuthApiResponse>('/auth/complete-onboarding');
+    return response.data.user;
   }
 }

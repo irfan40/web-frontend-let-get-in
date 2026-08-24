@@ -20,6 +20,8 @@ interface AuthState {
     password: string;
     confirmPassword: string;
     otp: string;
+    role?: 'user' | 'recruiter';
+    entityType?: 'company' | 'institution' | 'startup';
   }) => Promise<UserProfile>;
 
   sendOtp: (email: string) => Promise<{ cooldown: number }>;
@@ -29,7 +31,9 @@ interface AuthState {
     password: string;
     confirmPassword: string;
     otp: string;
-  }) => Promise<UserProfile>;
+    role?: 'user' | 'recruiter';
+    entityType?: 'company' | 'institution' | 'startup';
+  }) => Promise<UserProfile>; // Alias for verifyEmailOtp
 
   sendWhatsAppOtp: (data: { countryCode: string; phone: string }) => Promise<{ cooldown: number }>;
   verifyWhatsAppOtp: (data: {
@@ -39,6 +43,8 @@ interface AuthState {
     password: string;
     confirmPassword: string;
     otp: string;
+    role?: 'user' | 'recruiter';
+    entityType?: 'company' | 'institution' | 'startup';
   }) => Promise<UserProfile>;
 
   emailSignup: (data: {
@@ -55,8 +61,8 @@ interface AuthState {
   revokeSession: (sessionId: string) => Promise<void>;
   refresh: () => Promise<UserProfile | null>;
   fetchCurrentUser: (force?: boolean) => Promise<UserProfile | null>;
-  checkAuth: (force?: boolean) => Promise<UserProfile | null>;
-  retryAuth: () => Promise<UserProfile | null>;
+  checkAuth: (force?: boolean) => Promise<UserProfile | null>; // Deduplicated session check
+  completeOnboarding: () => Promise<UserProfile | null>;
   clearError: () => void;
 }
 
@@ -383,6 +389,24 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         isNetworkError: false,
         sessions: [],
       });
+    }
+  },
+
+  completeOnboarding: async () => {
+    try {
+      const updatedUser = await AuthService.completeOnboarding();
+      const mergedUser = { ...(get().user || {}), ...updatedUser, hasBuiltResume: true };
+      set({ user: mergedUser as UserProfile });
+      return mergedUser as UserProfile;
+    } catch (err) {
+      console.warn('Failed updating completeOnboarding in backend:', err);
+      const currentUser = get().user;
+      if (currentUser) {
+        const optimistic = { ...currentUser, hasBuiltResume: true };
+        set({ user: optimistic });
+        return optimistic;
+      }
+      return null;
     }
   },
 

@@ -37,6 +37,8 @@ export interface IJob {
   applicationUrl: string;
   source: string;
   publishedAt: string;
+  eligibilityMinPercent?: number;
+  expiresAt?: string;
   matchScore: number;
   matchedSkills: string[];
   missingSkills: string[];
