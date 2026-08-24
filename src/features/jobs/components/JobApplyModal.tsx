@@ -14,6 +14,8 @@ import {
 } from "lucide-react";
 import { IJob } from "../types/job.types";
 import { useAuthStore } from "@/features/auth/store/useAuthStore";
+import { applicationService } from "@/features/applications/services/applicationService";
+import { ProfileService } from "@/features/profile/services/profileService";
 
 interface JobApplyModalProps {
   isOpen: boolean;
@@ -39,6 +41,7 @@ export const JobApplyModal: React.FC<JobApplyModalProps> = ({
   const [noLinkedin, setNoLinkedin] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [academicPercentage, setAcademicPercentage] = useState<number | undefined>(undefined);
 
   // Pre-fill user details when modal opens
   useEffect(() => {
@@ -49,6 +52,9 @@ export const JobApplyModal: React.FC<JobApplyModalProps> = ({
       setEmail(user?.email || "");
       setLinkedinUrl("");
       setNoLinkedin(false);
+      ProfileService.getProfile()
+        .then((p) => setAcademicPercentage(p.academicPercentage))
+        .catch(() => setAcademicPercentage(undefined));
     }
   }, [isOpen, user]);
 
@@ -98,17 +104,52 @@ export const JobApplyModal: React.FC<JobApplyModalProps> = ({
       return;
     }
 
+    const ineligibleReason = isTargetIneligible(job);
+    if (ineligibleReason) {
+      setErrorMsg(ineligibleReason);
+      return;
+    }
+
     // Move to step 2 ("Before you apply")
     setStep("recommendations");
   };
 
-  const handleFinalizeApplication = (targetJobId?: string) => {
+  const isTargetIneligible = (targetJob: IJob | undefined): string | null => {
+    if (!targetJob) return null;
+    if (targetJob.expiresAt && new Date(targetJob.expiresAt).getTime() < Date.now()) {
+      return "Applications for this job have closed.";
+    }
+    if (
+      targetJob.eligibilityMinPercent != null &&
+      academicPercentage != null &&
+      academicPercentage < targetJob.eligibilityMinPercent
+    ) {
+      return `You do not meet the minimum eligibility requirement (${targetJob.eligibilityMinPercent}%) for this job.`;
+    }
+    return null;
+  };
+
+  const handleFinalizeApplication = async (targetJobId?: string) => {
+    const targetId = targetJobId || job._id;
+    const targetJob = targetId === job._id ? job : allJobs.find((j) => j._id === targetId);
+
+    setErrorMsg(null);
+    const ineligibleReason = isTargetIneligible(targetJob);
+    if (ineligibleReason) {
+      setErrorMsg(ineligibleReason);
+      return;
+    }
+
     setIsSubmitting(true);
-    setTimeout(() => {
-      setIsSubmitting(false);
-      onSuccess(targetJobId || job._id);
+    try {
+      await applicationService.createApplication({ jobId: targetId, source: "manual" });
+      onSuccess(targetId);
       onClose();
-    }, 600);
+    } catch (err: unknown) {
+      setErrorMsg((err as { message?: string })?.message || "Failed to submit your application. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -237,6 +278,12 @@ export const JobApplyModal: React.FC<JobApplyModalProps> = ({
                   Here are other open roles you might want to consider.
                 </p>
               </div>
+
+              {errorMsg && (
+                <div className="p-3 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-xs font-semibold text-left">
+                  {errorMsg}
+                </div>
+              )}
 
               <div className="text-left space-y-3">
                 <p className="text-xs font-bold text-ink-soft uppercase tracking-wider">

@@ -29,42 +29,41 @@ export interface BulkUploadResult {
   duplicates: number;
 }
 
-export type RecruiterLinkStatus = "active" | "inactive";
+export type RecruiterLinkStatus = "active" | "pending" | "inactive";
 
-export interface ConnectedRecruiter {
-  _id: string;
-  status: RecruiterLinkStatus;
-  connectedAt: string;
-  recruiterOrgId: string;
-  company: string;
-  entity?: string;
-  email: string;
-  phone: string;
-  industry: string;
-  website: string;
-}
-
-export interface AvailableRecruiter {
-  recruiterOrgId: string;
-  company: string;
-  entity: string;
-  industry: string;
-  website: string;
-}
-
-export interface InstitutionJob {
-  _id: string;
+export interface RecruiterRequirement {
+  _id?: string;
   title: string;
-  company: { name: string; logo?: string; website?: string };
-  employmentType: string;
-  workplaceType: string;
-  skills: string[];
-  location: { city?: string; state?: string; country: string; remote: boolean };
-  salaryText?: string;
-  expiresAt?: string;
-  description: string;
-  publishedAt: string;
+  openings?: number;
+  notes?: string;
 }
+
+export interface InstitutionRecruiter {
+  _id: string;
+  institutionOrgId: string;
+  company: string;
+  contactPerson?: string;
+  email: string;
+  phone?: string;
+  industry?: string;
+  status: RecruiterLinkStatus;
+  requirements: RecruiterRequirement[];
+  connectedAt: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AddRecruiterInput {
+  company: string;
+  contactPerson?: string;
+  email: string;
+  phone?: string;
+  industry?: string;
+  status?: RecruiterLinkStatus;
+  requirements?: RecruiterRequirement[];
+}
+
+export type UpdateRecruiterInput = Partial<AddRecruiterInput>;
 
 export type ApplicationPipelineStatus =
   | "submitted"

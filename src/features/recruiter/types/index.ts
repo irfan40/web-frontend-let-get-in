@@ -61,6 +61,8 @@ export interface RecruiterJob {
   pipelineOptions?: PipelineOptions;
   creditsCost?: number;
   applicantCount?: number;
+  eligibilityMinPercent?: number;
+  expiresAt?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -79,6 +81,8 @@ export interface CreateJobInput {
   salaryText?: string;
   skills?: string[];
   description?: string;
+  eligibilityMinPercent?: number;
+  deadline?: string;
   saveAsDraft?: boolean;
   pipelineOptions?: PipelineOptions;
 }

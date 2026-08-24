@@ -1,5 +1,5 @@
 import React, { useRef, useState } from "react";
-import { AlertCircle, CheckCircle2, FileSpreadsheet, Loader2, UploadCloud, X } from "lucide-react";
+import { AlertCircle, CheckCircle2, Download, FileSpreadsheet, Info, Loader2, UploadCloud, X } from "lucide-react";
 import { institutionService } from "../services/institutionService";
 import { BulkUploadResult } from "../types";
 
@@ -7,6 +7,25 @@ interface StudentBulkUploadModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
+}
+
+// Matches the existing Student input fields (see InstitutionStudentsPage's Add Student form and
+// studentImport.util.ts's REQUIRED_HEADERS). Two example rows only — never persisted anywhere.
+const SAMPLE_CSV = `name,email,course,year,status
+John Doe,john@example.com,B.Tech Computer Science,2026,Active
+Jane Smith,jane@example.com,BCA,2025,Active
+`;
+
+function downloadSampleCsv() {
+  const blob = new Blob([SAMPLE_CSV], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "student-bulk-upload-sample.csv";
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
 }
 
 export function StudentBulkUploadModal({ isOpen, onClose, onSuccess }: StudentBulkUploadModalProps) {
@@ -73,6 +92,26 @@ export function StudentBulkUploadModal({ isOpen, onClose, onSuccess }: StudentBu
             <X className="w-5 h-5" />
           </button>
         </div>
+
+        {!result && (
+          <>
+            <div className="flex items-start gap-2.5 bg-primary/5 border border-primary/15 rounded-xl px-3.5 py-3 text-xs text-ink-soft">
+              <Info className="w-4 h-4 text-primary-glow shrink-0 mt-0.5" />
+              <span>
+                Download the sample CSV and add student details using the same format and column headers. Once
+                completed, upload the CSV file here to bulk add students.
+              </span>
+            </div>
+
+            <button
+              type="button"
+              onClick={downloadSampleCsv}
+              className="inline-flex items-center gap-2 text-xs font-semibold border border-border text-ink px-3.5 py-2 rounded-xl hover:bg-surface-alt transition w-full justify-center"
+            >
+              <Download className="w-3.5 h-3.5" /> Download Sample CSV
+            </button>
+          </>
+        )}
 
         {errorMessage && (
           <div className="bg-destructive/10 border border-destructive/30 text-destructive text-xs p-3 rounded-xl flex items-start gap-2">

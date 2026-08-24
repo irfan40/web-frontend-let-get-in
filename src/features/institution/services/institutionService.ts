@@ -1,25 +1,24 @@
 import { apiClient } from "@/shared/services/apiClient";
 import {
-  AvailableRecruiter,
+  AddRecruiterInput,
   BulkUploadResult,
-  ConnectedRecruiter,
   CreateEventInput,
   CreateStudentInput,
   CreateTaskInput,
   CreateTrainingProgramInput,
   InstitutionEvent,
-  InstitutionJob,
   InstitutionOverview,
   InstitutionPolicy,
+  InstitutionRecruiter,
   InstitutionReports,
   InstitutionStudent,
   InstitutionTask,
   PipelineEntry,
   PlacementEntry,
-  RecruiterLinkStatus,
   TrainingInsightsResponse,
   TrainingProgram,
   UpdatePolicyInput,
+  UpdateRecruiterInput,
 } from "../types";
 
 interface ApiResponse<T> {
@@ -64,39 +63,23 @@ export const institutionService = {
     return res.data;
   },
 
-  async getConnectedRecruiters(): Promise<ConnectedRecruiter[]> {
-    const res = await apiClient.get<never, ApiResponse<ConnectedRecruiter[]>>("/institution/recruiters");
+  async getRecruiters(): Promise<InstitutionRecruiter[]> {
+    const res = await apiClient.get<never, ApiResponse<InstitutionRecruiter[]>>("/institution/recruiters");
     return res.data;
   },
 
-  async getAvailableRecruiters(search?: string): Promise<AvailableRecruiter[]> {
-    const res = await apiClient.get<never, ApiResponse<AvailableRecruiter[]>>("/institution/recruiters/available", {
-      params: search ? { search } : undefined,
-    });
+  async addRecruiter(payload: AddRecruiterInput): Promise<InstitutionRecruiter> {
+    const res = await apiClient.post<never, ApiResponse<InstitutionRecruiter>>("/institution/recruiters", payload);
     return res.data;
   },
 
-  async connectRecruiter(recruiterOrgId: string): Promise<ConnectedRecruiter> {
-    const res = await apiClient.post<never, ApiResponse<ConnectedRecruiter>>("/institution/recruiters", {
-      recruiterOrgId,
-    });
+  async updateRecruiter(id: string, payload: UpdateRecruiterInput): Promise<InstitutionRecruiter> {
+    const res = await apiClient.patch<never, ApiResponse<InstitutionRecruiter>>(`/institution/recruiters/${id}`, payload);
     return res.data;
   },
 
-  async updateRecruiterStatus(linkId: string, status: RecruiterLinkStatus): Promise<ConnectedRecruiter> {
-    const res = await apiClient.patch<never, ApiResponse<ConnectedRecruiter>>(`/institution/recruiters/${linkId}`, {
-      status,
-    });
-    return res.data;
-  },
-
-  async disconnectRecruiter(linkId: string): Promise<void> {
-    await apiClient.delete(`/institution/recruiters/${linkId}`);
-  },
-
-  async getJobs(): Promise<InstitutionJob[]> {
-    const res = await apiClient.get<never, ApiResponse<InstitutionJob[]>>("/institution/jobs");
-    return res.data;
+  async deleteRecruiter(id: string): Promise<void> {
+    await apiClient.delete(`/institution/recruiters/${id}`);
   },
 
   async getPipeline(): Promise<PipelineEntry[]> {

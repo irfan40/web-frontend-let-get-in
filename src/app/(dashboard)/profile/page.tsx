@@ -1859,6 +1859,26 @@ function EducationSection({
   const list = profile.educationsList || [];
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [percentDraft, setPercentDraft] = useState(profile.academicPercentage?.toString() ?? "");
+  const [savingPercent, setSavingPercent] = useState(false);
+
+  useEffect(() => {
+    setPercentDraft(profile.academicPercentage?.toString() ?? "");
+  }, [profile.academicPercentage]);
+
+  const handleSavePercent = () => {
+    const value = percentDraft.trim() === "" ? undefined : Number(percentDraft);
+    if (value !== undefined && (isNaN(value) || value < 0 || value > 100)) {
+      toast.error("Academic percentage must be a number between 0 and 100.");
+      return;
+    }
+    setSavingPercent(true);
+    const updatedProfile: ProfileData = { ...profile, academicPercentage: value };
+    onUpdate(() => updatedProfile);
+    onSave(updatedProfile);
+    toast.success("Academic percentage saved.");
+    setSavingPercent(false);
+  };
 
   const [institution, setInstitution] = useState("");
   const [degree, setDegree] = useState("");
@@ -1994,6 +2014,34 @@ function EducationSection({
           ) : null
         }
       />
+
+      {/* Academic Percentage — a single, overall figure used to check job eligibility requirements */}
+      <Card icon={GraduationCap} iconColor="text-primary-glow" title="Academic Percentage">
+        <div className="flex flex-col sm:flex-row sm:items-end gap-4">
+          <div className="flex-1 max-w-[200px]">
+            <Field label="Overall percentage" hint="Used to check eligibility for jobs that specify a minimum percentage.">
+              <input
+                type="number"
+                min={0}
+                max={100}
+                step="0.01"
+                className="input-base"
+                placeholder="e.g. 75"
+                value={percentDraft}
+                onChange={(e) => setPercentDraft(e.target.value)}
+              />
+            </Field>
+          </div>
+          <button
+            type="button"
+            onClick={handleSavePercent}
+            disabled={savingPercent}
+            className="bg-gradient-brand text-white font-semibold px-5 py-2.5 rounded-xl text-xs shadow-elegant hover:shadow-glow transition cursor-pointer disabled:opacity-60 shrink-0"
+          >
+            Save
+          </button>
+        </div>
+      </Card>
 
       {/* Add / Edit Form Card */}
       {(isAdding || editingId) && (

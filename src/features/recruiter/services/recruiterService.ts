@@ -79,6 +79,10 @@ export const recruiterService = {
     return res.data;
   },
 
+  async deleteJob(jobId: string): Promise<void> {
+    await apiClient.delete(`/jobs/mine/${jobId}`);
+  },
+
   async updateJobStage(jobId: string, stage: RecruiterJobStage): Promise<RecruiterJob> {
     const res = await apiClient.patch<never, ApiResponse<RecruiterJob>>(`/jobs/${jobId}/stage`, { stage });
     return res.data;
