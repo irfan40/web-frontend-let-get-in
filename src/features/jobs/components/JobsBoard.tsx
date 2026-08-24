@@ -987,25 +987,10 @@ export function JobsBoard({
                 <span className="text-[10px] uppercase font-bold text-ink-soft block">
                   Source
                 </span>
-<<<<<<< HEAD
                 <span className="text-xs font-bold text-ink capitalize">
                   {selectedJob.source === "ai_apply"
                     ? "AI Auto-Apply"
                     : selectedJob.source}
-=======
-                <span className="text-xs font-bold text-ink capitalize flex items-center gap-1">
-                  {selectedJob.source === "ai_apply" ? (
-                    <span className="inline-flex items-center gap-1 text-[11px] text-purple-600 dark:text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded-md border border-purple-500/20">
-                      <Zap className="w-3 h-3" /> AI Auto-Apply
-                    </span>
-                  ) : selectedJob.source === "manual" ? (
-                    <span className="inline-flex items-center gap-1 text-[11px] text-blue-600 dark:text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded-md border border-blue-500/20">
-                      <Send className="w-3 h-3" /> Manual Apply
-                    </span>
-                  ) : (
-                    <span>{selectedJob.source}</span>
-                  )}
->>>>>>> origin/main
                 </span>
               </div>
 
