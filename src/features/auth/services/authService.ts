@@ -17,6 +17,7 @@ export interface UserProfile {
   emailVerified?: boolean;
   isEmailVerified?: boolean;
   phoneVerified?: boolean;
+  hasBuiltResume?: boolean;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -175,5 +176,10 @@ export class AuthService {
       }
     );
     return { success: response.success };
+  }
+
+  static async completeOnboarding(): Promise<UserProfile> {
+    const response = await apiClient.post<never, AuthApiResponse>('/auth/complete-onboarding');
+    return response.data.user;
   }
 }

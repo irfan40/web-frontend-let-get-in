@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Logo } from "@/components/landing/Logo";
 import { useAuthStore } from "@/features/auth/store/useAuthStore";
 import { StorageProviderFactory } from "@/features/resume/storage/factory";
@@ -26,6 +26,10 @@ import {
   Store,
   Rocket,
   Briefcase,
+  ChevronsUpDown,
+  ShieldCheck,
+  UserCheck,
+  Building2,
   type LucideIcon,
 } from "lucide-react";
 
@@ -58,12 +62,37 @@ export function DashboardSidebar({
   onClose,
 }: DashboardSidebarProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const { user, logout } = useAuthStore();
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const profileRef = useRef<HTMLDivElement>(null);
   const [hasResumes, setHasResumes] = useState<boolean | null>(null);
   const [expandedMenus, setExpandedMenus] = useState<Record<string, boolean>>(
     {},
   );
+
+  // Close profile menu on click outside or escape
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
+        setIsProfileOpen(false);
+      }
+    }
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setIsProfileOpen(false);
+      }
+    }
+    if (isProfileOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      document.addEventListener("keydown", handleEscape);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [isProfileOpen]);
 
   // Load collapsed preference from localStorage
   useEffect(() => {
@@ -115,8 +144,8 @@ export function DashboardSidebar({
       icon: Rocket,
       description: "Configure preferences and auto-apply to matching jobs",
     },
-    // Show AI Onboarding only if user has 0 resumes (new user first time)
-    ...(hasResumes === false
+    // Show AI Onboarding only if user has never built a resume in DB and has 0 resumes
+    ...(!user?.hasBuiltResume && hasResumes === false
       ? [
           {
             name: "AI Onboarding",
@@ -226,9 +255,16 @@ export function DashboardSidebar({
   const firstLetter = (displayName || email || "U").charAt(0).toUpperCase();
   const avatarUrl = user?.avatarUrl || user?.avatar;
 
+  const handleLogout = async () => {
+    setIsProfileOpen(false);
+    if (onClose) onClose();
+    await logout();
+    router.push("/auth");
+  };
+
   const sidebarContent = (
     <div
-      className={`flex flex-col h-full bg-surface border-r border-border select-none shadow-sm transition-all duration-300 ease-in-out ${
+      className={`flex flex-col h-full bg-surface border-r border-border select-none shadow-sm transition-all duration-300 ease-in-out relative ${
         isCollapsed ? "w-20" : "w-64 lg:w-60"
       }`}
     >
@@ -531,74 +567,207 @@ export function DashboardSidebar({
         </div>
       </div>
 
-      {/* User Profile Mini Footer */}
+      {/* User Profile SaaS Footer Trigger & Popover Box */}
       <div
-        className={`border-t border-border bg-surface-alt/40 ${
-          isCollapsed ? "p-2 flex flex-col items-center gap-2" : "p-3.5"
+        ref={profileRef}
+        className={`border-t border-border bg-surface-alt/40 relative ${
+          isCollapsed ? "p-2 flex flex-col items-center" : "p-2.5"
         }`}
       >
+        {/* Profile Card Trigger Button */}
         {isCollapsed ? (
-          <div className="relative group flex flex-col items-center gap-1 w-full">
-            {avatarUrl ? (
-              <img
-                src={avatarUrl}
-                alt={displayName}
-                className="w-9 h-9 rounded-2xl object-cover ring-1 ring-border shrink-0"
-              />
-            ) : (
-              <div className="w-9 h-9 rounded-2xl bg-gradient-brand text-primary-foreground font-bold text-xs flex items-center justify-center shadow-glow shrink-0">
-                {firstLetter}
-              </div>
-            )}
-            <span className="text-[9.5px] font-semibold text-ink-soft text-center truncate max-w-[58px] leading-tight">
-              {firstName}
-            </span>
-
+          <div className="flex flex-col items-center gap-1 w-full">
             <button
-              onClick={() => logout()}
-              className="text-ink-soft hover:text-destructive p-1.5 rounded-xl hover:bg-surface transition-colors shrink-0 cursor-pointer mt-0.5"
-              title="Log Out"
-              aria-label="Log Out"
+              type="button"
+              onClick={() => setIsProfileOpen((prev) => !prev)}
+              className="relative p-0.5 rounded-2xl hover:ring-2 hover:ring-primary-glow/50 transition-all cursor-pointer group"
+              aria-label="Open User Profile Menu"
             >
-              <LogOut className="w-3.5 h-3.5" />
-            </button>
-
-            {/* Tooltip on profile when collapsed */}
-            <div className="absolute left-full ml-3.5 bottom-0 px-3 py-2 bg-slate-900 text-white text-xs rounded-xl shadow-2xl whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity z-50 border border-slate-800">
-              <div className="font-bold">{displayName}</div>
-              <div className="text-[10px] text-slate-400">{email}</div>
-            </div>
-          </div>
-        ) : (
-          <div className="flex items-center justify-between gap-2.5">
-            <div className="flex items-center gap-2.5 min-w-0">
               {avatarUrl ? (
-                <img
-                  src={avatarUrl}
-                  alt={displayName}
-                  className="w-8 h-8 rounded-full object-cover ring-1 ring-border shrink-0"
-                />
+                <div className="w-10 h-10 rounded-2xl overflow-hidden ring-1 ring-border shadow-sm shrink-0">
+                  <img
+                    src={avatarUrl}
+                    alt={displayName}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
               ) : (
-                <div className="w-8 h-8 rounded-full bg-gradient-brand text-primary-foreground font-bold text-xs flex items-center justify-center shadow-glow shrink-0">
+                <div className="w-10 h-10 rounded-2xl bg-gradient-brand text-primary-foreground font-extrabold text-sm flex items-center justify-center shadow-glow shrink-0 group-hover:scale-105 transition-transform">
                   {firstLetter}
                 </div>
               )}
+              {/* Online Indicator */}
+              <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-surface" />
+            </button>
+            <span className="text-[9.5px] font-semibold text-ink-soft text-center truncate max-w-[58px] leading-tight">
+              {firstName}
+            </span>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setIsProfileOpen((prev) => !prev)}
+            className="w-full flex items-center justify-between p-2 rounded-2xl hover:bg-surface-alt transition-all group/profile cursor-pointer border border-transparent hover:border-border/60 text-left"
+            aria-label="Open User Profile Menu"
+          >
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="relative shrink-0">
+                {avatarUrl ? (
+                  <div className="w-9 h-9 rounded-xl overflow-hidden ring-1 ring-border shadow-xs">
+                    <img
+                      src={avatarUrl}
+                      alt={displayName}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                ) : (
+                  <div className="w-9 h-9 rounded-xl bg-gradient-brand text-primary-foreground font-extrabold text-xs flex items-center justify-center shadow-glow group-hover/profile:scale-105 transition-transform">
+                    {firstLetter}
+                  </div>
+                )}
+                {/* Online Indicator */}
+                <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-surface" />
+              </div>
               <div className="min-w-0">
-                <div className="text-xs font-bold text-ink truncate">
+                <div className="text-xs font-bold text-ink truncate group-hover/profile:text-primary-glow transition-colors">
                   {displayName}
                 </div>
-                <div className="text-[10px] text-ink-soft truncate">
-                  {email}
+                <div className="text-[10px] text-ink-soft truncate">{email}</div>
+              </div>
+            </div>
+            <ChevronsUpDown
+              className={`w-4 h-4 text-ink-soft transition-transform duration-200 shrink-0 ${
+                isProfileOpen ? "rotate-180 text-primary-glow" : "group-hover/profile:text-ink"
+              }`}
+            />
+          </button>
+        )}
+
+        {/* ======================================================== */}
+        {/* SAAS USER PROFILE MODAL / POPOVER BOX                    */}
+        {/* ======================================================== */}
+        {isProfileOpen && (
+          <div
+            className={`absolute z-50 bg-surface border border-border rounded-3xl shadow-2xl p-4 space-y-3.5 animate-in fade-in zoom-in-95 duration-150 ${
+              isCollapsed
+                ? "left-[calc(100%+12px)] bottom-2 w-72"
+                : "bottom-[calc(100%+8px)] left-2 right-2 w-[calc(100%-16px)] sm:w-72"
+            }`}
+          >
+            {/* User Identity Header */}
+            <div className="flex items-start gap-3 pb-3 border-b border-border">
+              <div className="relative shrink-0">
+                {avatarUrl ? (
+                  <div className="w-12 h-12 rounded-2xl overflow-hidden ring-2 ring-primary-glow/30 shadow-md">
+                    <img
+                      src={avatarUrl}
+                      alt={displayName}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                ) : (
+                  <div className="w-12 h-12 rounded-2xl bg-gradient-brand text-primary-foreground font-extrabold text-base flex items-center justify-center shadow-glow">
+                    {firstLetter}
+                  </div>
+                )}
+                <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-500 ring-2 ring-surface" />
+              </div>
+
+              <div className="flex-1 min-w-0">
+                <h4 className="text-xs font-extrabold text-ink truncate">{displayName}</h4>
+                <p className="text-[11px] text-ink-soft truncate">{email}</p>
+                <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                  <span className="inline-flex items-center gap-1 text-[9.5px] font-bold text-primary-glow bg-primary/10 border border-primary/20 px-2 py-0.5 rounded-full">
+                    <Sparkles className="w-2.5 h-2.5 text-primary-glow" /> Pro Career
+                  </span>
+                  <span className="inline-flex items-center gap-1 text-[9.5px] font-semibold text-emerald-500 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
+                    <ShieldCheck className="w-2.5 h-2.5 text-emerald-500" /> Active
+                  </span>
                 </div>
               </div>
             </div>
+
+            {/* Quick SaaS Menu Actions */}
+            <div className="space-y-1 pt-1">
+              <Link
+                href="/profile"
+                onClick={() => {
+                  setIsProfileOpen(false);
+                  if (onClose) onClose();
+                }}
+                className="flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-ink hover:text-primary-glow hover:bg-surface-alt transition-colors group"
+              >
+                <div className="flex items-center gap-2.5">
+                  <UserCheck className="w-4 h-4 text-primary-glow" />
+                  <span>My Profile & Identity</span>
+                </div>
+                <ChevronRight className="w-3.5 h-3.5 text-ink-soft opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
+              </Link>
+
+              <Link
+                href="/resume"
+                onClick={() => {
+                  setIsProfileOpen(false);
+                  if (onClose) onClose();
+                }}
+                className="flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-ink hover:text-primary-glow hover:bg-surface-alt transition-colors group"
+              >
+                <div className="flex items-center gap-2.5">
+                  <Briefcase className="w-4 h-4 text-primary-glow" />
+                  <span>Jobs & Applications</span>
+                </div>
+                <ChevronRight className="w-3.5 h-3.5 text-ink-soft opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
+              </Link>
+
+              <Link
+                href="/drive"
+                onClick={() => {
+                  setIsProfileOpen(false);
+                  if (onClose) onClose();
+                }}
+                className="flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-ink-soft hover:text-ink hover:bg-surface-alt transition-colors group"
+              >
+                <div className="flex items-center gap-2.5">
+                  <HardDrive className="w-4 h-4 text-ink-soft group-hover:text-ink" />
+                  <span>Cloud Asset Storage</span>
+                </div>
+                <ChevronRight className="w-3.5 h-3.5 text-ink-soft opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
+              </Link>
+
+              <Link
+                href="/recruiter/dashboard"
+                onClick={() => {
+                  setIsProfileOpen(false);
+                  if (onClose) onClose();
+                }}
+                className="flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-ink-soft hover:text-ink hover:bg-surface-alt transition-colors group"
+              >
+                <div className="flex items-center gap-2.5">
+                  <Building2 className="w-4 h-4 text-ink-soft group-hover:text-ink" />
+                  <span>Recruiter Dashboard</span>
+                </div>
+                <span className="text-[9px] font-semibold text-ink-soft bg-surface-alt px-1.5 py-0.5 rounded-md">
+                  Recruiter
+                </span>
+              </Link>
+            </div>
+
+            {/* Divider */}
+            <div className="border-t border-border pt-1" />
+
+            {/* Logout Action */}
             <button
-              onClick={() => logout()}
-              className="text-ink-soft hover:text-destructive p-1.5 rounded-xl hover:bg-surface transition-colors shrink-0 cursor-pointer"
-              title="Log Out"
-              aria-label="Log Out"
+              type="button"
+              onClick={handleLogout}
+              className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold text-destructive hover:bg-destructive/10 border border-destructive/20 hover:border-destructive/30 transition-all cursor-pointer group"
             >
-              <LogOut className="w-4 h-4" />
+              <div className="flex items-center gap-2.5">
+                <LogOut className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
+                <span>Sign Out</span>
+              </div>
+              <span className="text-[10px] text-destructive/70 font-semibold bg-destructive/10 px-1.5 py-0.5 rounded-md">
+                Log Out
+              </span>
             </button>
           </div>
         )}

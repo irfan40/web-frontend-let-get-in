@@ -54,6 +54,7 @@ export default function AuthPage() {
     isAuthenticated,
     isLoading,
     user,
+    completeOnboarding,
   } = useAuthStore();
 
   const routeUserAfterAuth = async () => {
@@ -61,10 +62,18 @@ export default function AuthPage() {
       router.replace("/recruiter");
       return;
     }
+
+    // 1. If user already has hasBuiltResume set to true in MongoDB, redirect to workspace
+    if (user?.hasBuiltResume) {
+      router.replace("/resume");
+      return;
+    }
+
     try {
       const provider = StorageProviderFactory.getProvider();
       const list = await provider.list();
       if (Array.isArray(list) && list.length > 0) {
+        completeOnboarding().catch(() => {});
         router.replace("/resume");
       } else {
         router.replace("/demo");

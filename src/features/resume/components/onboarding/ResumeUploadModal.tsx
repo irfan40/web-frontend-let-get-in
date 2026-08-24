@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Upload, CheckCircle2, AlertCircle, Loader2, Sparkles, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { ResumeImportService } from '../../services/ResumeImportService';
+import { useAuthStore } from '@/features/auth/store/useAuthStore';
 
 interface ResumeUploadModalProps {
   isOpen: boolean;
@@ -68,6 +69,7 @@ export const ResumeUploadModal: React.FC<ResumeUploadModalProps> = ({ isOpen, on
 
       setIsParsing(false);
       onClose();
+      useAuthStore.getState().completeOnboarding().catch(() => {});
       if (imported?.id) {
         router.push(`/builder?id=${imported.id}`);
       } else {

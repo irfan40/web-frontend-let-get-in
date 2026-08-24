@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { X, Sparkles, LayoutTemplate } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useResumeStore } from "../../resume/store/useResumeStore";
+import { useAuthStore } from "@/features/auth/store/useAuthStore";
 
 interface CreateResumeModalProps {
   isOpen: boolean;
@@ -49,6 +50,7 @@ export const CreateResumeModal: React.FC<CreateResumeModalProps> = ({
   const handleCreate = () => {
     updateTitle(title.trim() || "My Professional Resume");
     updateTemplateId(selectedTemplate);
+    useAuthStore.getState().completeOnboarding().catch(() => {});
     onClose();
     router.push("/builder");
   };

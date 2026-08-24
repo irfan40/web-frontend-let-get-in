@@ -57,6 +57,7 @@ interface AuthState {
   refresh: () => Promise<UserProfile | null>;
   fetchCurrentUser: (force?: boolean) => Promise<UserProfile | null>;
   checkAuth: (force?: boolean) => Promise<UserProfile | null>; // Deduplicated session check
+  completeOnboarding: () => Promise<UserProfile | null>;
   clearError: () => void;
 }
 
@@ -224,6 +225,24 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       console.error('Logout error:', err);
     } finally {
       set({ user: null, isAuthenticated: false, loading: false, isLoading: false, isInitialized: true });
+    }
+  },
+
+  completeOnboarding: async () => {
+    try {
+      const updatedUser = await AuthService.completeOnboarding();
+      const mergedUser = { ...(get().user || {}), ...updatedUser, hasBuiltResume: true };
+      set({ user: mergedUser as UserProfile });
+      return mergedUser as UserProfile;
+    } catch (err) {
+      console.warn('Failed updating completeOnboarding in backend:', err);
+      const currentUser = get().user;
+      if (currentUser) {
+        const optimistic = { ...currentUser, hasBuiltResume: true };
+        set({ user: optimistic });
+        return optimistic;
+      }
+      return null;
     }
   },
 

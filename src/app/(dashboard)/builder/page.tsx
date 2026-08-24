@@ -24,7 +24,7 @@ function BuilderContent() {
   const resumeId = searchParams.get("id");
   const tailorSessionId = searchParams.get("tailor");
   const { loadResume, syncFromProfile, resume, activeResumeContext } = useResumeStore();
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, user, completeOnboarding } = useAuthStore();
   const {
     isOpen: isChatOpen,
     setIsOpen: setIsChatOpen,
@@ -34,6 +34,12 @@ function BuilderContent() {
 
   // Initialize Autosave Hook (self-suppresses while a Tailor Resume session is active)
   useAutosave();
+
+  useEffect(() => {
+    if (isAuthenticated && user && !user.hasBuiltResume) {
+      completeOnboarding().catch(() => {});
+    }
+  }, [isAuthenticated, user, completeOnboarding]);
 
   useEffect(() => {
     if (resumeId) {

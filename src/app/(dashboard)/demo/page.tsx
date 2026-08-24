@@ -14,24 +14,33 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useResumeStore } from "@/features/resume/store/useResumeStore";
+import { useAuthStore } from "@/features/auth/store/useAuthStore";
 import { StorageProviderFactory } from "@/features/resume/storage/factory";
 import { ResumeUploadModal } from "@/features/resume/components/onboarding/ResumeUploadModal";
 
 export default function DemoOnboardingPage() {
   const router = useRouter();
   const { resetToBlank } = useResumeStore();
+  const { user, completeOnboarding } = useAuthStore();
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [isChecking, setIsChecking] = useState(true);
 
-  // Check if user already has resumes. If so, redirect to dashboard
+  // Check if user already built a resume or has resumes in DB. If so, redirect to workspace
   useEffect(() => {
     let isMounted = true;
     const verifyNewUser = async () => {
+      // 1. If database flag hasBuiltResume is true, immediately redirect away
+      if (user?.hasBuiltResume) {
+        router.replace("/resume");
+        return;
+      }
+
+      // 2. Also check if user has existing resumes in MongoDB
       try {
         const provider = StorageProviderFactory.getProvider();
         const list = await provider.list();
         if (isMounted && Array.isArray(list) && list.length > 0) {
-          // Old user already has resumes, redirect away from /demo to /dashboard
+          await completeOnboarding().catch(() => {});
           router.replace("/resume");
           return;
         }
@@ -49,9 +58,11 @@ export default function DemoOnboardingPage() {
     return () => {
       isMounted = false;
     };
-  }, [router]);
+  }, [user, router, completeOnboarding]);
 
-  const handleStartFromScratch = () => {
+  const handleStartFromScratch = async () => {
+    // Persist hasBuiltResume: true in database so this page is never shown again
+    await completeOnboarding().catch(() => {});
     resetToBlank();
     router.push("/builder");
   };
