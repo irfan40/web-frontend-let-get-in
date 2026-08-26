@@ -130,33 +130,53 @@ export default function CvSearchPage() {
             >
               <div
                 onClick={() => setProfileCandidate(c)}
-                className="min-w-0 cursor-pointer group flex-1"
+                className="min-w-0 cursor-pointer group flex items-center gap-3.5 flex-1"
               >
-                <div className="text-sm font-bold text-ink group-hover:text-primary transition flex items-center gap-2">
-                  <span>{c.name}</span>
-                </div>
-                {c.headline && <div className="text-xs text-ink-soft mt-0.5">{c.headline}</div>}
-                {c.skills && c.skills.length > 0 && (
-                  <div className="flex flex-wrap gap-1 mt-1.5">
-                    {c.skills.slice(0, 6).map((s, sIdx) => (
-                      <span
-                        key={`${s}-${sIdx}`}
-                        className="text-[10px] font-semibold text-primary-glow bg-primary/10 px-1.5 py-0.5 rounded-full"
-                      >
-                        {s}
-                      </span>
-                    ))}
+                {c.avatarUrl ? (
+                  <img
+                    src={c.avatarUrl}
+                    alt={c.name}
+                    className="w-11 h-11 rounded-2xl object-cover ring-1 ring-border group-hover:ring-primary transition shrink-0"
+                  />
+                ) : (
+                  <div className="w-11 h-11 rounded-2xl bg-gradient-brand text-primary-foreground font-bold text-xs flex items-center justify-center shadow-glow group-hover:scale-105 transition shrink-0">
+                    <User className="w-5 h-5" />
                   </div>
                 )}
+                <div className="min-w-0 flex-1">
+                  <div className="text-sm font-bold text-ink group-hover:text-primary transition flex items-center gap-2">
+                    <span>{c.name}</span>
+                  </div>
+                  {c.headline && <div className="text-xs text-ink-soft mt-0.5 truncate">{c.headline}</div>}
+                  {c.skills && c.skills.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-1.5">
+                      {c.skills.slice(0, 6).map((s, sIdx) => (
+                        <span
+                          key={`${s}-${sIdx}`}
+                          className="text-[10px] font-semibold text-primary-glow bg-primary/10 px-2 py-0.5 rounded-full"
+                        >
+                          {s}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
               <div className="flex items-center gap-3 shrink-0">
-                <span className="text-[10px] font-bold text-primary-glow bg-primary/10 px-2 py-1 rounded-full">
+                <span className="text-[10px] font-bold text-primary-glow bg-primary/10 px-2.5 py-1 rounded-full">
                   {c.matchScore}% match
                 </span>
                 <button
                   type="button"
+                  onClick={() => setProfileCandidate(c)}
+                  className="text-xs font-semibold text-ink bg-surface-alt border border-border px-3 py-2 rounded-xl hover:bg-surface transition cursor-pointer"
+                >
+                  View Profile
+                </button>
+                <button
+                  type="button"
                   onClick={() => setActiveCandidate(c)}
-                  className="text-xs font-semibold text-ink bg-surface-alt border border-border px-3 py-2 rounded-xl hover:bg-surface transition"
+                  className="text-xs font-semibold text-primary bg-primary/10 border border-primary/20 px-3 py-2 rounded-xl hover:bg-primary hover:text-white transition cursor-pointer"
                 >
                   {c.contactRevealed ? "View Contact" : "Reveal Contact"}
                 </button>
@@ -188,17 +208,12 @@ export default function CvSearchPage() {
       {profileCandidate && (
         <CandidateProfileModal
           isOpen={!!profileCandidate}
-          candidate={{
-            _id: profileCandidate.candidateUserId,
-            fullName: profileCandidate.name,
-            headline: profileCandidate.headline,
-            location: profileCandidate.location,
-            skills: profileCandidate.skills,
-            matchScore: profileCandidate.matchScore,
-            email: profileCandidate.contactRevealed ? profileCandidate.email : undefined,
-            phone: profileCandidate.contactRevealed ? profileCandidate.phone : undefined,
-          }}
+          candidate={profileCandidate}
+          initialTab="profile"
           onClose={() => setProfileCandidate(null)}
+          onRevealContact={(candidateUserId) => {
+            setActiveCandidate(profileCandidate);
+          }}
         />
       )}
     </div>

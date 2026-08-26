@@ -189,14 +189,31 @@ export interface CreditPack {
 export interface SourcedCandidate {
   candidateUserId: string;
   name: string;
+  avatarUrl?: string;
   headline?: string;
   location?: string;
   skills?: string[];
+  summary?: string;
+  experiences?: any[];
+  educations?: any[];
+  projects?: any[];
+  certificates?: any[];
+  languages?: any[];
+  socialLinks?: any[];
   yearsOfExperience?: number;
   matchScore: number;
   email?: string;
   phone?: string;
   contactRevealed: boolean;
+  resume?: ApplicantResume | null;
+  candidate?: {
+    _id?: string;
+    fullName?: string;
+    username?: string;
+    email?: string;
+    phone?: string;
+    avatarUrl?: string;
+  } | null;
 }
 
 export interface AllApplicant {
