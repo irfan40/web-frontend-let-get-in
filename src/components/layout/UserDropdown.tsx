@@ -44,6 +44,10 @@ export function UserDropdown() {
   const email = user?.email || "";
   const firstLetter = (displayName || email || "U").charAt(0).toUpperCase();
   const avatarUrl = user?.avatarUrl || user?.avatar;
+  const isRecruiter = user?.role === "recruiter";
+  const dashboardHref = isRecruiter ? "/recruiter/dashboard" : "/resume";
+  const profileHref = isRecruiter ? "/recruiter/profile" : "/profile";
+  const roleBadge = isRecruiter ? "Verified Recruiter" : "Verified User";
 
   return (
     <div className="relative inline-block text-left" ref={dropdownRef}>
@@ -102,7 +106,7 @@ export function UserDropdown() {
                 </p>
                 <p className="text-[11px] text-ink-soft truncate">{email}</p>
                 <div className="inline-flex items-center gap-1 text-[9px] font-semibold text-success bg-success/10 px-2 py-0.5 rounded-full mt-1">
-                  <ShieldCheck className="w-2.5 h-2.5" /> Verified User
+                  <ShieldCheck className="w-2.5 h-2.5" /> {roleBadge}
                 </div>
               </div>
             </div>
@@ -111,7 +115,7 @@ export function UserDropdown() {
           {/* Navigation Links */}
           <div className="px-1.5 py-1.5 space-y-0.5">
             <Link
-              href="/resume"
+              href={dashboardHref}
               onClick={() => setIsOpen(false)}
               className="flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-ink hover:text-primary-glow hover:bg-surface-alt rounded-xl transition"
             >
@@ -120,7 +124,7 @@ export function UserDropdown() {
             </Link>
 
             <Link
-              href="/profile"
+              href={profileHref}
               onClick={() => setIsOpen(false)}
               className="flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-ink hover:text-primary-glow hover:bg-surface-alt rounded-xl transition"
             >

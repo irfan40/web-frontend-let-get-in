@@ -7,7 +7,7 @@ import { Loader2 } from "lucide-react";
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const { isAuthenticated, isLoading, isInitialized, checkAuth } = useAuthStore();
+  const { user, isAuthenticated, isLoading, isInitialized, checkAuth } = useAuthStore();
 
   useEffect(() => {
     if (!isInitialized) {
@@ -16,12 +16,16 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   }, [isInitialized, checkAuth]);
 
   useEffect(() => {
-    if (isInitialized && !isLoading && !isAuthenticated) {
-      router.replace("/auth");
+    if (isInitialized && !isLoading) {
+      if (!isAuthenticated) {
+        router.replace("/auth");
+      } else if (user?.role === "recruiter") {
+        router.replace("/recruiter");
+      }
     }
-  }, [isInitialized, isLoading, isAuthenticated, router]);
+  }, [isInitialized, isLoading, isAuthenticated, user, router]);
 
-  if (isLoading) {
+  if (isLoading || !isInitialized) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center text-ink-soft">
         <Loader2 className="w-8 h-8 animate-spin text-primary-glow mb-4" />
@@ -30,9 +34,11 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (!isAuthenticated) {
+  if (!isAuthenticated || user?.role === "recruiter") {
     return null;
   }
 
   return <>{children}</>;
 }
+
+export const CandidateGuard = AuthGuard;

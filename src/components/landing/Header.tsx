@@ -16,7 +16,8 @@ const navLinks = [
 
 export function Header() {
   const [open, setOpen] = useState(false);
-  const { isAuthenticated, checkAuth, logout } = useAuthStore();
+  const { isAuthenticated, user, checkAuth, logout } = useAuthStore();
+  const dashboardHref = user?.role === "recruiter" ? "/recruiter/dashboard" : "/resume";
 
   useEffect(() => {
     checkAuth();
@@ -99,7 +100,7 @@ export function Header() {
               {isAuthenticated ? (
                 <>
                   <Link
-                    to="/resume"
+                    to={dashboardHref}
                     onClick={() => setOpen(false)}
                     className="mt-1 bg-gradient-brand text-primary-foreground text-sm font-semibold px-5 py-3 rounded-xl text-center shadow-elegant flex items-center justify-center gap-2"
                   >

@@ -6,7 +6,8 @@ import Link from "./NavLink";
 import { useAuthStore } from "@/features/auth/store/useAuthStore";
 
 export function Hero() {
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, user } = useAuthStore();
+  const dashboardHref = user?.role === "recruiter" ? "/recruiter/dashboard" : "/resume";
 
   return (
     <section className="pt-28 md:pt-36 pb-16 md:pb-24 px-4 sm:px-6 relative overflow-hidden">
@@ -40,7 +41,7 @@ export function Hero() {
             <div className="flex flex-wrap items-center gap-4 pt-2">
               {isAuthenticated ? (
                 <Link
-                  to="/dashboard"
+                  to={dashboardHref}
                   className="bg-gradient-brand text-primary-foreground font-semibold px-8 py-3.5 rounded-xl shadow-elegant hover:shadow-glow transition-all hover:scale-[1.02] active:scale-95 text-base flex items-center gap-2"
                 >
                   <span>Go to Dashboard</span>

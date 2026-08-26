@@ -6,7 +6,8 @@ import Link from "./NavLink";
 import { useAuthStore } from "@/features/auth/store/useAuthStore";
 
 export function CtaBand() {
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, user } = useAuthStore();
+  const dashboardHref = user?.role === "recruiter" ? "/recruiter/dashboard" : "/resume";
 
   return (
     <section className="py-20 md:py-28 px-4 sm:px-6 bg-gradient-dark relative overflow-hidden">
@@ -31,7 +32,7 @@ export function CtaBand() {
         <div className="mt-8 flex flex-wrap justify-center gap-4">
           {isAuthenticated ? (
             <Link
-              to="/resume"
+              to={dashboardHref}
               className="bg-white text-ink font-bold px-8 py-3.5 rounded-xl shadow-xl hover:scale-[1.02] active:scale-95 transition text-base inline-flex items-center gap-2"
             >
               <span>Go to Dashboard</span>

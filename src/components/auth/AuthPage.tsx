@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { useAuthStore } from "@/features/auth/store/useAuthStore";
 import { StorageProviderFactory } from "@/features/resume/storage/factory";
+import type { UserProfile } from "@/features/auth/services/authService";
 
 type Mode = "signin" | "signup";
 type Step = "form" | "verify" | "done";
@@ -57,14 +58,17 @@ export default function AuthPage() {
     completeOnboarding,
   } = useAuthStore();
 
-  const routeUserAfterAuth = async () => {
-    if (user?.role === "recruiter") {
+  const routeUserAfterAuth = async (targetUser?: UserProfile | null) => {
+    const currentUser = targetUser || useAuthStore.getState().user;
+    if (!currentUser) return;
+
+    if (currentUser.role === "recruiter") {
       router.replace("/recruiter");
       return;
     }
 
     // 1. If user already has hasBuiltResume set to true in MongoDB, redirect to workspace
-    if (user?.hasBuiltResume) {
+    if (currentUser.hasBuiltResume) {
       router.replace("/resume");
       return;
     }
@@ -84,10 +88,10 @@ export default function AuthPage() {
   };
 
   useEffect(() => {
-    if (!isLoading && isAuthenticated) {
-      routeUserAfterAuth();
+    if (!isLoading && isAuthenticated && user) {
+      routeUserAfterAuth(user);
     }
-  }, [isAuthenticated, isLoading]);
+  }, [isAuthenticated, isLoading, user]);
 
   const [mode, setMode] = useState<Mode>("signup");
   const [verificationMethod, setVerificationMethod] =
@@ -131,8 +135,8 @@ export default function AuthPage() {
 
     setIsSubmitting(true);
     try {
-      await googleLogin(credentialResponse.credential);
-      await routeUserAfterAuth();
+      const authenticatedUser = await googleLogin(credentialResponse.credential);
+      await routeUserAfterAuth(authenticatedUser);
     } catch (err: unknown) {
       const msg =
         (err as { message?: string })?.message ||
@@ -283,8 +287,8 @@ export default function AuthPage() {
     setIsSubmitting(true);
     try {
       const identifier = email.trim() || `${countryCode}${phone.trim()}`;
-      await login({ emailOrPhone: identifier, password });
-      await routeUserAfterAuth();
+      const authenticatedUser = await login({ emailOrPhone: identifier, password });
+      await routeUserAfterAuth(authenticatedUser);
     } catch (err: unknown) {
       const msg = (err as { message?: string })?.message || "Sign in failed.";
       setLocalError(msg);
@@ -756,10 +760,10 @@ export default function AuthPage() {
               </p>
               <button
                 type="button"
-                onClick={() => routeUserAfterAuth()}
+                onClick={() => routeUserAfterAuth(useAuthStore.getState().user || user)}
                 className="inline-flex mt-8 bg-gradient-brand text-primary-foreground font-semibold px-8 py-3.5 rounded-xl shadow-elegant hover:shadow-glow transition"
               >
-                {accountRole === "recruiter" ? "Continue to Recruiter Dashboard" : "Continue to Resume Onboarding"}
+                {accountRole === "recruiter" || (useAuthStore.getState().user?.role || user?.role) === "recruiter" ? "Continue to Recruiter Dashboard" : "Continue to Resume Onboarding"}
               </button>
             </div>
           )}
