@@ -7,6 +7,7 @@ import { Loader2, MapPin, Search, User, FileText } from "lucide-react";
 import { recruiterService } from "@/features/recruiter/services/recruiterService";
 import { Applicant, RecruiterJob } from "@/features/recruiter/types";
 import { ApplicantResumeModal } from "@/features/recruiter/components/ApplicantResumeModal";
+import { CandidateProfileModal } from "@/features/recruiter/components/CandidateProfileModal";
 
 const STATUS_OPTIONS = ["submitted", "reviewing", "shortlisted", "interviewing", "offered", "rejected"];
 
@@ -19,6 +20,7 @@ export default function JobDetailPage() {
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [selectedApplicantForResume, setSelectedApplicantForResume] = useState<Applicant | null>(null);
+  const [selectedApplicantForProfile, setSelectedApplicantForProfile] = useState<Applicant | null>(null);
 
   useEffect(() => {
     if (!jobId) return;
@@ -37,6 +39,9 @@ export default function JobDetailPage() {
       setApplicants((prev) => prev.map((a) => (a._id === applicationId ? { ...a, ...updated } : a)));
       if (selectedApplicantForResume?._id === applicationId) {
         setSelectedApplicantForResume((prev) => (prev ? { ...prev, ...updated, status } : null));
+      }
+      if (selectedApplicantForProfile?._id === applicationId) {
+        setSelectedApplicantForProfile((prev) => (prev ? { ...prev, ...updated, status } : null));
       }
     } finally {
       setUpdatingId(null);
@@ -103,20 +108,24 @@ export default function JobDetailPage() {
                 key={a._id}
                 className="flex items-center justify-between gap-3 p-3.5 rounded-xl border border-border hover:bg-surface-alt/50 transition flex-wrap"
               >
-                <div className="flex items-center gap-3 min-w-0">
+                {/* Clickable Candidate Identity to view profile */}
+                <div
+                  onClick={() => setSelectedApplicantForProfile(a)}
+                  className="flex items-center gap-3 min-w-0 cursor-pointer group"
+                >
                   {a.candidate?.avatarUrl ? (
                     <img
                       src={a.candidate.avatarUrl}
                       alt={a.candidate.fullName || ""}
-                      className="w-10 h-10 rounded-full object-cover ring-1 ring-border shrink-0"
+                      className="w-10 h-10 rounded-full object-cover ring-1 ring-border group-hover:ring-primary transition shrink-0"
                     />
                   ) : (
-                    <div className="w-10 h-10 rounded-full bg-gradient-brand text-primary-foreground font-bold text-xs flex items-center justify-center shadow-glow shrink-0">
+                    <div className="w-10 h-10 rounded-full bg-gradient-brand text-primary-foreground font-bold text-xs flex items-center justify-center shadow-glow group-hover:scale-105 transition shrink-0">
                       <User className="w-4 h-4" />
                     </div>
                   )}
                   <div className="min-w-0">
-                    <div className="text-sm font-bold text-ink truncate">
+                    <div className="text-sm font-bold text-ink truncate group-hover:text-primary transition">
                       {a.candidate?.fullName || a.candidate?.username || "Candidate"}
                     </div>
                     <div className="text-xs text-ink-soft truncate flex items-center gap-1.5 mt-0.5">
@@ -160,7 +169,21 @@ export default function JobDetailPage() {
         )}
       </div>
 
-      {/* Applicant Resume Modal */}
+      {/* Candidate Profile Modal */}
+      <CandidateProfileModal
+        isOpen={!!selectedApplicantForProfile}
+        applicant={selectedApplicantForProfile}
+        candidate={selectedApplicantForProfile?.candidate || null}
+        onClose={() => setSelectedApplicantForProfile(null)}
+        onViewResume={() => {
+          setSelectedApplicantForResume(selectedApplicantForProfile);
+          setSelectedApplicantForProfile(null);
+        }}
+        onStatusChange={handleStatusChange}
+        isUpdatingStatus={updatingId === selectedApplicantForProfile?._id}
+      />
+
+      {/* Actual Applicant PDF Resume Modal */}
       <ApplicantResumeModal
         isOpen={!!selectedApplicantForResume}
         applicant={selectedApplicantForResume}

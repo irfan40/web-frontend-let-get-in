@@ -2,11 +2,12 @@
 
 import React, { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Loader2, Search, Zap } from "lucide-react";
+import { Loader2, Search, Zap, User } from "lucide-react";
 import { recruiterService } from "@/features/recruiter/services/recruiterService";
 import { CreditPack, SourcedCandidate } from "@/features/recruiter/types";
 import { BuyCreditsModal } from "@/features/recruiter/components/BuyCreditsModal";
 import { ContactModal } from "@/features/recruiter/components/ContactModal";
+import { CandidateProfileModal } from "@/features/recruiter/components/CandidateProfileModal";
 
 export default function CvSearchPage() {
   const searchParams = useSearchParams();
@@ -22,6 +23,7 @@ export default function CvSearchPage() {
   const [packs, setPacks] = useState<CreditPack[]>([]);
   const [buyModalOpen, setBuyModalOpen] = useState(false);
   const [activeCandidate, setActiveCandidate] = useState<SourcedCandidate | null>(null);
+  const [profileCandidate, setProfileCandidate] = useState<SourcedCandidate | null>(null);
 
   useEffect(() => {
     recruiterService.getCredits().then(({ balance, packs }) => {
@@ -61,6 +63,9 @@ export default function CvSearchPage() {
     );
     if (newBalance !== undefined) setBalance(newBalance);
     setActiveCandidate(null);
+    if (profileCandidate?.candidateUserId === candidateUserId) {
+      setProfileCandidate((prev) => (prev ? { ...prev, email, phone, contactRevealed: true } : null));
+    }
   };
 
   return (
@@ -123,8 +128,13 @@ export default function CvSearchPage() {
               key={c.candidateUserId || `candidate-${index}`}
               className="flex items-center justify-between gap-3 p-4 rounded-2xl border border-border bg-surface hover:shadow-elegant transition flex-wrap"
             >
-              <div className="min-w-0">
-                <div className="text-sm font-bold text-ink">{c.name}</div>
+              <div
+                onClick={() => setProfileCandidate(c)}
+                className="min-w-0 cursor-pointer group flex-1"
+              >
+                <div className="text-sm font-bold text-ink group-hover:text-primary transition flex items-center gap-2">
+                  <span>{c.name}</span>
+                </div>
                 {c.headline && <div className="text-xs text-ink-soft mt-0.5">{c.headline}</div>}
                 {c.skills && c.skills.length > 0 && (
                   <div className="flex flex-wrap gap-1 mt-1.5">
@@ -172,6 +182,23 @@ export default function CvSearchPage() {
             setActiveCandidate(null);
             setBuyModalOpen(true);
           }}
+        />
+      )}
+
+      {profileCandidate && (
+        <CandidateProfileModal
+          isOpen={!!profileCandidate}
+          candidate={{
+            _id: profileCandidate.candidateUserId,
+            fullName: profileCandidate.name,
+            headline: profileCandidate.headline,
+            location: profileCandidate.location,
+            skills: profileCandidate.skills,
+            matchScore: profileCandidate.matchScore,
+            email: profileCandidate.contactRevealed ? profileCandidate.email : undefined,
+            phone: profileCandidate.contactRevealed ? profileCandidate.phone : undefined,
+          }}
+          onClose={() => setProfileCandidate(null)}
         />
       )}
     </div>
