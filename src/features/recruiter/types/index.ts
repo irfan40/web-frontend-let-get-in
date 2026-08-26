@@ -88,6 +88,77 @@ export interface CreateJobInput {
 }
 
 
+export interface ApplicantResume {
+  _id?: string;
+  id?: string;
+  title?: string;
+  templateId?: string;
+  content?: {
+    personalInfo?: {
+      fullName?: string;
+      headline?: string;
+      email?: string;
+      phone?: string;
+      location?: string;
+      websiteUrl?: string;
+      avatarUrl?: string;
+    };
+    summary?: string;
+    experiences?: Array<{
+      id?: string;
+      company?: string;
+      position?: string;
+      location?: string;
+      startDate?: string;
+      endDate?: string;
+      isCurrent?: boolean;
+      highlights?: string[] | string;
+    }>;
+    educations?: Array<{
+      id?: string;
+      institution?: string;
+      degree?: string;
+      fieldOfStudy?: string;
+      startDate?: string;
+      endDate?: string;
+      gradeScore?: string;
+    }>;
+    skills?: Array<string | { id?: string; name: string; level?: number }>;
+    projects?: Array<{
+      id?: string;
+      title: string;
+      subtitle?: string;
+      link?: string;
+      startDate?: string;
+      endDate?: string;
+      description?: string;
+      highlights?: string[];
+      technologies?: string[];
+    }>;
+    certificates?: Array<{
+      id?: string;
+      name: string;
+      issuer: string;
+      issueDate?: string;
+      credentialUrl?: string;
+    }>;
+    languages?: Array<{
+      id?: string;
+      language: string;
+      proficiency?: string;
+    }>;
+    socialLinks?: Array<{
+      platform?: string;
+      url: string;
+      label?: string;
+    }>;
+  };
+  settings?: Record<string, any>;
+  atsScore?: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export interface Applicant {
   _id: string;
   candidate: {
@@ -99,7 +170,7 @@ export interface Applicant {
     avatarUrl?: string;
     avatar?: string;
   } | null;
-  resume: { _id?: string; title?: string } | null;
+  resume: ApplicantResume | null;
   status: string;
   matchScore: number;
   assessmentScore?: number;
@@ -141,7 +212,7 @@ export interface AllApplicant {
     avatarUrl?: string;
     avatar?: string;
   } | null;
-  resume: { _id?: string; title?: string } | null;
+  resume: ApplicantResume | null;
   status: string;
   matchScore: number;
   assessmentScore?: number;

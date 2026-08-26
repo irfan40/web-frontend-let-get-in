@@ -3,9 +3,10 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { Loader2, MapPin, Search, User } from "lucide-react";
+import { Loader2, MapPin, Search, User, FileText } from "lucide-react";
 import { recruiterService } from "@/features/recruiter/services/recruiterService";
 import { Applicant, RecruiterJob } from "@/features/recruiter/types";
+import { ApplicantResumeModal } from "@/features/recruiter/components/ApplicantResumeModal";
 
 const STATUS_OPTIONS = ["submitted", "reviewing", "shortlisted", "interviewing", "offered", "rejected"];
 
@@ -17,6 +18,7 @@ export default function JobDetailPage() {
   const [applicants, setApplicants] = useState<Applicant[]>([]);
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [selectedApplicantForResume, setSelectedApplicantForResume] = useState<Applicant | null>(null);
 
   useEffect(() => {
     if (!jobId) return;
@@ -33,6 +35,9 @@ export default function JobDetailPage() {
     try {
       const updated = await recruiterService.updateApplicantStatus(applicationId, status);
       setApplicants((prev) => prev.map((a) => (a._id === applicationId ? { ...a, ...updated } : a)));
+      if (selectedApplicantForResume?._id === applicationId) {
+        setSelectedApplicantForResume((prev) => (prev ? { ...prev, ...updated, status } : null));
+      }
     } finally {
       setUpdatingId(null);
     }
@@ -96,37 +101,51 @@ export default function JobDetailPage() {
             {applicants.map((a) => (
               <div
                 key={a._id}
-                className="flex items-center justify-between gap-3 p-3 rounded-xl border border-border hover:bg-surface-alt/50 transition flex-wrap"
+                className="flex items-center justify-between gap-3 p-3.5 rounded-xl border border-border hover:bg-surface-alt/50 transition flex-wrap"
               >
                 <div className="flex items-center gap-3 min-w-0">
                   {a.candidate?.avatarUrl ? (
                     <img
                       src={a.candidate.avatarUrl}
                       alt={a.candidate.fullName || ""}
-                      className="w-9 h-9 rounded-full object-cover ring-1 ring-border shrink-0"
+                      className="w-10 h-10 rounded-full object-cover ring-1 ring-border shrink-0"
                     />
                   ) : (
-                    <div className="w-9 h-9 rounded-full bg-gradient-brand text-primary-foreground font-bold text-xs flex items-center justify-center shadow-glow shrink-0">
+                    <div className="w-10 h-10 rounded-full bg-gradient-brand text-primary-foreground font-bold text-xs flex items-center justify-center shadow-glow shrink-0">
                       <User className="w-4 h-4" />
                     </div>
                   )}
                   <div className="min-w-0">
-                    <div className="text-sm font-semibold text-ink truncate">
+                    <div className="text-sm font-bold text-ink truncate">
                       {a.candidate?.fullName || a.candidate?.username || "Candidate"}
                     </div>
-                    <div className="text-[11px] text-ink-soft truncate">{a.resume?.title || "Resume"}</div>
+                    <div className="text-xs text-ink-soft truncate flex items-center gap-1.5 mt-0.5">
+                      <span className="font-medium text-ink">{a.resume?.title || "Applied Resume"}</span>
+                      {a.candidate?.email && <span>· {a.candidate.email}</span>}
+                    </div>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 shrink-0">
-                  <span className="text-[10px] font-bold text-primary-glow bg-primary/10 px-2 py-0.5 rounded-full">
+                <div className="flex items-center gap-2.5 shrink-0">
+                  <span className="text-[10px] font-bold text-primary-glow bg-primary/10 px-2.5 py-1 rounded-full">
                     {a.matchScore || 0}% match
                   </span>
+
+                  {/* View Resume Button */}
+                  <button
+                    type="button"
+                    onClick={() => setSelectedApplicantForResume(a)}
+                    className="inline-flex items-center gap-1.5 text-xs font-bold bg-primary/10 hover:bg-primary text-primary hover:text-white px-3 py-1.5 rounded-xl transition cursor-pointer"
+                  >
+                    <FileText className="w-3.5 h-3.5" />
+                    <span>View Resume</span>
+                  </button>
+
                   <select
                     value={a.status}
                     disabled={updatingId === a._id}
                     onChange={(e) => handleStatusChange(a._id, e.target.value)}
-                    className="text-[11px] font-semibold bg-surface-alt border border-border rounded-lg px-2 py-1.5 capitalize disabled:opacity-50"
+                    className="text-xs font-semibold bg-surface-alt border border-border rounded-xl px-2.5 py-1.5 capitalize disabled:opacity-50 cursor-pointer"
                   >
                     {STATUS_OPTIONS.map((s) => (
                       <option key={s} value={s}>
@@ -140,6 +159,15 @@ export default function JobDetailPage() {
           </div>
         )}
       </div>
+
+      {/* Applicant Resume Modal */}
+      <ApplicantResumeModal
+        isOpen={!!selectedApplicantForResume}
+        applicant={selectedApplicantForResume}
+        onClose={() => setSelectedApplicantForResume(null)}
+        onStatusChange={handleStatusChange}
+        isUpdatingStatus={updatingId === selectedApplicantForResume?._id}
+      />
     </div>
   );
 }

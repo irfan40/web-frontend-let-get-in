@@ -125,6 +125,8 @@ export interface IResume {
   settings: ITemplateSettings;
   atsScore?: number;
   isPublic?: boolean;
+  starred?: boolean;
+  isActive?: boolean;
   shareToken?: string;
   createdAt?: string;
   updatedAt?: string;

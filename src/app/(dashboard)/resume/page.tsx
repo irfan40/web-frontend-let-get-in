@@ -141,6 +141,8 @@ function DashboardPageContent() {
     };
   }, []);
 
+  const [settingActiveId, setSettingActiveId] = useState<string | null>(null);
+
   const handleDelete = async (id: string) => {
     try {
       const provider = StorageProviderFactory.getProvider();
@@ -152,6 +154,27 @@ function DashboardPageContent() {
       const errorMsg = (err as { message?: string })?.message || String(err);
 
       console.error("Failed to delete resume:", errorMsg);
+    }
+  };
+
+  const handleSetActive = async (id: string) => {
+    setSettingActiveId(id);
+    try {
+      const provider = StorageProviderFactory.getProvider();
+      if (provider.setActive) {
+        await provider.setActive(id);
+      }
+      setResumes((prev) =>
+        prev.map((r) => ({
+          ...r,
+          isActive: r.id === id,
+        }))
+      );
+    } catch (err: unknown) {
+      const errorMsg = (err as { message?: string })?.message || String(err);
+      console.error("Failed to set active resume:", errorMsg);
+    } finally {
+      setSettingActiveId(null);
     }
   };
 
@@ -325,6 +348,8 @@ function DashboardPageContent() {
                           key={resume.id}
                           resume={resume}
                           onDelete={handleDelete}
+                          onSetActive={handleSetActive}
+                          isSettingActive={settingActiveId === resume.id}
                         />
                       ))}
                     </div>

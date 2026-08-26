@@ -67,4 +67,14 @@ export class MongoStorage implements IStorageProvider {
       throw error;
     }
   }
+
+  async setActive(id: string): Promise<IResume> {
+    try {
+      const response = await apiClient.patch<never, ApiResponse<{ resume: IResume }>>(`/resumes/${id}/active`);
+      return response?.data?.resume;
+    } catch (error) {
+      console.error('MongoStorage setActive error:', error);
+      throw error;
+    }
+  }
 }
